@@ -1,7 +1,8 @@
 # Agents in the Delivery Hallway
 
 **Student:** Michael Warner
-**GitHub repository:** [Private repository URL]  
+**GitHub repository:**  
+https://github.com/michaelwarner27/AI4300/tree/main/HW-02
 **Repository access:** [Confirm that `fractal13` has at least read access]
 
 ## 1. Agent Designs
@@ -68,11 +69,12 @@ Having an internal model allows us to travel in a single direction until our goa
 If the destination changes this could harbor performance but that won't happen in this environment.
 An improvement that could be made to the stored state is changing the starting direction based on starting location. The state stored in current direction starts stale because it is arbitrarily set to right.
 5. State whether your evidence supports the claim that the model-based reflex agent performs better in this environment. Refer to measured results rather than relying only on intuition.
-Yes my evidence supports that the model-based agent performs the best of the 3 in this environment. It has a completion rate of 100% compared to 16% and 26% of the random and reflex models. Additionally, it completes the problem in fewer steps, average of ~7 compared to ~28 and ~23, and with a higher reward ~22, compared to ~-47 and ~-14 of the random and reflex models
+Yes my evidence supports that the model-based agent performs the best of the 3 in this environment. It has a completion rate of 100% compared to 16% and 26% of the random and reflex models. Additionally, it completes the problem in fewer steps, average of ~7 compared to ~28 and ~23, and with a higher reward ~22, compared to ~-47 and ~-14 of the random and reflex models.
 
 ## 5. AI-Assistance Disclosure
 
 **Tools used:** [Tool names, or "No AI assistance used."]
+No AI tools used in this assignment
 
 **Material effect on this work:** [Describe generated code, debugging,
 explanations, editing, or other assistance. Explain how you checked it.]
