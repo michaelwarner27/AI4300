@@ -14,6 +14,7 @@ class Agent(Protocol):
 
     def act(self, percept: Percept) -> Action:
         """Choose one action from the current percept."""
+        return Action.WAIT
 
 
 class RandomAgent:
@@ -37,14 +38,23 @@ class SimpleReflexAgent:
         pass
 
     def act(self, percept: Percept) -> Action:
-        # TODO: Implement rules that depend only on the current percept.
-        raise NotImplementedError("Implement SimpleReflexAgent.act")
+        if percept.package_here == True and percept.carrying == False:
+            return Action.PICK_UP
+        elif percept.destination_here == True and percept.carrying == True:
+            return Action.DROP_OFF
+        elif percept.location == "A":
+            return Action.MOVE_RIGHT
+        elif percept.location == "E":
+            return Action.MOVE_LEFT
+        return Action.MOVE_RIGHT
 
 
 class ModelBasedReflexAgent:
     """A reflex agent that first updates an internal hallway model."""
 
     def __init__(self) -> None:
+        self.destination = ""
+        self.direction_left = False
         self.reset()
 
     def reset(self) -> None:
@@ -53,4 +63,31 @@ class ModelBasedReflexAgent:
 
     def act(self, percept: Percept) -> Action:
         # TODO: Update the model from the percept, then apply condition-action rules.
-        raise NotImplementedError("Implement ModelBasedReflexAgent.act")
+        if percept.destination_here == True:
+            self.destination = percept.location
+
+        if percept.package_here == True:
+            if self.destination == "":
+                pass
+            elif percept.location < self.destination:
+                self.direction_left = False
+
+            elif percept.location > self.destination:
+                self.direction_left = True
+
+
+        if percept.package_here == True and percept.carrying == False:
+            return Action.PICK_UP
+        if percept.destination_here == True and percept.carrying == True:
+            return Action.DROP_OFF
+        
+        if percept.location == "A":
+            self.direction_left = False
+        elif percept.location == "E":
+            self.direction_left = True
+
+        if self.direction_left == True:
+            return Action.MOVE_LEFT
+        elif self.direction_left == False:
+            return Action.MOVE_RIGHT
+        return Action.WAIT
