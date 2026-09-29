@@ -1,0 +1,25 @@
+stage,focal_agent,focal_color,orange_agent,black_agent,orange_depth,black_depth,orange_seed,black_seed,max_plies,max_llm_calls,max_think_seconds,live,status,exit_status,error,result,reason,plies,orange_utility,black_utility,orange_time,black_time,orange_generated,orange_evaluated,orange_maximum_depth,orange_model_calls,orange_fallback_calls,orange_cache_hits,black_generated,black_evaluated,black_maximum_depth,black_model_calls,black_fallback_calls,black_cache_hits,stdout,stderr
+b,minimax_3,orange,minimax_3,random,1,1,0,0,60,,3600.0,False,ok,0,,ORANGE,win,5,1,-1,0.190015,0.000627,178,178,1,,,,,,,,,,"result=ORANGE reason=win plies=5 orange_utility=1 black_utility=-1 orange_time=0.190015s black_time=0.000627s
+agent=orange name='Orange Minimax 3' generated=178 evaluated=178 maximum_depth=1
+agent=black name='Black Random'
+",
+b,minimax_3,black,random,minimax_3,1,1,0,0,60,,3600.0,False,ok,0,,BLACK,win,6,-1,1,0.001069,0.198284,,,,,,,178,178,1,,,,"result=BLACK reason=win plies=6 orange_utility=-1 black_utility=1 orange_time=0.001069s black_time=0.198284s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 3' generated=178 evaluated=178 maximum_depth=1
+",
+b,minimax_3,orange,minimax_3,random,1,1,1,1,60,,3600.0,False,ok,0,,ORANGE,win,5,1,-1,0.186426,0.001114,178,178,1,,,,,,,,,,"result=ORANGE reason=win plies=5 orange_utility=1 black_utility=-1 orange_time=0.186426s black_time=0.001114s
+agent=orange name='Orange Minimax 3' generated=178 evaluated=178 maximum_depth=1
+agent=black name='Black Random'
+",
+b,minimax_3,black,random,minimax_3,1,1,1,1,60,,3600.0,False,ok,0,,BLACK,win,6,-1,1,0.001171,0.214196,,,,,,,178,178,1,,,,"result=BLACK reason=win plies=6 orange_utility=-1 black_utility=1 orange_time=0.001171s black_time=0.214196s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 3' generated=178 evaluated=178 maximum_depth=1
+",
+b,llm_evaluator,orange,llm_evaluator,random,1,1,0,0,60,100,3600.0,True,ok,0,,BLACK,time_limit,56,-1,1,3706.534152,0.020172,2053,2053,1,2053,0,0,,,,,,,"result=BLACK reason=time_limit plies=56 orange_utility=-1 black_utility=1 orange_time=3706.534152s black_time=0.020172s
+agent=orange name='Orange LLM Evaluator' generated=2053 evaluated=2053 maximum_depth=1 model_calls=2053 fallback_calls=0 cache_hits=0
+agent=black name='Black Random'
+",
+b,llm_evaluator,black,random,llm_evaluator,1,1,0,0,60,100,3600.0,True,ok,0,,BLACK,win,42,-1,1,0.014946,2645.899013,,,,,,,1580,1580,1,1564,16,0,"result=BLACK reason=win plies=42 orange_utility=-1 black_utility=1 orange_time=0.014946s black_time=2645.899013s
+agent=orange name='Orange Random'
+agent=black name='Black LLM Evaluator' generated=1580 evaluated=1580 maximum_depth=1 model_calls=1564 fallback_calls=16 cache_hits=0
+",
