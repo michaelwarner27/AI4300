@@ -1,0 +1,49 @@
+stage,focal_agent,focal_color,orange_agent,black_agent,orange_depth,black_depth,orange_seed,black_seed,max_plies,max_llm_calls,max_think_seconds,live,status,exit_status,error,result,reason,plies,orange_utility,black_utility,orange_time,black_time,orange_generated,orange_evaluated,orange_maximum_depth,orange_model_calls,orange_fallback_calls,orange_cache_hits,black_generated,black_evaluated,black_maximum_depth,black_model_calls,black_fallback_calls,black_cache_hits,stdout,stderr
+a1,minimax_1,orange,minimax_1,random,1,1,0,0,100,,,False,ok,0,,DRAW,move_limit,100,0,0,0.456126,0.012150,2705,2705,1,,,,,,,,,,"result=DRAW reason=move_limit plies=100 orange_utility=0 black_utility=0 orange_time=0.456126s black_time=0.012150s
+agent=orange name='Orange Minimax 1' generated=2705 evaluated=2705 maximum_depth=1
+agent=black name='Black Random'
+",
+a1,minimax_1,black,random,minimax_1,1,1,0,0,100,,,False,ok,0,,BLACK,win,22,-1,1,0.002519,0.120222,,,,,,,644,644,1,,,,"result=BLACK reason=win plies=22 orange_utility=-1 black_utility=1 orange_time=0.002519s black_time=0.120222s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 1' generated=644 evaluated=644 maximum_depth=1
+",
+a1,minimax_1,orange,minimax_1,random,1,1,1,1,100,,,False,ok,0,,DRAW,move_limit,100,0,0,0.430489,0.014775,2542,2542,1,,,,,,,,,,"result=DRAW reason=move_limit plies=100 orange_utility=0 black_utility=0 orange_time=0.430489s black_time=0.014775s
+agent=orange name='Orange Minimax 1' generated=2542 evaluated=2542 maximum_depth=1
+agent=black name='Black Random'
+",
+a1,minimax_1,black,random,minimax_1,1,1,1,1,100,,,False,ok,0,,BLACK,win,42,-1,1,0.004704,0.213467,,,,,,,1262,1262,1,,,,"result=BLACK reason=win plies=42 orange_utility=-1 black_utility=1 orange_time=0.004704s black_time=0.213467s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 1' generated=1262 evaluated=1262 maximum_depth=1
+",
+a1,minimax_2,orange,minimax_2,random,1,1,0,0,100,,,False,ok,0,,ORANGE,win,11,1,-1,0.316445,0.001190,463,463,1,,,,,,,,,,"result=ORANGE reason=win plies=11 orange_utility=1 black_utility=-1 orange_time=0.316445s black_time=0.001190s
+agent=orange name='Orange Minimax 2' generated=463 evaluated=463 maximum_depth=1
+agent=black name='Black Random'
+",
+a1,minimax_2,black,random,minimax_2,1,1,0,0,100,,,False,ok,0,,BLACK,win,16,-1,1,0.002073,0.573752,,,,,,,754,754,1,,,,"result=BLACK reason=win plies=16 orange_utility=-1 black_utility=1 orange_time=0.002073s black_time=0.573752s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 2' generated=754 evaluated=754 maximum_depth=1
+",
+a1,minimax_2,orange,minimax_2,random,1,1,1,1,100,,,False,ok,0,,ORANGE,win,17,1,-1,0.656720,0.001978,858,858,1,,,,,,,,,,"result=ORANGE reason=win plies=17 orange_utility=1 black_utility=-1 orange_time=0.656720s black_time=0.001978s
+agent=orange name='Orange Minimax 2' generated=858 evaluated=858 maximum_depth=1
+agent=black name='Black Random'
+",
+a1,minimax_2,black,random,minimax_2,1,1,1,1,100,,,False,ok,0,,BLACK,win,16,-1,1,0.002015,0.431357,,,,,,,608,608,1,,,,"result=BLACK reason=win plies=16 orange_utility=-1 black_utility=1 orange_time=0.002015s black_time=0.431357s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 2' generated=608 evaluated=608 maximum_depth=1
+",
+a1,minimax_3,orange,minimax_3,random,1,1,0,0,100,,,False,ok,0,,ORANGE,win,5,1,-1,0.130153,0.000498,178,178,1,,,,,,,,,,"result=ORANGE reason=win plies=5 orange_utility=1 black_utility=-1 orange_time=0.130153s black_time=0.000498s
+agent=orange name='Orange Minimax 3' generated=178 evaluated=178 maximum_depth=1
+agent=black name='Black Random'
+",
+a1,minimax_3,black,random,minimax_3,1,1,0,0,100,,,False,ok,0,,BLACK,win,6,-1,1,0.000744,0.120326,,,,,,,178,178,1,,,,"result=BLACK reason=win plies=6 orange_utility=-1 black_utility=1 orange_time=0.000744s black_time=0.120326s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 3' generated=178 evaluated=178 maximum_depth=1
+",
+a1,minimax_3,orange,minimax_3,random,1,1,1,1,100,,,False,ok,0,,ORANGE,win,5,1,-1,0.116601,0.000528,178,178,1,,,,,,,,,,"result=ORANGE reason=win plies=5 orange_utility=1 black_utility=-1 orange_time=0.116601s black_time=0.000528s
+agent=orange name='Orange Minimax 3' generated=178 evaluated=178 maximum_depth=1
+agent=black name='Black Random'
+",
+a1,minimax_3,black,random,minimax_3,1,1,1,1,100,,,False,ok,0,,BLACK,win,6,-1,1,0.000709,0.118741,,,,,,,178,178,1,,,,"result=BLACK reason=win plies=6 orange_utility=-1 black_utility=1 orange_time=0.000709s black_time=0.118741s
+agent=orange name='Orange Random'
+agent=black name='Black Minimax 3' generated=178 evaluated=178 maximum_depth=1
+",

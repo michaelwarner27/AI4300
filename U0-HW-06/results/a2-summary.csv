@@ -1,0 +1,2 @@
+stage,agent,configured_depth,games_attempted,games_with_results,wins,draws,losses,failures,mean_utility,utility_denominator,mean_plies,plies_denominator,mean_think_time,think_time_denominator,mean_generated,generated_denominator,mean_evaluated,evaluated_denominator,mean_model_calls,model_calls_denominator,mean_fallback_calls,fallback_calls_denominator,mean_cache_hits,cache_hits_denominator
+a2,minimax_3,2,4,4,4,0,0,0,1.0,4,9.0,4,60.146186,4,20775.5,4,20442.5,4,,0,,0,,0

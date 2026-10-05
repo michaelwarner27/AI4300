@@ -1,0 +1,17 @@
+stage,focal_agent,focal_color,orange_agent,black_agent,orange_depth,black_depth,orange_seed,black_seed,max_plies,max_llm_calls,max_think_seconds,live,status,exit_status,error,result,reason,plies,orange_utility,black_utility,orange_time,black_time,orange_generated,orange_evaluated,orange_maximum_depth,orange_model_calls,orange_fallback_calls,orange_cache_hits,black_generated,black_evaluated,black_maximum_depth,black_model_calls,black_fallback_calls,black_cache_hits,stdout,stderr
+c,llm_direct,orange,llm_direct,minimax_3,1,1,0,0,60,,3600.0,True,ok,0,,BLACK,win,4,-1,1,12.706072,0.422300,,,,2,1,,113,113,1,,,,"result=BLACK reason=win plies=4 orange_utility=-1 black_utility=1 orange_time=12.706072s black_time=0.422300s
+agent=orange name='Orange Direct LLM' model_calls=2 fallback_calls=1
+agent=black name='Black Minimax 3' generated=113 evaluated=113 maximum_depth=1
+",
+c,llm_direct,black,minimax_3,llm_direct,1,1,0,0,60,,3600.0,True,ok,0,,ORANGE,win,13,1,-1,0.976670,16.024228,414,414,1,,,,,,,6,0,,"result=ORANGE reason=win plies=13 orange_utility=1 black_utility=-1 orange_time=0.976670s black_time=16.024228s
+agent=orange name='Orange Minimax 3' generated=414 evaluated=414 maximum_depth=1
+agent=black name='Black Direct LLM' model_calls=6 fallback_calls=0
+",
+c,llm_direct,orange,llm_direct,minimax_3,1,1,1,0,60,,3600.0,True,ok,0,,BLACK,win,48,-1,1,57.889806,1.926573,,,,24,1,,1368,1368,1,,,,"result=BLACK reason=win plies=48 orange_utility=-1 black_utility=1 orange_time=57.889806s black_time=1.926573s
+agent=orange name='Orange Direct LLM' model_calls=24 fallback_calls=1
+agent=black name='Black Minimax 3' generated=1368 evaluated=1368 maximum_depth=1
+",
+c,llm_direct,black,minimax_3,llm_direct,1,1,0,1,60,,3600.0,True,ok,0,,ORANGE,win,13,1,-1,0.920761,12.250760,414,414,1,,,,,,,6,0,,"result=ORANGE reason=win plies=13 orange_utility=1 black_utility=-1 orange_time=0.920761s black_time=12.250760s
+agent=orange name='Orange Minimax 3' generated=414 evaluated=414 maximum_depth=1
+agent=black name='Black Direct LLM' model_calls=6 fallback_calls=0
+",
