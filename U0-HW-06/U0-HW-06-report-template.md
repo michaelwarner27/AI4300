@@ -1,10 +1,10 @@
 # Alpha-Beta Pruning and Move Ordering in Jetan
 
 **Student:** [Michael Warner]  
-**Private repository:** [URL]  
+**Private repository:** [https://github.com/michaelwarner27/AI4300/tree/main/U0-HW-06]  
 **Access:** [Confirm `fractal13` has read access]  
-**Submitted commit:** [Hash]  
-**Inherited U0-HW-05 commit:** [Hash]
+**Submitted commit:** [90ec51b755f0a59896679041fe1e3c91cfb57339]  
+**Inherited U0-HW-05 commit:** [79503f6b68681c6353e51b59cf4d831d6eafbb33]
 
 ## 1. Selected U0-HW-05 Evaluation Function
 
