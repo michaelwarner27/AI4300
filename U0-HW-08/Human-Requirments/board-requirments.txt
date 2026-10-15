@@ -1,0 +1,30 @@
+Sudoku Board
+
+Basic Structure:
+    2D array storing tile objects.
+    9X9 Board
+    rows column and blocks are numbered 0-8 starting from the top left  
+Board Methods:
+    init(self, board) takes a starter board and structures it as described
+    checkIfInRow(row, value) checks if that number is already contained in that row
+    checkIfInColumn(column, value)
+    checkIfInBlock(block, value)
+    validateRow(row) -> Bool
+    validateColumn(column) -> Bool
+    validateBlock(block) -> Bool 
+    locateBlock(tile location) given tile location return int 0-8 of which block it is in 
+    validateIncompleteBoard() loops through validate row column and block to test if there are any illegal values written allows empty tiles
+    validatePuzzle() checks that the board is valid and has no empty tiles
+    printBoard() print to terminal for human to read
+
+Tile objects:
+    Data
+        Value: int 1-9. init to None unless value given in starter board
+        Writable: Bool is this tile a starter hint or a writable tile. On board init any tile inited with a value is not writable, all empty tiles are writable.
+        notes: list[int] possible values for this tile. init to empty
+    Methods
+        ReadTile(tile location)
+        WriteValue(location, value) -> Bool check if writable is true, write value to tile. reject values not int 1-9. Reject None values that is for the eraseTile methods
+        eraseTile(location) writes None to tile.value if writeable is true. 
+        append to notes(location, values) notes will be manually populated by the user
+        list notes(location)

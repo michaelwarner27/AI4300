@@ -1,0 +1,83 @@
+Agent Version 1:
+    The goal is build a ReAct agent that will solve a sudoku puzzle. The agent will do this by making tool calls to solve then modify the board. It will not modify the board directly
+    This we will use lang graph to implement this ReAct agent
+    This first version will be very scrappy. I primarily want to test the agent making tool calls.
+    
+    Agent Prompt:
+        """
+        You are a Sudoku solving bot, using the given tools with the current board make tool calls to solve the puzzle.
+        {Board State}
+        {Tool descriptions}
+        Output a single tool call as JSON {"tool": "...", "parameters": ...}
+        """
+    Tools available:
+        Read/write tools: readBoard(), readTile(), writeTile(), eraseTile()
+        Validation tools: checkTileCandidate(), block; validate row, column, block; validate incomplete board; validate puzzle. 
+        
+        Tool Descriptions:
+            TODO appropriate tool calls, return results, and action description
+
+    Agent loop until board is solved
+        The agent will be given the current board as part of the prompt
+        The agent may test potential candidate(s), make a decision, write to the board, then validate it's change.
+        The controller will validate that the model make a valid tool call, then execute it. 
+        The loop will end when either the board is solved or when the budgeted number of tool calls is passed. BUDGET = 150
+
+    Decision Logic:
+        Start with the top left most empty tile. Read the board and decide if the tile is constrained enough to make a decision. If it is, write to the tile and continue, otherwise move to the next tile without writing.
+        The agent can call write as soon as it makes a decision on what to write to the tile. 
+        Only write when there is only one candidate left
+        Move to the next tile in reading order and loop to the beginning when the last tile is reached
+        The agent should either read the full board or use checkTileCandidate() to make an appropriate decision
+        if the LLM believes the board is complete it should call checkPuzzle()
+   
+    Board State and Validation:
+        The after every agent write, call checkIncompleteBoard() and return whether or not that passes to the agent.
+        Using notes is optional
+   
+    Error Handling:
+        When the agent makes an invalid tool call give it the list of allowed tools and let it try again.
+        Invalid tool calls count towards the BUDGET.
+        Keeps a separate tracker for invalid tool calls.
+    
+    Termination:
+        Terminate when puzzle is solved
+        Terminate when budget is reached
+        If the agent gets stuck it should keep checking tiles.
+        If it detects an invalid puzzle state it should use the eraseTile() tool to correct it.
+
+    Success:
+        I don't expect this first version to solve the puzzle.
+        This prototype will succeed if it fills in 10 correct tiles within its budget. The agent should however continue to the end of its budget.
+        The board must pass checkIncompleteBoard() with 10 or more tiles filled in order to have succeeded our basic tests.
+
+    Tests:
+        Will be run on the puzzle given in 'board.py'
+    
+    Agent Model:
+        .env stores 3 variables: API_KEY, URL, MODELS these are how to access the agent that will make the tool calls. Use MODELS[0]
+
+
+    LangGraph Structure:
+        Multiple node loop
+        Prompt Message -> LLM Decision/Response -> Response Parser -> Execute Tool Call -> Tool call result & checkIncompleteBoard() -> returns to LLM and loops there
+        Invalid tool calls will give the llm an error and loop back to the llm without making a tool call.
+        On a checkIncompleteBoard() fail, tell the agent validation failed try again
+        Only the LLM Decision node will make an API call
+    Observability for debugging:
+        Print the full trace of the agent's responses so I can see it's thought process
+        Include Every llm response including invalid ones, and tool results.
+    Stored State:
+        board_state (the current puzzle)
+        current_tile_index (tracking position)
+        tiles_filled (count for success metric)
+        invalid_calls_count
+        total_calls_count
+        agent_messages (for observability trace)
+        
+
+
+
+
+Agent Version 2:
+    Propositional logic tools added to aid in decision making.
