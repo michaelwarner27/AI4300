@@ -1,0 +1,55 @@
+Current Problem:
+- The agent moves through cells in strict reading order (left-to-right, top-to-bottom), checking each cell sequentially for candidates
+- It calls kb_entails() up to 9 times per cell to check which values are valid
+- This is inefficient because many cells might have multiple candidates while others could be solved immediately
+- The budget (15 LLM calls) gets exhausted quickly with this naive approach
+Key Inefficiencies:
+1. No prioritization - Treats all empty cells equally regardless of how constrained they are
+2. Redundant constraint checking - Checking candidates one-by-one instead of finding the most constrained cells first
+3. No constraint propagation strategy - Solving cells in order rather than solving "easier" cells first that unlock others
+Proposed Solutions
+I see three main optimization strategies:
+Option A: Add Cell-Scoring Heuristic (Minimal Constraint First)
+Modify advance_index() to find the empty cell with the fewest candidates instead of just the next one in reading order.
+Pros:
+- Cells with fewer possibilities are more likely to be solvable
+- Reduces wasted kb_entails() calls on cells with many candidates
+- Fits well with the LLM's reasoning - "Why are you trying this cell? Because it has only 2-3 possible values"
+Cons:
+- Requires additional computation to scan and score all empty cells each time
+- LLM still does constraint checking one-by-one
+Option B: Add a Batch Analysis Tool
+Create a new tool that returns all candidates for a given cell in one call, or all cells with their candidate counts in one call.
+Pros:
+- Single call gives the LLM the full constraint picture
+- LLM can make smarter decisions about which cell to tackle next
+- Dramatically reduces the number of kb_entails() calls
+Cons:
+- Requires extending the tool API
+- More complex implementation
+Option C: Improve LLM Prompt Strategy
+Update the system prompt to explicitly tell the LLM to:
+- Identify the most constrained cells first (those with fewest candidates)
+- Use readRow(), readColumn(), readBlock() to narrow possibilities before calling kb_entails()
+- Cache candidate sets mentally to avoid redundant checks
+Pros:
+- No code changes needed
+- Leverages the LLM's reasoning ability
+- Minimal performance overhead
+Cons:
+- Relies on LLM following instructions (prompt engineering is imperfect)
+- Still calls kb_entails() many times
+My Recommendation
+Start with Option A + Option C combined:
+1. Keep the current KB-based solving
+2. Modify advance_index() to prioritize the most constrained cell (fewest candidates)
+3. Update the system prompt to hint that the LLM should check candidates in order of likelihood
+This is:
+- Relatively simple to implement
+- Effective - dramatically reduces wasted cycles on cells with many candidates
+- Compatible with your existing KB infrastructure
+- Measurable - you'll see the agent solve more cells within the same budget
+Questions for You
+1. Budget concern: Is 15 LLM calls enough for your current puzzle? Would increasing the budget be acceptable?
+2. Constraint checking: Would you like me to implement the cell-scoring heuristic (find most-constrained cell first)?
+3. Alternative direction: Would you prefer a more aggressive approach like adding a batch candidate-finding tool?

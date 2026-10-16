@@ -9,6 +9,7 @@ Run:  python react_agent.py
 """
 import json
 import os
+import time
 from typing import Any, TypedDict
 
 from dotenv import load_dotenv
@@ -17,6 +18,7 @@ from openai import OpenAI
 
 from board import Board
 from Example_Board import sudoku_puzzle
+from proplogic import KnowledgeBase, Literal, atom
 
 BUDGET = 15
 MAX_NONWRITE_CALLS_PER_TILE = 9
@@ -50,17 +52,22 @@ def call_llm(messages: list[dict]) -> str:
 # --------------------------------------------------------------------------
 # Tools
 # --------------------------------------------------------------------------
-def _grid(board: Board) -> list[list[int | None]]:
-    return [[board.readTile(r, c) for c in range(9)] for r in range(9)]
-
-
 # name -> (param spec {name: (lo, hi)}, description, function(board, **params))
 TOOLS: dict[str, tuple[dict, str, Any]] = {
     "readBoard": ({}, "Returns the 9x9 grid (list of rows, null = empty).",
-                  lambda b: _grid(b)),
+                   lambda b: b.readBoard()),
     "readTile": ({"row": (0, 8), "column": (0, 8)},
                  "Returns the tile value (1-9) or null if empty.",
                  lambda b, row, column: b.readTile(row, column)),
+    "readRow": ({"row": (0, 8)},
+                "Returns list of 9 values from the row in left-to-right order (values are 1-9 or null).",
+                lambda b, row: b.readRow(row)),
+    "readColumn": ({"column": (0, 8)},
+                   "Returns list of 9 values from the column in top-to-bottom order (values are 1-9 or null).",
+                   lambda b, column: b.readColumn(column)),
+    "readBlock": ({"block": (0, 8)},
+                  "Returns list of 9 values from the block in reading order (left to right, top to bottom; values are 1-9 or null).",
+                  lambda b, block: b.readBlock(block)),
     "writeTile": ({"row": (0, 8), "column": (0, 8), "value": (1, 9)},
                   "Writes value to a writable tile. Returns true on success, false otherwise. "
                   "You will be told whether the board still validates afterwards.",
@@ -91,6 +98,21 @@ TOOLS: dict[str, tuple[dict, str, Any]] = {
                         lambda b, column, value: b.checkIfInColumn(column, value)),
     "checkIfInBlock": ({"block": (0, 8), "value": (1, 9)}, "Returns true if value exists in the block.",
                        lambda b, block, value: b.checkIfInBlock(block, value)),
+    # Note: KB tools require special handling in execute_tool() to access KB from state
+    "kb_add_formula": ({"formula": (0, 0)},  # special: string param, validation handled separately
+                       "Add a formula to the knowledge base (parsed and converted to CNF). Useful for encoding Sudoku constraints. Returns true if added successfully.",
+                       lambda b, formula: True),  # implemented in execute_tool()
+    "kb_add_clause": ({"literals": (0, 0)},  # special: list param, validation handled separately
+                      "Add a disjunctive clause (OR) of literals to the knowledge base when constraints are in CNF form. Returns true if added successfully.",
+                      lambda b, literals: True),  # implemented in execute_tool()
+    "kb_add_fact": ({"symbol": (0, 0), "positive": (0, 0)},  # special: string/bool params, validation handled separately
+                    "Add a definite fact to the knowledge base (e.g., cell_0_0_has_value_5 is True). Returns true if added successfully.",
+                    lambda b, symbol, positive: True),  # implemented in execute_tool()
+    "kb_entails": ({"query": (0, 0)},  # special: string param, validation handled separately
+                   "Query the knowledge base to check if a deduction is entailed. Returns true if KB entails the query.",
+                   lambda b, query: True),  # implemented in execute_tool()
+    "kb_is_consistent": ({}, "Check if the knowledge base is consistent (contains no contradictions). Returns true if consistent, false otherwise.",
+                         lambda b: True),  # implemented in execute_tool()
 }
 
 
@@ -110,6 +132,7 @@ CALL_FORMAT = '{"tool": "toolName", "parameters": {"param1": value1, "param2": v
 # --------------------------------------------------------------------------
 class AgentState(TypedDict):
     board_state: Board
+    knowledge_base: KnowledgeBase
     current_tile_index: int
     tiles_filled: int
     invalid_calls_count: int
@@ -121,6 +144,95 @@ class AgentState(TypedDict):
     nonwrite_calls_on_tile: int
     done: bool
     solved: bool
+
+
+def initialize_knowledge_base(board: Board) -> KnowledgeBase:
+    """
+    Initialize a knowledge base with fundamental Sudoku constraints.
+    
+    Adds:
+    - Cell Constraints: Each tile contains exactly one value (mutual exclusion)
+    - Uniqueness Constraints: For each row, column, and block, no two positions contain the same value
+    - Initial Facts: Clues from the puzzle (starter tiles)
+    
+    Args:
+        board: The Sudoku board with clues
+        
+    Returns:
+        Initialized KnowledgeBase
+    """
+    kb = KnowledgeBase()
+    
+    # Cell Constraints: Each tile (r, c) must have exactly one value
+    # For each tile, add: cell_r_c_has_v OR cell_r_c_has_v+1 OR ... (at least one)
+    # And add mutual exclusion: NOT (cell_r_c_has_v AND cell_r_c_has_w) for v != w
+    for r in range(9):
+        for c in range(9):
+            # At least one value must be true for this tile
+            literals = [Literal(f"cell_{r}_{c}_has_{v}") for v in range(1, 10)]
+            kb.add_clause(*literals)
+            
+            # Mutual exclusion: no two values can be simultaneously true
+            for v in range(1, 10):
+                for w in range(v + 1, 10):
+                    kb.add_clause(
+                        Literal(f"cell_{r}_{c}_has_{v}", False),
+                        Literal(f"cell_{r}_{c}_has_{w}", False)
+                    )
+    
+    # Uniqueness Constraints: Each row, column, and block contains each value at most once
+    
+    # Row uniqueness: For each row and value, at most one cell in the row has that value
+    for r in range(9):
+        for v in range(1, 10):
+            for c1 in range(9):
+                for c2 in range(c1 + 1, 9):
+                    kb.add_clause(
+                        Literal(f"cell_{r}_{c1}_has_{v}", False),
+                        Literal(f"cell_{r}_{c2}_has_{v}", False)
+                    )
+    
+    # Column uniqueness: For each column and value, at most one cell in the column has that value
+    for c in range(9):
+        for v in range(1, 10):
+            for r1 in range(9):
+                for r2 in range(r1 + 1, 9):
+                    kb.add_clause(
+                        Literal(f"cell_{r1}_{c}_has_{v}", False),
+                        Literal(f"cell_{r2}_{c}_has_{v}", False)
+                    )
+    
+    # Block uniqueness: For each 3x3 block and value, at most one cell in the block has that value
+    for block in range(9):
+        block_row = (block // 3) * 3
+        block_col = (block % 3) * 3
+        
+        # Get all cells in this block
+        block_cells = []
+        for r in range(block_row, block_row + 3):
+            for c in range(block_col, block_col + 3):
+                block_cells.append((r, c))
+        
+        # For each value, no two cells in the block can have it
+        for v in range(1, 10):
+            for i in range(len(block_cells)):
+                for j in range(i + 1, len(block_cells)):
+                    r1, c1 = block_cells[i]
+                    r2, c2 = block_cells[j]
+                    kb.add_clause(
+                        Literal(f"cell_{r1}_{c1}_has_{v}", False),
+                        Literal(f"cell_{r2}_{c2}_has_{v}", False)
+                    )
+    
+    # Initial Facts: Add clues from the board as facts
+    for r in range(9):
+        for c in range(9):
+            value = board.readTile(r, c)
+            if value is not None:
+                # This tile has a definite value from the puzzle clue
+                kb.add_fact(Literal(f"cell_{r}_{c}_has_{value}"))
+    
+    return kb
 
 
 def count_filled(board: Board) -> int:
@@ -152,14 +264,20 @@ def render_board(board: Board) -> str:
 def build_system_prompt(state: AgentState) -> str:
     idx = state["current_tile_index"]
     return (
-        "You are a Sudoku solving bot, using the given tools with the current board "
-        "make tool calls to solve the puzzle.\n\n"
+        "You are a Sudoku solving bot. Your goal: solve the puzzle by filling every empty tile with the correct value.\n\n"
         f"Current board ('.' = empty; rows/columns/blocks numbered 0-8 from top left):\n"
         f"{render_board(state['board_state'])}\n\n"
-        f"Current tile: ({idx // 9}, {idx % 9}). Decide whether it is constrained enough to "
-        "fill: only write when exactly one candidate remains, otherwise gather information "
-        "(the controller moves you to the next tile automatically).\n\n"
-        f"Tools:\n{tool_descriptions()}\n\n"
+        f"Current tile: ({idx // 9}, {idx % 9})\n\n"
+        "**SOLVING STRATEGY (Version 2 - Knowledge Base Solver):**\n"
+        "1. Use kb_entails() to query which values are logically possible for the current tile.\n"
+        "2. For each candidate value (1-9), call kb_entails() with the query 'cell_{row}_{col}_has_{value}'.\n"
+        "3. Count how many candidates the KB entails. If exactly ONE value is entailed, that is the only valid choice.\n"
+        "4. ONLY call writeTile() when the KB entails exactly one candidate for that tile.\n"
+        "5. After writeTile(), the cell is automatically added to the KB as a fact to propagate constraints.\n"
+        "6. Check kb_is_consistent() if you suspect logical contradictions.\n"
+        "7. When all 81 tiles are filled, call validatePuzzle() to verify the solution.\n"
+        "8. Use readRow(), readColumn(), readBlock() to efficiently analyze board structure.\n\n"
+        f"Available tools:\n{tool_descriptions()}\n\n"
         f"Output a single tool call as JSON {CALL_FORMAT} and nothing else."
     )
 
@@ -187,7 +305,7 @@ def llm_decision(state: AgentState) -> dict:
     log(f"\n===== Call {n}/{BUDGET} | tile index {state['current_tile_index']} "
         f"| filled {state['tiles_filled']} =====")
     response = call_llm(messages)
-    log(f"[LLM response]\n{response}")
+    # log(f"[LLM response]\n{response}")
     record(state, "assistant", response)
     return {"last_response": response, "total_calls_count": n}
 
@@ -237,7 +355,37 @@ def _validate_call(call: Any) -> str | None:
     spec = TOOLS[name][0]
     if set(params) != set(spec):
         return f"Tool '{name}' requires exactly the parameters {list(spec)}; got {list(params)}."
+    
+    # Special handling for proplogic tools (string and complex parameters)
+    if name in ("kb_add_formula", "kb_entails"):
+        # These tools expect a "query" or "formula" string parameter
+        if "formula" in spec or "query" in spec:
+            param_name = "formula" if "formula" in spec else "query"
+            if param_name in params and not isinstance(params[param_name], str):
+                return f"Parameter '{param_name}' must be a string; got {type(params[param_name]).__name__}."
+    elif name == "kb_add_fact":
+        # Expects "symbol" (string) and "positive" (bool)
+        if "symbol" in params and not isinstance(params["symbol"], str):
+            return "Parameter 'symbol' must be a string."
+        if "positive" in params and not isinstance(params["positive"], bool):
+            return "Parameter 'positive' must be a boolean."
+    elif name == "kb_add_clause":
+        # Expects "literals" as a list of {symbol: str, positive: bool}
+        if "literals" in params:
+            if not isinstance(params["literals"], list):
+                return "Parameter 'literals' must be a list."
+            for i, lit in enumerate(params["literals"]):
+                if not isinstance(lit, dict):
+                    return f"Literal at index {i} must be a dict with 'symbol' and 'positive'."
+                if not isinstance(lit.get("symbol"), str):
+                    return f"Literal at index {i}: 'symbol' must be a string."
+                if not isinstance(lit.get("positive"), bool):
+                    return f"Literal at index {i}: 'positive' must be a boolean."
+    
+    # Standard integer range validation for non-proplogic tools
     for p, (lo, hi) in spec.items():
+        if lo == 0 and hi == 0:  # Skip validation for special params (proplogic tools)
+            continue
         v = params[p]
         if isinstance(v, bool) or not isinstance(v, int) or not lo <= v <= hi:
             return f"Parameter '{p}' must be an integer in {lo}-{hi}; got {v!r}."
@@ -261,20 +409,60 @@ def parse_response(state: AgentState) -> dict:
 
 def execute_tool(state: AgentState) -> dict:
     board = state["board_state"]
+    kb = state["knowledge_base"]
     call = state["parsed_call"]
     name, params = call["tool"], call.get("parameters", {})
-    result = TOOLS[name][2](board, **params)
+    
+    # Handle proplogic tools specially (they need access to KB from state)
+    if name == "kb_add_formula":
+        kb.add_formula(params["formula"])
+        result = True
+        log(f"[KB] Added formula: {params['formula']}")
+    elif name == "kb_add_clause":
+        # Convert list of {symbol, positive} dicts to Literal objects
+        literals = [Literal(lit["symbol"], lit["positive"]) for lit in params["literals"]]
+        kb.add_clause(*literals)
+        result = True
+        lit_str = " OR ".join(f"{'~' if not lit.positive else ''}{lit.symbol}" for lit in literals)
+        log(f"[KB] Added clause: {lit_str}")
+    elif name == "kb_add_fact":
+        kb.add_fact(Literal(params["symbol"], params["positive"]))
+        result = True
+        fact_str = f"{'~' if not params['positive'] else ''}{params['symbol']}"
+        log(f"[KB] Added fact: {fact_str}")
+    elif name == "kb_entails":
+        result = kb.entails(params["query"])
+        log(f"[KB] Entailment query '{params['query']}': {result}")
+    elif name == "kb_is_consistent":
+        result = kb.is_consistent()
+        log(f"[KB] Consistency check: {result}")
+    else:
+        # Non-proplogic tools use the standard tool function
+        result = TOOLS[name][2](board, **params)
+    
     log(f"[Tool] {name}({params}) -> {result}")
 
     feedback = f"Tool result for {name}({json.dumps(params)}): {json.dumps(result)}"
     updates: dict = {}
 
     if name == "writeTile":
+        # Add the written tile to the KB as a fact
+        row, col, value = params["row"], params["column"], params["value"]
+        kb.add_fact(Literal(f"cell_{row}_{col}_has_{value}"))
+        log(f"[KB] Added fact: cell_{row}_{col}_has_{value}")
+        
+        # Check board validation
         ok = board.validateIncompleteBoard()
         log(f"[validateIncompleteBoard after write] {ok}")
         feedback += ("\nBoard validation passed." if ok else
                      "\nValidation failed, try again. The board now contains a duplicate "
                      "value; use eraseTile to correct it.")
+        
+        # Check KB consistency
+        kb_consistent = kb.is_consistent()
+        log(f"[KB consistency check] {kb_consistent}")
+        if not kb_consistent:
+            feedback += "\nWARNING: Knowledge base is inconsistent. There may be a logical contradiction."
 
     filled = count_filled(board)
     solved = name == "validatePuzzle" and result is True
@@ -361,33 +549,53 @@ def solve_reference(grid: list[list[int]]) -> list[list[int]] | None:
     return g if rec() else None
 
 
-def final_report(state: AgentState) -> None:
+def final_report(state: AgentState, elapsed_time: float) -> None:
     board = state["board_state"]
-    valid = board.validateIncompleteBoard()
+    kb = state["knowledge_base"]
+    valid_incomplete = board.validateIncompleteBoard()
+    valid_complete = board.validatePuzzle()
+    kb_consistent = kb.is_consistent()
     ref = solve_reference(sudoku_puzzle)
     correct = None
     if ref:
         correct = sum(1 for r in range(9) for c in range(9)
                       if board.grid[r][c].writable and board.readTile(r, c) == ref[r][c])
-    print("\n" + "=" * 50 + "\nFINAL REPORT\n" + "=" * 50)
+    
+    print("\n" + "=" * 60 + "\nFINAL REPORT (Version 2 - KB Solver)\n" + "=" * 60)
     print("Final board state:")
     board.printBoard()
-    print(f"Total tool calls:        {state['total_calls_count']}")
-    print(f"Invalid tool calls:      {state['invalid_calls_count']}")
-    print(f"validateIncompleteBoard: {'PASS' if valid else 'FAIL'}")
-    print(f"Puzzle solved:           {state['solved']}")
-    print(f"Tiles filled by agent:   {state['tiles_filled']}")
+    print(f"\nExecution Metrics:")
+    print(f"  Total tool calls:              {state['total_calls_count']}")
+    print(f"  Invalid tool calls:            {state['invalid_calls_count']}")
+    print(f"  Tiles filled by agent:         {state['tiles_filled']}")
+    print(f"  Elapsed time:                  {elapsed_time:.2f}s")
+    print(f"\nBoard Validation:")
+    print(f"  validateIncompleteBoard():     {'PASS' if valid_incomplete else 'FAIL'}")
+    print(f"  validatePuzzle():              {'PASS' if valid_complete else 'FAIL'}")
+    print(f"\nKnowledge Base Status:")
+    print(f"  KB consistency:                {'CONSISTENT' if kb_consistent else 'INCONSISTENT'}")
+    print(f"\nPuzzle Solve Status:")
+    print(f"  Puzzle solved (100% complete): {state['solved']}")
     if correct is not None:
-        print(f"Tiles correct (vs. solution): {correct}")
-    ok = valid and (correct if correct is not None else state['tiles_filled']) >= SUCCESS_TILES
-    print(f"Prototype success (>= {SUCCESS_TILES} correct tiles and valid): {ok}")
+        print(f"  Tiles correct (vs. solution):  {correct}/81")
+    
+    # Version 2 success criteria: 100% complete puzzle, valid, and within budget
+    success = valid_complete and state['solved'] and kb_consistent
+    print(f"\n{'SUCCESS' if success else 'INCOMPLETE'}")
+    print(f"  All 81 tiles filled correctly:  {state['solved']}")
+    print(f"  validatePuzzle() passed:        {valid_complete}")
+    print(f"  KB remained consistent:         {kb_consistent}")
+    print("=" * 60)
 
 
 def main() -> None:
+    start_time = time.time()
     board = Board(sudoku_puzzle)
+    kb = initialize_knowledge_base(board)
     first = advance_index(board, -1)
     state: AgentState = {
         "board_state": board,
+        "knowledge_base": kb,
         "current_tile_index": first,
         "tiles_filled": 0,
         "invalid_calls_count": 0,
@@ -400,10 +608,14 @@ def main() -> None:
         "solved": False,
     }
     log(f"Model: {MODEL} | Budget: {BUDGET}")
+    log("Initializing Knowledge Base with Sudoku constraints...")
+    kb_consistent = kb.is_consistent()
+    log(f"KB consistency check: {kb_consistent}")
     board.printBoard()
     # recursion_limit: 3 nodes per call, plus headroom
     final = build_graph().invoke(state, {"recursion_limit": BUDGET * 3 + 20})
-    final_report(final)
+    elapsed_time = time.time() - start_time
+    final_report(final, elapsed_time)
 
 
 if __name__ == "__main__":

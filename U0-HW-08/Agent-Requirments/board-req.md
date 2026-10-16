@@ -70,6 +70,22 @@ def validatePuzzle() -> bool
 ```
 Validates the entire board and ensures there are no empty tiles. Returns True if the puzzle is complete and valid.
 
+#### Reading Structures
+```python
+def readRow(row: int) -> list[int | None]
+```
+Returns all tile values in the specified row in left-to-right order. Values are 1-9 or None for empty tiles.
+
+```python
+def readColumn(column: int) -> list[int | None]
+```
+Returns all tile values in the specified column in top-to-bottom order. Values are 1-9 or None for empty tiles.
+
+```python
+def readBlock(block: int) -> list[int | None]
+```
+Returns all tile values in the specified block (0-8) in reading order (left to right, top to bottom). Values are 1-9 or None for empty tiles.
+
 #### Display
 ```python
 def printBoard() -> None

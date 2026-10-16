@@ -377,6 +377,58 @@ class Board:
         
         print()
 
-    def readBoard(self):
-        return self.grid
+    def readRow(self, row: int) -> list[int | None]:
+        """
+        Read all tile values in a row.
+        
+        Args:
+            row: Row index (0-8)
+            
+        Returns:
+            List of 9 values (1-9 or None for empty tiles) in left-to-right order
+        """
+        return [self.grid[row][col].value for col in range(9)]
     
+    def readColumn(self, column: int) -> list[int | None]:
+        """
+        Read all tile values in a column.
+        
+        Args:
+            column: Column index (0-8)
+            
+        Returns:
+            List of 9 values (1-9 or None for empty tiles) in top-to-bottom order
+        """
+        return [self.grid[row][column].value for row in range(9)]
+    
+    def readBlock(self, block: int) -> list[int | None]:
+        """
+        Read all tile values in a block.
+        
+        Args:
+            block: Block index (0-8)
+            
+        Returns:
+            List of 9 values (1-9 or None for empty tiles) in reading order
+            (left to right, top to bottom within the block)
+        """
+        # Calculate the top-left corner of the block
+        block_row = (block // 3) * 3
+        block_col = (block % 3) * 3
+        
+        result = []
+        # Read all 9 tiles in the block in reading order
+        for row in range(block_row, block_row + 3):
+            for col in range(block_col, block_col + 3):
+                result.append(self.grid[row][col].value)
+        
+        return result
+
+    def readBoard(self) -> list[list[int | None]]:
+        """
+        Read the entire board as a 2D array of values.
+
+        Returns:
+            A 9x9 list of lists containing tile values (1-9 or None for empty tiles)
+        """
+        return [[self.grid[r][c].value for c in range(9)] for r in range(9)]
