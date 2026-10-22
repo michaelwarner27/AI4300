@@ -1,0 +1,210 @@
+
+============================================================
+FINAL REPORT (Version 2 - KB Solver)
+============================================================
+Final board state:
+   0 1 2 | 3 4 5 | 6 7 8
+   ------+-------+------
+0 | 5 3 . | . 7 . | . . . 
+1 | 6 . . | 1 9 5 | . . . 
+2 | . 9 8 | . . . | . 6 . 
+  ------+-------+------
+3 | 8 . . | . 6 . | . . 3 
+4 | 4 . . | 8 . 3 | . . 1 
+5 | 7 . . | . 2 . | . . 6 
+  ------+-------+------
+6 | . 6 . | . . . | 2 8 . 
+7 | . . . | 4 1 9 | . . 5 
+8 | . . . | . 8 . | . 7 9 
+
+Execution Metrics:
+  Total tool calls:              150
+  Invalid tool calls:            0
+  Tiles filled by agent:         0
+  Elapsed time:                  109.89s
+
+Board Validation:
+  validateIncompleteBoard():     PASS
+  validatePuzzle():              FAIL
+
+Knowledge Base Status:
+  KB consistency:                CONSISTENT
+
+Puzzle Solve Status:
+  Puzzle solved (100% complete): False
+  Tiles correct (vs. solution):  0/81
+
+INCOMPLETE
+  All 81 tiles filled correctly:  False
+  validatePuzzle() passed:        False
+  KB remained consistent:         True
+============================================================
+
+TOOL CALLS - ORDERED EXECUTION LOG:
+
+======================================================================
+1. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+2. getCellCandidates(0,2) -> [1, 2, 4]
+3. getCellCandidates(0,3) -> [2, 6]
+4. getCellCandidates(0,5) -> [2, 4, 6, 8]
+5. getCellCandidates(1,1) -> [2, 4, 7]
+6. getCellCandidates(1,2) -> [2, 4, 7]
+7. getCellCandidates(1,6) -> [3, 4, 7, 8]
+8. getCellCandidates(1,7) -> [2, 3, 4]
+9. getCellCandidates(1,8) -> [2, 4, 7, 8]
+10. getCellCandidates(0,0) -> []
+11. kb_is_consistent() -> True
+12. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+13. getCellCandidates(0,2) -> [1, 2, 4]
+14. getCellCandidates(0,3) -> [2, 6]
+15. getCellCandidates(0,5) -> [2, 4, 6, 8]
+16. getCellCandidates(0,6) -> [1, 4, 8, 9]
+17. getCellCandidates(0,7) -> [1, 2, 4, 9]
+18. getCellCandidates(0,8) -> [2, 4, 8]
+19. getCellCandidates(1,0) -> []
+20. kb_entails(cell_1_0_has_1) -> False
+21. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+22. getCellCandidates(1,1) -> [2, 4, 7]
+23. getCellCandidates(1,2) -> [2, 4, 7]
+24. getCellCandidates(0,2) -> [1, 2, 4]
+25. getCellCandidates(0,3) -> [2, 6]
+26. getCellCandidates(0,5) -> [2, 4, 6, 8]
+27. getCellCandidates(0,6) -> [1, 4, 8, 9]
+28. getCellCandidates(0,7) -> [1, 2, 4, 9]
+29. getCellCandidates(0,8) -> [2, 4, 8]
+30. getCellCandidates(1,0) -> []
+31. kb_entails(cell_1_0_has_1) -> False
+32. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+33. getCellCandidates(1,1) -> [2, 4, 7]
+34. getCellCandidates(1,2) -> [2, 4, 7]
+35. getCellCandidates(0,2) -> [1, 2, 4]
+36. getCellCandidates(0,3) -> [2, 6]
+37. getCellCandidates(0,5) -> [2, 4, 6, 8]
+38. getCellCandidates(0,6) -> [1, 4, 8, 9]
+39. getCellCandidates(0,7) -> [1, 2, 4, 9]
+40. getCellCandidates(0,8) -> [2, 4, 8]
+41. getCellCandidates(1,0) -> []
+42. kb_entails(cell_1_0_has_1) -> False
+43. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+44. getCellCandidates(1,1) -> [2, 4, 7]
+45. getCellCandidates(1,2) -> [2, 4, 7]
+46. getCellCandidates(0,2) -> [1, 2, 4]
+47. getCellCandidates(0,3) -> [2, 6]
+48. getCellCandidates(0,5) -> [2, 4, 6, 8]
+49. getCellCandidates(0,6) -> [1, 4, 8, 9]
+50. getCellCandidates(0,7) -> [1, 2, 4, 9]
+51. getCellCandidates(0,8) -> [2, 4, 8]
+52. getCellCandidates(1,0) -> []
+53. kb_entails(cell_1_0_has_1) -> False
+54. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+55. getCellCandidates(1,1) -> [2, 4, 7]
+56. getCellCandidates(1,2) -> [2, 4, 7]
+57. getCellCandidates(0,2) -> [1, 2, 4]
+58. getCellCandidates(0,3) -> [2, 6]
+59. getCellCandidates(0,5) -> [2, 4, 6, 8]
+60. getCellCandidates(0,6) -> [1, 4, 8, 9]
+61. getCellCandidates(0,7) -> [1, 2, 4, 9]
+62. getCellCandidates(0,8) -> [2, 4, 8]
+63. getCellCandidates(1,0) -> []
+64. kb_entails(cell_1_0_has_1) -> False
+65. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+66. getCellCandidates(1,1) -> [2, 4, 7]
+67. getCellCandidates(1,2) -> [2, 4, 7]
+68. getCellCandidates(0,2) -> [1, 2, 4]
+69. getCellCandidates(0,3) -> [2, 6]
+70. getCellCandidates(0,5) -> [2, 4, 6, 8]
+71. getCellCandidates(0,6) -> [1, 4, 8, 9]
+72. getCellCandidates(0,7) -> [1, 2, 4, 9]
+73. getCellCandidates(0,8) -> [2, 4, 8]
+74. getCellCandidates(1,0) -> []
+75. kb_entails(cell_1_0_has_1) -> False
+76. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+77. getCellCandidates(1,1) -> [2, 4, 7]
+78. getCellCandidates(1,2) -> [2, 4, 7]
+79. getCellCandidates(0,2) -> [1, 2, 4]
+80. getCellCandidates(0,3) -> [2, 6]
+81. getCellCandidates(0,5) -> [2, 4, 6, 8]
+82. getCellCandidates(0,6) -> [1, 4, 8, 9]
+83. getCellCandidates(0,7) -> [1, 2, 4, 9]
+84. getCellCandidates(0,8) -> [2, 4, 8]
+85. getCellCandidates(1,0) -> []
+86. kb_entails(cell_1_0_has_1) -> False
+87. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+88. getCellCandidates(1,1) -> [2, 4, 7]
+89. getCellCandidates(1,2) -> [2, 4, 7]
+90. getCellCandidates(0,2) -> [1, 2, 4]
+91. getCellCandidates(0,3) -> [2, 6]
+92. getCellCandidates(0,5) -> [2, 4, 6, 8]
+93. getCellCandidates(0,6) -> [1, 4, 8, 9]
+94. getCellCandidates(0,7) -> [1, 2, 4, 9]
+95. getCellCandidates(0,8) -> [2, 4, 8]
+96. getCellCandidates(1,0) -> []
+97. kb_entails(cell_1_0_has_1) -> False
+98. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+99. getCellCandidates(1,1) -> [2, 4, 7]
+100. getCellCandidates(1,2) -> [2, 4, 7]
+101. getCellCandidates(0,2) -> [1, 2, 4]
+102. getCellCandidates(0,3) -> [2, 6]
+103. getCellCandidates(0,5) -> [2, 4, 6, 8]
+104. getCellCandidates(0,6) -> [1, 4, 8, 9]
+105. getCellCandidates(0,7) -> [1, 2, 4, 9]
+106. getCellCandidates(0,8) -> [2, 4, 8]
+107. getCellCandidates(1,0) -> []
+108. kb_entails(cell_1_0_has_1) -> False
+109. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+110. getCellCandidates(1,1) -> [2, 4, 7]
+111. getCellCandidates(1,2) -> [2, 4, 7]
+112. getCellCandidates(0,2) -> [1, 2, 4]
+113. getCellCandidates(0,3) -> [2, 6]
+114. getCellCandidates(0,5) -> [2, 4, 6, 8]
+115. getCellCandidates(0,6) -> [1, 4, 8, 9]
+116. getCellCandidates(0,7) -> [1, 2, 4, 9]
+117. getCellCandidates(0,8) -> [2, 4, 8]
+118. getCellCandidates(1,0) -> []
+119. kb_entails(cell_1_0_has_1) -> False
+120. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+121. getCellCandidates(1,1) -> [2, 4, 7]
+122. getCellCandidates(1,2) -> [2, 4, 7]
+123. getCellCandidates(0,2) -> [1, 2, 4]
+124. getCellCandidates(0,3) -> [2, 6]
+125. getCellCandidates(0,5) -> [2, 4, 6, 8]
+126. getCellCandidates(0,6) -> [1, 4, 8, 9]
+127. getCellCandidates(0,7) -> [1, 2, 4, 9]
+128. getCellCandidates(0,8) -> [2, 4, 8]
+129. getCellCandidates(1,0) -> []
+130. kb_entails(cell_1_0_has_1) -> False
+131. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+132. getCellCandidates(1,1) -> [2, 4, 7]
+133. getCellCandidates(1,2) -> [2, 4, 7]
+134. getCellCandidates(0,2) -> [1, 2, 4]
+135. getCellCandidates(0,3) -> [2, 6]
+136. getCellCandidates(0,5) -> [2, 4, 6, 8]
+137. getCellCandidates(0,6) -> [1, 4, 8, 9]
+138. getCellCandidates(0,7) -> [1, 2, 4, 9]
+139. getCellCandidates(0,8) -> [2, 4, 8]
+140. getCellCandidates(1,0) -> []
+141. kb_entails(cell_1_0_has_1) -> False
+142. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+143. getCellCandidates(1,1) -> [2, 4, 7]
+144. getCellCandidates(1,2) -> [2, 4, 7]
+145. getCellCandidates(0,2) -> [1, 2, 4]
+146. getCellCandidates(0,3) -> [2, 6]
+147. getCellCandidates(0,5) -> [2, 4, 6, 8]
+148. getCellCandidates(0,6) -> [1, 4, 8, 9]
+149. getCellCandidates(0,7) -> [1, 2, 4, 9]
+150. getCellCandidates(0,8) -> [2, 4, 8]
+======================================================================
+
+TOOL CALL SUMMARY:
+
+Total calls made: 150
+  - Executed: 150
+  - Failed: 0
+  - Rejected: 0
+
+CALLS BY TOOL:
+
+  getCellCandidates: 123
+  kb_entails: 12
+  kb_is_consistent: 1
+  readBoard: 14

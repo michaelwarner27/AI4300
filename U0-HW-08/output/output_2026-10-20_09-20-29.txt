@@ -1,0 +1,102 @@
+
+============================================================
+FINAL REPORT (Version 2 - KB Solver)
+============================================================
+Final board state:
+   0 1 2 | 3 4 5 | 6 7 8
+   ------+-------+------
+0 | 1 2 3 | 4 5 6 | 7 8 9 
+1 | 4 5 6 | 7 8 9 | 1 2 3 
+2 | 7 8 9 | 1 2 3 | 4 5 6 
+  ------+-------+------
+3 | 2 3 4 | 5 6 7 | 8 9 1 
+4 | 5 6 7 | 8 9 1 | 2 3 4 
+5 | 8 9 1 | 2 3 4 | 5 6 7 
+  ------+-------+------
+6 | 3 4 5 | 6 7 8 | 9 1 2 
+7 | 6 7 8 | 9 1 2 | 3 4 5 
+8 | 9 1 2 | 3 4 5 | 6 7 8 
+
+Execution Metrics:
+  Total tool calls:              41
+  Invalid tool calls:            0
+  Tiles filled by agent:         14
+  Elapsed time:                  80.95s
+
+Board Validation:
+  validateIncompleteBoard():     PASS
+  validatePuzzle():              PASS
+
+Knowledge Base Status:
+  KB consistency:                CONSISTENT
+
+Puzzle Solve Status:
+  Puzzle solved (100% complete): True
+  Tiles correct (vs. solution):  14/81
+
+SUCCESS
+  All 81 tiles filled correctly:  True
+  validatePuzzle() passed:        True
+  KB remained consistent:         True
+============================================================
+
+TOOL CALLS - ORDERED EXECUTION LOG:
+
+======================================================================
+1. readBoard() -> [[1, None, 3, 4, 5, 6, 7, None, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, None, 9, 1, 2, 3, None, 5, 6], [2, 3, None, None, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, None, None, 4], [8, 9, 1, None, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+2. getCellCandidates(0,1) -> [2, 8]
+3. getCellCandidates(0,7) -> [8]
+4. writeTile(0,7,8) -> True
+5. writeTile(0,1,2) -> True
+6. getCellCandidates(2,1) -> [8]
+7. writeTile(2,1,8) -> True
+8. getCellCandidates(0,0) -> []
+9. kb_is_consistent() -> True
+10. readBoard() -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, None, 5, 6], [2, 3, None, None, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, None, None, 4], [8, 9, 1, None, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+11. getCellCandidates(2,6) -> [4]
+12. writeTile(2,6,4) -> True
+13. getCellCandidates(3,2) -> [4]
+14. writeTile(3,2,4) -> True
+15. getCellCandidates(3,3) -> [5]
+16. writeTile(3,3,5) -> True
+17. getCellCandidates(3,4) -> []
+18. readBoard() -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, None, None, 4], [8, 9, 1, None, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+19. getCellCandidates(4,6) -> [2]
+20. writeTile(4,6,2) -> True
+21. getCellCandidates(4,7) -> [3]
+22. writeTile(4,7,3) -> True
+23. getCellCandidates(5,3) -> [2]
+24. writeTile(5,3,2) -> True
+25. getCellCandidates(5,4) -> []
+26. kb_is_consistent() -> True
+27. readBoard() -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, 2, 3, 4], [8, 9, 1, 2, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+28. getCellCandidates(5,5) -> [4]
+29. writeTile(5,5,4) -> True
+30. getCellCandidates(5,7) -> [6]
+31. writeTile(5,7,6) -> True
+32. getCellCandidates(6,7) -> [1]
+33. writeTile(6,7,1) -> True
+34. getCellCandidates(0,0) -> []
+35. kb_is_consistent() -> True
+36. readBoard() -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, 2, 3, 4], [8, 9, 1, 2, 3, 4, 5, 6, 7], [3, 4, 5, 6, 7, 8, 9, 1, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+37. getCellCandidates(7,5) -> [2]
+38. writeTile(7,5,2) -> True
+39. getCellCandidates(8,1) -> [1]
+40. writeTile(8,1,1) -> True
+41. validatePuzzle() -> True
+======================================================================
+
+TOOL CALL SUMMARY:
+
+Total calls made: 41
+  - Executed: 41
+  - Failed: 0
+  - Rejected: 0
+
+CALLS BY TOOL:
+
+  getCellCandidates: 18
+  kb_is_consistent: 3
+  readBoard: 5
+  validatePuzzle: 1
+  writeTile: 14

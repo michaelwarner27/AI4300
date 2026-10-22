@@ -1,0 +1,296 @@
+Model: Gemma-4-26B-A4B | Budget: 150
+Initializing Knowledge Base with Sudoku constraints...
+KB consistency check: True
+
+   0 1 2 | 3 4 5 | 6 7 8
+   ------+-------+------
+0 | 1 . 3 | 4 5 6 | 7 . 9 
+1 | 4 5 6 | 7 8 9 | 1 2 3 
+2 | 7 . 9 | 1 2 3 | . 5 6 
+  ------+-------+------
+3 | 2 3 . | . 6 7 | 8 9 1 
+4 | 5 6 7 | 8 9 1 | . . 4 
+5 | 8 9 1 | . 3 . | 5 . 7 
+  ------+-------+------
+6 | 3 4 5 | 6 7 8 | 9 . 2 
+7 | 6 7 8 | 9 1 . | 3 4 5 
+8 | 9 . 2 | 3 4 5 | 6 7 8 
+
+
+===== Call 1/150 | tile index 1 | filled 0 =====
+[LLM response]
+{"tool": "readBoard", "parameters": {}}
+**readBoard**({}) -> [[1, None, 3, 4, 5, 6, 7, None, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, None, 9, 1, 2, 3, None, 5, 6], [2, 3, None, None, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, None, None, 4], [8, 9, 1, None, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+
+===== Call 2/150 | tile index 1 | filled 0 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 0, "column": 1}}
+**getCellCandidates**({'row': 0, 'column': 1}) -> [2, 8]
+
+===== Call 3/150 | tile index 1 | filled 0 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 0, "column": 7}}
+**getCellCandidates**({'row': 0, 'column': 7}) -> [8]
+
+===== Call 4/150 | tile index 1 | filled 0 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 0, "column": 7, "value": 8}}
+**writeTile**({'row': 0, 'column': 7, 'value': 8}) -> True
+
+===== Call 5/150 | tile index 1 | filled 1 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 0, "column": 1, "value": 2}}
+**writeTile**({'row': 0, 'column': 1, 'value': 2}) -> True
+
+===== Call 6/150 | tile index 19 | filled 2 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 2, "column": 1}}
+**getCellCandidates**({'row': 2, 'column': 1}) -> [8]
+
+===== Call 7/150 | tile index 19 | filled 2 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 2, "column": 1, "value": 8}}
+**writeTile**({'row': 2, 'column': 1, 'value': 8}) -> True
+
+===== Call 8/150 | tile index 24 | filled 3 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 0, "column": 0}}
+**getCellCandidates**({'row': 0, 'column': 0}) -> []
+
+===== Call 9/150 | tile index 24 | filled 3 =====
+[LLM response]
+{"tool": "kb_is_consistent", "parameters": {}}
+**kb_is_consistent**({}) -> True
+
+===== Call 10/150 | tile index 24 | filled 3 =====
+[LLM response]
+{"tool": "readBoard", "parameters": {}}
+**readBoard**({}) -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, None, 5, 6], [2, 3, None, None, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, None, None, 4], [8, 9, 1, None, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+
+===== Call 11/150 | tile index 24 | filled 3 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 2, "column": 6}}
+**getCellCandidates**({'row': 2, 'column': 6}) -> [4]
+
+===== Call 12/150 | tile index 24 | filled 3 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 2, "column": 6, "value": 4}}
+**writeTile**({'row': 2, 'column': 6, 'value': 4}) -> True
+
+===== Call 13/150 | tile index 29 | filled 4 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 3, "column": 2}}
+**getCellCandidates**({'row': 3, 'column': 2}) -> [4]
+
+===== Call 14/150 | tile index 29 | filled 4 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 3, "column": 2, "value": 4}}
+**writeTile**({'row': 3, 'column': 2, 'value': 4}) -> True
+
+--- Board state after 5 tiles filled ---
+   0 1 2 | 3 4 5 | 6 7 8
+   ------+-------+------
+0 | 1 2 3 | 4 5 6 | 7 8 9 
+1 | 4 5 6 | 7 8 9 | 1 2 3 
+2 | 7 8 9 | 1 2 3 | 4 5 6 
+  ------+-------+------
+3 | 2 3 4 | . 6 7 | 8 9 1 
+4 | 5 6 7 | 8 9 1 | . . 4 
+5 | 8 9 1 | . 3 . | 5 . 7 
+  ------+-------+------
+6 | 3 4 5 | 6 7 8 | 9 . 2 
+7 | 6 7 8 | 9 1 . | 3 4 5 
+8 | 9 . 2 | 3 4 5 | 6 7 8 
+
+===== Call 15/150 | tile index 30 | filled 5 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 3, "column": 3}}
+**getCellCandidates**({'row': 3, 'column': 3}) -> [5]
+
+===== Call 16/150 | tile index 30 | filled 5 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 3, "column": 3, "value": 5}}
+**writeTile**({'row': 3, 'column': 3, 'value': 5}) -> True
+
+===== Call 17/150 | tile index 42 | filled 6 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 3, "column": 4}}
+**getCellCandidates**({'row': 3, 'column': 4}) -> []
+
+===== Call 18/150 | tile index 42 | filled 6 =====
+[LLM response]
+{"tool": "readBoard", "parameters": {}}
+**readBoard**({}) -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, None, None, 4], [8, 9, 1, None, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+
+===== Call 19/150 | tile index 42 | filled 6 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 4, "column": 6}}
+**getCellCandidates**({'row': 4, 'column': 6}) -> [2]
+
+===== Call 20/150 | tile index 42 | filled 6 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 4, "column": 6, "value": 2}}
+**writeTile**({'row': 4, 'column': 6, 'value': 2}) -> True
+
+===== Call 21/150 | tile index 43 | filled 7 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 4, "column": 7}}
+**getCellCandidates**({'row': 4, 'column': 7}) -> [3]
+
+===== Call 22/150 | tile index 43 | filled 7 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 4, "column": 7, "value": 3}}
+**writeTile**({'row': 4, 'column': 7, 'value': 3}) -> True
+
+===== Call 23/150 | tile index 48 | filled 8 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 5, "column": 3}}
+**getCellCandidates**({'row': 5, 'column': 3}) -> [2]
+
+===== Call 24/150 | tile index 48 | filled 8 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 5, "column": 3, "value": 2}}
+**writeTile**({'row': 5, 'column': 3, 'value': 2}) -> True
+
+===== Call 25/150 | tile index 50 | filled 9 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 5, "column": 4}}
+**getCellCandidates**({'row': 5, 'column': 4}) -> []
+
+===== Call 26/150 | tile index 50 | filled 9 =====
+[LLM response]
+{"tool": "kb_is_consistent", "parameters": {}}
+**kb_is_consistent**({}) -> True
+
+===== Call 27/150 | tile index 50 | filled 9 =====
+[LLM response]
+{"tool": "readBoard", "parameters": {}}
+**readBoard**({}) -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, 2, 3, 4], [8, 9, 1, 2, 3, None, 5, None, 7], [3, 4, 5, 6, 7, 8, 9, None, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+
+===== Call 28/150 | tile index 50 | filled 9 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 5, "column": 5}}
+**getCellCandidates**({'row': 5, 'column': 5}) -> [4]
+
+===== Call 29/150 | tile index 50 | filled 9 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 5, "column": 5, "value": 4}}
+**writeTile**({'row': 5, 'column': 5, 'value': 4}) -> True
+
+--- Board state after 10 tiles filled ---
+   0 1 2 | 3 4 5 | 6 7 8
+   ------+-------+------
+0 | 1 2 3 | 4 5 6 | 7 8 9 
+1 | 4 5 6 | 7 8 9 | 1 2 3 
+2 | 7 8 9 | 1 2 3 | 4 5 6 
+  ------+-------+------
+3 | 2 3 4 | 5 6 7 | 8 9 1 
+4 | 5 6 7 | 8 9 1 | 2 3 4 
+5 | 8 9 1 | 2 3 4 | 5 . 7 
+  ------+-------+------
+6 | 3 4 5 | 6 7 8 | 9 . 2 
+7 | 6 7 8 | 9 1 . | 3 4 5 
+8 | 9 . 2 | 3 4 5 | 6 7 8 
+
+===== Call 30/150 | tile index 52 | filled 10 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 5, "column": 7}}
+**getCellCandidates**({'row': 5, 'column': 7}) -> [6]
+
+===== Call 31/150 | tile index 52 | filled 10 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 5, "column": 7, "value": 6}}
+**writeTile**({'row': 5, 'column': 7, 'value': 6}) -> True
+
+===== Call 32/150 | tile index 61 | filled 11 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 6, "column": 7}}
+**getCellCandidates**({'row': 6, 'column': 7}) -> [1]
+
+===== Call 33/150 | tile index 61 | filled 11 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 6, "column": 7, "value": 1}}
+**writeTile**({'row': 6, 'column': 7, 'value': 1}) -> True
+
+===== Call 34/150 | tile index 68 | filled 12 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 0, "column": 0}}
+**getCellCandidates**({'row': 0, 'column': 0}) -> []
+
+===== Call 35/150 | tile index 68 | filled 12 =====
+[LLM response]
+{"tool": "kb_is_consistent", "parameters": {}}
+**kb_is_consistent**({}) -> True
+
+===== Call 36/150 | tile index 68 | filled 12 =====
+[LLM response]
+{"tool": "readBoard", "parameters": {}}
+**readBoard**({}) -> [[1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, 9, 1, 2, 3], [7, 8, 9, 1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7, 8, 9, 1], [5, 6, 7, 8, 9, 1, 2, 3, 4], [8, 9, 1, 2, 3, 4, 5, 6, 7], [3, 4, 5, 6, 7, 8, 9, 1, 2], [6, 7, 8, 9, 1, None, 3, 4, 5], [9, None, 2, 3, 4, 5, 6, 7, 8]]
+
+===== Call 37/150 | tile index 68 | filled 12 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 7, "column": 5}}
+**getCellCandidates**({'row': 7, 'column': 5}) -> [2]
+
+===== Call 38/150 | tile index 68 | filled 12 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 7, "column": 5, "value": 2}}
+**writeTile**({'row': 7, 'column': 5, 'value': 2}) -> True
+
+===== Call 39/150 | tile index 73 | filled 13 =====
+[LLM response]
+{"tool": "getCellCandidates", "parameters": {"row": 8, "column": 1}}
+**getCellCandidates**({'row': 8, 'column': 1}) -> [1]
+
+===== Call 40/150 | tile index 73 | filled 13 =====
+[LLM response]
+{"tool": "writeTile", "parameters": {"row": 8, "column": 1, "value": 1}}
+**writeTile**({'row': 8, 'column': 1, 'value': 1}) -> True
+
+===== Call 41/150 | tile index 73 | filled 14 =====
+[LLM response]
+{"tool": "validatePuzzle", "parameters": {}}
+**validatePuzzle**({}) -> True
+
+============================================================
+FINAL REPORT (Version 2 - KB Solver)
+============================================================
+Final board state:
+
+   0 1 2 | 3 4 5 | 6 7 8
+   ------+-------+------
+0 | 1 2 3 | 4 5 6 | 7 8 9 
+1 | 4 5 6 | 7 8 9 | 1 2 3 
+2 | 7 8 9 | 1 2 3 | 4 5 6 
+  ------+-------+------
+3 | 2 3 4 | 5 6 7 | 8 9 1 
+4 | 5 6 7 | 8 9 1 | 2 3 4 
+5 | 8 9 1 | 2 3 4 | 5 6 7 
+  ------+-------+------
+6 | 3 4 5 | 6 7 8 | 9 1 2 
+7 | 6 7 8 | 9 1 2 | 3 4 5 
+8 | 9 1 2 | 3 4 5 | 6 7 8 
+
+
+Execution Metrics:
+  Total tool calls:              41
+  Invalid tool calls:            0
+  Tiles filled by agent:         14
+  Elapsed time:                  78.82s
+
+Board Validation:
+  validateIncompleteBoard():     PASS
+  validatePuzzle():              PASS
+
+Knowledge Base Status:
+  KB consistency:                CONSISTENT
+
+Puzzle Solve Status:
+  Puzzle solved (100% complete): True
+  Tiles correct (vs. solution):  14/81
+
+SUCCESS
+  All 81 tiles filled correctly:  True
+  validatePuzzle() passed:        True
+  KB remained consistent:         True
+============================================================

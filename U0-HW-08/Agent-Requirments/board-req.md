@@ -14,7 +14,7 @@ The Sudoku Board is a 9x9 grid of tile objects that represents a Sudoku puzzle. 
 ```python
 def __init__(self, board: list[list[int]]) -> None
 ```
-Takes a starter board configuration and initializes the 9x9 grid with Tile objects. Any tile initialized with a value is marked as non-writable, and all empty tiles are marked as writable.
+Takes a starter board configuration and initializes the 9x9 grid with Tile objects. Any tile initialized with a value is marked as non-writable, and all empty tiles are marked as writable. After initialization, all empty tiles are automatically pre-populated with their candidate values (determined by getCandidates) in their notes lists.
 
 #### Validation - Existence Checks
 ```python
@@ -140,11 +140,16 @@ Writes None to the tile's value if the tile is writable. Returns True if the era
 
 #### Notes Management
 ```python
-def appendNote(row: int, column: int, value: int) -> None
+def appendNote(row: int, column: int, values: list[int]) -> None
 ```
-Appends a value to the notes list for the tile at the specified location.
+Appends values to the notes list for the tile at the specified location.
 
 ```python
 def listNotes(row: int, column: int) -> list[int]
 ```
 Returns the current notes list for the tile at the specified location.
+
+```python
+def removeNote(row: int, column: int, values: list[int]) -> bool
+```
+Removes values from the notes list for the tile at the specified location. Returns True if all values were successfully removed, False if any note didn't exist in the list.

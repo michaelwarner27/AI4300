@@ -1,0 +1,314 @@
+
+============================================================
+FINAL REPORT (Version 2 - KB Solver)
+============================================================
+Final board state:
+   0 1 2 | 3 4 5 | 6 7 8
+   ------+-------+------
+0 | 5 3 4 | 6 7 8 | 9 1 2 
+1 | 6 7 2 | 1 9 5 | 3 4 8 
+2 | 1 9 8 | . . . | 7 6 . 
+  ------+-------+------
+3 | 8 . . | . 6 . | . . 3 
+4 | 4 . . | 8 5 3 | . . 1 
+5 | 7 1 3 | 9 2 4 | 8 5 6 
+  ------+-------+------
+6 | 9 6 1 | 5 3 7 | 2 8 4 
+7 | 2 8 7 | 4 1 9 | . . 5 
+8 | . . . | . 8 . | . 7 9 
+
+Execution Metrics:
+  Total tool calls:              250
+  Invalid tool calls:            2
+  Tiles filled by agent:         29
+  Elapsed time:                  595.74s
+
+Board Validation:
+  validateIncompleteBoard():     PASS
+  validatePuzzle():              FAIL
+
+Knowledge Base Status:
+  KB consistency:                INCONSISTENT
+
+Puzzle Solve Status:
+  Puzzle solved (100% complete): False
+  Tiles correct (vs. solution):  28/81
+
+INCOMPLETE
+  All 81 tiles filled correctly:  False
+  validatePuzzle() passed:        False
+  KB remained consistent:         False
+============================================================
+
+TOOL CALLS - ORDERED EXECUTION LOG:
+
+======================================================================
+1. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, None, 3, None, None, 1], [7, None, None, None, 2, None, None, None, 6], [None, 6, None, None, None, None, 2, 8, None], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+2. listNotes(0,2) -> [4]
+3. listNotes(0,3) -> [6]
+4. listNotes(0,5) -> [8]
+5. listNotes(0,6) -> [9]
+6. listNotes(0,7) -> [1, 2, 4, 9]
+7. listNotes(0,8) -> [2, 4, 8]
+8. listNotes(1,1) -> [7]
+9. listNotes(1,2) -> [2, 4, 7]
+10. listNotes(1,6) -> [3, 4, 7, 8]
+11. listNotes(1,7) -> [4]
+12. listNotes(1,8) -> [8]
+13. listNotes(2,0) -> [1, 2]
+14. listNotes(2,3) -> [2, 3]
+15. listNotes(2,4) -> [3, 4]
+16. listNotes(2,5) -> [2, 4]
+17. listNotes(2,6) -> [1, 3, 4, 5, 7]
+18. listNotes(2,8) -> [2, 4, 7]
+19. kb_add_clause([{'symbol': 'cell_0_2_has_1', 'positive': True}, {'symbol': 'cell_0_2_has_2', 'positive': True}, {'symbol': 'cell_0_2_has_4', 'positive': True}]) -> True
+20. kb_add_clause([{'symbol': 'cell_0_3_has_2', 'positive': True}, {'symbol': 'cell_0_3_has_6', 'positive': True}]) -> True
+21. kb_add_clause([{'symbol': 'cell_0_5_has_2', 'positive': True}, {'symbol': 'cell_0_5_has_4', 'positive': True}, {'symbol': 'cell_0_5_has_6', 'positive': True}, {'symbol': 'cell_0_5_has_8', 'positive': True}]) -> True
+22. kb_add_clause([{'symbol': 'cell_0_6_has_1', 'positive': True}, {'symbol': 'cell_0_6_has_4', 'positive': True}, {'symbol': 'cell_0_6_has_8', 'positive': True}, {'symbol': 'cell_0_6_has_9', 'positive': True}]) -> True
+23. kb_add_clause([{'symbol': 'cell_0_7_has_1', 'positive': True}, {'symbol': 'cell_0_7_has_2', 'positive': True}, {'symbol': 'cell_0_7_has_4', 'positive': True}, {'symbol': 'cell_0_7_has_9', 'positive': True}]) -> True
+24. kb_add_clause([{'symbol': 'cell_0_8_has_2', 'positive': True}, {'symbol': 'cell_0_8_has_4', 'positive': True}, {'symbol': 'cell_0_8_has_8', 'positive': True}]) -> True
+25. kb_add_clause([{'symbol': 'cell_1_0_has_3', 'positive': True}, {'symbol': 'cell_1_1_has_2', 'positive': True}, {'symbol': 'cell_1_1_has_4', 'positive': True}, {'symbol': 'cell_1_1_has_7', 'positive': True}, {'symbol': 'cell_1_2_has_2', 'positive': True}, {'symbol': 'cell_1_2_has_4', 'positive': True}, {'symbol': 'cell_1_2_has_7', 'positive': True}, {'symbol': 'cell_1_3_has_1', 'positive': True}, {'symbol': 'cell_1_4_has_5', 'positive': True}, {'symbol': 'cell_1_5_has_6', 'positive': True}, {'symbol': 'cell_1_6_has_3', 'positive': True}, {'symbol': 'cell_1_6_has_4', 'positive': True}, {'symbol': 'cell_1_6_has_7', 'positive': True}, {'symbol': 'cell_1_6_has_8', 'positive': True}, {'symbol': 'cell_1_7_has_2', 'positive': True}, {'symbol': 'cell_1_7_has_3', 'positive': True}, {'symbol': 'cell_1_7_has_4', 'positive': True}, {'symbol': 'cell_1_8_has_2', 'positive': True}, {'symbol': 'cell_1_8_has_4', 'positive': True}, {'symbol': 'cell_1_8_has_7', 'positive': True}, {'symbol': 'cell_1_8_has_8', 'positive': True}]) -> True
+26. kb_add_clause([{'symbol': 'cell_2_0_has_1', 'positive': True}, {'symbol': 'cell_2_0_has_2', 'positive': True}, {'symbol': 'cell_2_1_has_5', 'positive': True}, {'symbol': 'cell_2_2_has_6', 'positive': True}, {'symbol': 'cell_2_3_has_2', 'positive': True}, {'symbol': 'cell_2_3_has_3', 'positive': True}, {'symbol': 'cell_2_4_has_3', 'positive': True}, {'symbol': 'cell_2_4_has_4', 'positive': True}, {'symbol': 'cell_2_5_has_2', 'positive': True}, {'symbol': 'cell_2_5_has_4', 'positive': True}, {'symbol': 'cell_2_6_has_1', 'positive': True}, {'symbol': 'cell_2_6_has_3', 'positive': True}, {'symbol': 'cell_2_6_has_4', 'positive': True}, {'symbol': 'cell_2_6_has_5', 'positive': True}, {'symbol': 'cell_2_6_has_7', 'positive': True}, {'symbol': 'cell_2_7_has_6', 'positive': True}, {'symbol': 'cell_2_8_has_2', 'positive': True}, {'symbol': 'cell_2_8_has_4', 'positive': True}, {'symbol': 'cell_2_8_has_7', 'positive': True}]) -> True
+27. listNotes(3,0) -> []
+28. [REJECTED] 
+   Reason: No JSON object with a 'tool' key was found.
+29. listNotes(3,1) -> [1, 2, 5]
+30. listNotes(3,2) -> [1, 2, 5, 9]
+31. listNotes(3,3) -> [5, 7, 9]
+32. listNotes(3,4) -> []
+33. listNotes(3,5) -> [1, 4, 7]
+34. listNotes(3,6) -> [4, 5, 7, 9]
+35. listNotes(3,7) -> [2, 4, 5, 9]
+36. listNotes(3,8) -> []
+37. listNotes(4,0) -> []
+38. listNotes(4,1) -> [2, 5]
+39. listNotes(4,2) -> [2, 5, 6, 9]
+40. listNotes(4,3) -> []
+41. listNotes(4,4) -> [5]
+42. writeTile(4,4,5) -> True
+43. listNotes(4,5) -> []
+44. listNotes(4,6) -> [5, 7, 9]
+45. listNotes(4,7) -> [2, 5, 9]
+46. listNotes(4,8) -> []
+47. listNotes(5,0) -> []
+48. listNotes(5,1) -> [1, 5]
+49. listNotes(5,2) -> [3, 5, 9]
+50. listNotes(5,3) -> [5, 9]
+51. listNotes(5,4) -> []
+52. listNotes(5,5) -> [1, 4]
+53. listNotes(5,6) -> [8, 9]
+54. listNotes(5,7) -> [5, 9]
+55. listNotes(5,8) -> []
+56. listNotes(6,0) -> [9]
+57. listNotes(6,1) -> []
+58. listNotes(6,2) -> [1, 3, 4, 5, 7, 9]
+59. listNotes(6,3) -> [5, 7]
+60. listNotes(6,4) -> [3, 5]
+61. listNotes(6,5) -> [7]
+62. writeTile(6,5,7) -> True
+63. listNotes(6,6) -> []
+64. listNotes(6,7) -> []
+65. listNotes(6,8) -> [4]
+66. writeTile(6,8,4) -> True
+67. listNotes(5,1) -> [1, 5]
+68. listNotes(5,2) -> [3, 5, 9]
+69. listNotes(5,3) -> [5, 9]
+70. kb_add_clause([{'symbol': 'cell_5_3_has_5', 'positive': True}, {'symbol': 'cell_5_3_has_9', 'positive': True}]) -> True
+71. listNotes(5,0) -> []
+72. listNotes(5,4) -> []
+73. listNotes(5,5) -> [1, 4]
+74. kb_add_clause([{'symbol': 'cell_5_0_has_2', 'positive': True}, {'symbol': 'cell_5_1_has_1', 'positive': True}, {'symbol': 'cell_5_1_has_5', 'positive': True}, {'symbol': 'cell_5_2_has_1', 'positive': True}, {'symbol': 'cell_5_2_has_3', 'positive': True}, {'symbol': 'cell_5_2_has_5', 'positive': True}, {'symbol': 'cell_5_2_has_9', 'positive': True}, {'symbol': 'cell_5_3_has_5', 'positive': True}, {'symbol': 'cell_5_3_has_9', 'positive': True}, {'symbol': 'cell_5_5_has_1', 'positive': True}, {'symbol': 'cell_5_5_has_4', 'positive': True}, {'symbol': 'cell_5_7_has_4', 'positive': True}, {'symbol': 'cell_5_7_has_5', 'positive': True}, {'symbol': 'cell_5_7_has_9', 'positive': True}]) -> True
+75. [REJECTED] {"tool": "kb_entails", "parameters": {"query": {"symbol": "cell_5_5_has_1", "positive": true}}}
+   Reason: Parameter 'query' must be a string; got dict.
+76. kb_entails(cell_5_5_has_1) -> False
+77. kb_entails(cell_5_5_has_4) -> True
+78. writeTile(5,5,4) -> True
+79. listNotes(5,7) -> [5, 9]
+80. kb_entails(cell_5_7_has_4) -> False
+81. removeNote(5,7,[4]) -> True
+82. listNotes(5,7) -> [5, 9]
+83. kb_entails(cell_5_7_has_5) -> True
+84. writeTile(5,7,5) -> True
+85. listNotes(5,3) -> [5, 9]
+86. kb_entails(cell_5_3_has_5) -> False
+87. kb_entails(cell_5_3_has_9) -> True
+88. writeTile(5,3,9) -> True
+89. listNotes(5,1) -> [1, 5]
+90. kb_entails(cell_5_1_has_1) -> True
+91. writeTile(5,1,1) -> True
+92. listNotes(5,2) -> [3, 5, 9]
+93. kb_entails(cell_5_2_has_1) -> False
+94. removeNote(5,2,[1]) -> True
+95. listNotes(5,2) -> [3, 5, 9]
+96. kb_entails(cell_5_2_has_3) -> True
+97. writeTile(5,2,3) -> True
+98. listNotes(5,0) -> []
+99. listNotes(5,4) -> []
+100. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, 5, 3, None, None, 1], [7, 1, 3, 9, 2, 4, None, 5, 6], [None, 6, None, None, None, 7, 2, 8, 4], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+101. listNotes(5,6) -> [8, 9]
+102. kb_entails(cell_5_6_has_4) -> False
+103. removeNote(5,6,[4]) -> True
+104. listNotes(5,6) -> [8, 9]
+105. kb_entails(cell_5_6_has_5) -> False
+106. removeNote(5,6,[5]) -> True
+107. listNotes(5,6) -> [8, 9]
+108. kb_entails(cell_5_6_has_8) -> True
+109. writeTile(5,6,8) -> True
+110. listNotes(5,7) -> [5, 9]
+111. kb_entails(cell_5_7_has_5) -> True
+112. writeTile(5,7,5) -> True
+113. listNotes(5,8) -> []
+114. listNotes(6,0) -> [9]
+115. kb_entails(cell_6_0_has_1) -> False
+116. removeNote(6,0,[1]) -> True
+117. listNotes(6,0) -> [9]
+118. kb_entails(cell_6_0_has_3) -> False
+119. removeNote(6,0,[3]) -> True
+120. listNotes(6,0) -> [9]
+121. writeTile(6,0,9) -> True
+122. listNotes(6,1) -> []
+123. listNotes(6,2) -> [1, 3, 4, 5, 7, 9]
+124. kb_entails(cell_6_2_has_1) -> True
+125. writeTile(6,2,1) -> True
+126. listNotes(6,3) -> [5, 7]
+127. kb_entails(cell_6_3_has_3) -> False
+128. removeNote(6,3,[3]) -> True
+129. listNotes(6,3) -> [5, 7]
+130. kb_entails(cell_6_3_has_5) -> True
+131. writeTile(6,3,5) -> True
+132. listNotes(6,4) -> [3, 5]
+133. kb_entails(cell_6_4_has_3) -> True
+134. writeTile(6,4,3) -> True
+135. listNotes(6,5) -> [7]
+136. writeTile(6,5,7) -> True
+137. listNotes(6,6) -> []
+138. listNotes(6,7) -> []
+139. listNotes(6,8) -> [4]
+140. writeTile(6,8,4) -> True
+141. listNotes(6,1) -> []
+142. listNotes(6,0) -> [9]
+143. writeTile(6,0,9) -> True
+144. readBoard() -> [[5, 3, None, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, 5, 3, None, None, 1], [7, 1, 3, 9, 2, 4, 8, 5, 6], [9, 6, 1, 5, 3, 7, 2, 8, 4], [None, None, None, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+145. listNotes(7,0) -> [2, 3]
+146. kb_entails(cell_7_0_has_2) -> True
+147. writeTile(7,0,2) -> True
+148. listNotes(7,1) -> [8]
+149. kb_entails(cell_7_1_has_2) -> False
+150. removeNote(7,1,[2]) -> True
+151. kb_entails(cell_7_1_has_7) -> False
+152. removeNote(7,1,[7]) -> True
+153. listNotes(7,1) -> [8]
+154. writeTile(7,1,8) -> True
+155. listNotes(7,2) -> [7]
+156. kb_entails(cell_7_2_has_2) -> False
+157. removeNote(7,2,[2]) -> True
+158. kb_entails(cell_7_2_has_3) -> False
+159. removeNote(7,2,[3]) -> True
+160. writeTile(7,2,7) -> True
+161. listNotes(0,2) -> [4]
+162. kb_entails(cell_0_2_has_1) -> False
+163. removeNote(0,2,[1]) -> True
+164. listNotes(0,2) -> [4]
+165. kb_entails(cell_0_2_has_2) -> False
+166. removeNote(0,2,[2]) -> True
+167. writeTile(0,2,4) -> True
+168. listNotes(0,0) -> []
+169. readBoard() -> [[5, 3, 4, None, 7, None, None, None, None], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, 5, 3, None, None, 1], [7, 1, 3, 9, 2, 4, 8, 5, 6], [9, 6, 1, 5, 3, 7, 2, 8, 4], [2, 8, 7, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+170. listNotes(0,3) -> [6]
+171. kb_entails(cell_0_3_has_2) -> False
+172. removeNote(0,3,[2]) -> True
+173. writeTile(0,3,6) -> True
+174. listNotes(0,5) -> [8]
+175. kb_entails(cell_0_5_has_2) -> False
+176. removeNote(0,5,[2]) -> True
+177. kb_entails(cell_0_5_has_4) -> False
+178. removeNote(0,5,[4]) -> True
+179. listNotes(0,5) -> [8]
+180. kb_entails(cell_0_5_has_6) -> False
+181. removeNote(0,5,[6]) -> True
+182. writeTile(0,5,8) -> True
+183. listNotes(0,6) -> [9]
+184. kb_entails(cell_0_6_has_1) -> False
+185. removeNote(0,6,[1]) -> True
+186. listNotes(0,6) -> [9]
+187. kb_entails(cell_0_6_has_4) -> False
+188. removeNote(0,6,[4]) -> True
+189. listNotes(0,6) -> [9]
+190. kb_entails(cell_0_6_has_8) -> False
+191. removeNote(0,6,[8]) -> True
+192. writeTile(0,6,9) -> True
+193. listNotes(0,7) -> [1, 2, 4, 9]
+194. kb_entails(cell_0_7_has_1) -> True
+195. writeTile(0,7,1) -> True
+196. listNotes(0,8) -> [2, 4, 8]
+197. kb_entails(cell_0_8_has_2) -> True
+198. writeTile(0,8,2) -> True
+199. listNotes(1,0) -> []
+200. readBoard() -> [[5, 3, 4, 6, 7, 8, 9, 1, 2], [6, None, None, 1, 9, 5, None, None, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, 5, 3, None, None, 1], [7, 1, 3, 9, 2, 4, 8, 5, 6], [9, 6, 1, 5, 3, 7, 2, 8, 4], [2, 8, 7, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+201. listNotes(1,1) -> [7]
+202. kb_entails(cell_1_1_has_2) -> False
+203. removeNote(1,1,[2]) -> True
+204. listNotes(1,1) -> [7]
+205. kb_entails(cell_1_1_has_4) -> False
+206. removeNote(1,1,[4]) -> True
+207. writeTile(1,1,7) -> True
+208. listNotes(1,2) -> [2, 4, 7]
+209. kb_entails(cell_1_2_has_2) -> True
+210. writeTile(1,2,2) -> True
+211. listNotes(1,6) -> [3, 4, 7, 8]
+212. kb_entails(cell_1_6_has_3) -> True
+213. writeTile(1,6,3) -> True
+214. listNotes(1,7) -> [4]
+215. kb_entails(cell_1_7_has_2) -> False
+216. removeNote(1,7,[2]) -> True
+217. listNotes(1,7) -> [4]
+218. kb_entails(cell_1_7_has_3) -> False
+219. removeNote(1,7,[3]) -> True
+220. writeTile(1,7,4) -> True
+221. listNotes(1,3) -> []
+222. listNotes(1,4) -> []
+223. listNotes(1,5) -> []
+224. listNotes(1,0) -> []
+225. readBoard() -> [[5, 3, 4, 6, 7, 8, 9, 1, 2], [6, 7, 2, 1, 9, 5, 3, 4, None], [None, 9, 8, None, None, None, None, 6, None], [8, None, None, None, 6, None, None, None, 3], [4, None, None, 8, 5, 3, None, None, 1], [7, 1, 3, 9, 2, 4, 8, 5, 6], [9, 6, 1, 5, 3, 7, 2, 8, 4], [2, 8, 7, 4, 1, 9, None, None, 5], [None, None, None, None, 8, None, None, 7, 9]]
+226. listNotes(1,8) -> [8]
+227. kb_entails(cell_1_8_has_2) -> False
+228. removeNote(1,8,[2]) -> True
+229. listNotes(1,8) -> [8]
+230. kb_entails(cell_1_8_has_4) -> False
+231. removeNote(1,8,[4]) -> True
+232. listNotes(1,8) -> [8]
+233. kb_entails(cell_1_8_has_7) -> False
+234. removeNote(1,8,[7]) -> True
+235. writeTile(1,8,8) -> True
+236. listNotes(2,0) -> [1, 2]
+237. kb_entails(cell_2_0_has_1) -> True
+238. writeTile(2,0,1) -> True
+239. listNotes(2,3) -> [2, 3]
+240. listNotes(2,4) -> [3, 4]
+241. listNotes(2,5) -> [2, 4]
+242. listNotes(2,6) -> [1, 3, 4, 5, 7]
+243. kb_add_clause([{'symbol': 'cell_2_0_has_1', 'positive': True}, {'symbol': 'cell_2_3_has_1', 'positive': True}, {'symbol': 'cell_2_4_has_1', 'positive': True}, {'symbol': 'cell_2_5_has_1', 'positive': True}, {'symbol': 'cell_2_6_has_1', 'positive': True}, {'symbol': 'cell_2_8_has_1', 'positive': True}]) -> True
+244. kb_add_clause([{'symbol': 'cell_2_3_has_2', 'positive': True}, {'symbol': 'cell_2_5_has_2', 'positive': True}]) -> True
+245. kb_add_clause([{'symbol': 'cell_2_3_has_3', 'positive': True}, {'symbol': 'cell_2_4_has_3', 'positive': True}, {'symbol': 'cell_2_6_has_3', 'positive': True}]) -> True
+246. kb_add_clause([{'symbol': 'cell_2_4_has_4', 'positive': True}, {'symbol': 'cell_2_5_has_4', 'positive': True}, {'symbol': 'cell_2_6_has_4', 'positive': True}]) -> True
+247. kb_add_clause([{'symbol': 'cell_2_6_has_5', 'positive': True}, {'symbol': 'cell_2_7_has_5', 'positive': True}]) -> True
+248. kb_add_clause([{'symbol': 'cell_2_6_has_7', 'positive': True}]) -> True
+249. kb_entails(cell_2_6_has_7) -> True
+250. writeTile(2,6,7) -> True
+======================================================================
+
+TOOL CALL SUMMARY:
+
+Total calls made: 250
+  - Executed: 248
+  - Failed: 0
+  - Rejected: 2
+
+CALLS BY TOOL:
+
+  kb_add_clause: 16
+  kb_entails: 46
+  listNotes: 120
+  readBoard: 6
+  removeNote: 27
+  writeTile: 33

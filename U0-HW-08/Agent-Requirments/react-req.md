@@ -1,5 +1,7 @@
 # ReAct Sudoku Solver Agent Requirements
 
+*Last Updated: Version 2.1 - With Agent Autonomy & Tool Tracking*
+
 ## Overview
 
 Build a ReAct agent that solves Sudoku puzzles by making tool calls to read, validate, and modify the board. The agent will not modify the board directly—all changes must happen through tool calls. Implementation will use LangGraph.
@@ -56,33 +58,56 @@ Error message includes: invalid call attempted, list of all tool descriptions, a
 
 ### System Prompt
 
-```
-You are a Sudoku solving bot, using the given tools with the current board make tool calls to solve the puzzle.
-{Board State}
-{Tool descriptions}
-Output a single tool call as JSON {"tool": "...", "parameters": ...}
-```
+The system prompt establishes:
+- **Agent role**: Sudoku constraint solver (board not presented in prompt)
+- **Output format**: Single JSON tool call per turn (no explanation or reasoning)
+- **Comprehensive solving strategy**: Detailed 5-step workflow for constraint solving
 
-The agent receives the current board state in each iteration and must make a single tool call per turn.
+**Prompt Structure:**
+- **System message** (sent once): Role, output format, complete 5-step strategy, tool descriptions, and key insights
+- **Initial user message**: "Begin solving. Call readBoard to see puzzle state"
+- **Agent must call readBoard()** on first move to discover board state
+- **Subsequent messages**: Recent message history + "Make your next tool call"
+
+**System Prompt Contents:**
+- Step 1: Call getCellCandidates() to identify candidate values
+- Step 2: Evaluate candidate list size
+- Step 3 (if multiple candidates): Use kb_entails() to test each candidate
+- Step 4: Write tiles only when KB entails exactly one candidate
+- Step 5: Repeat until puzzle solved or budget exhausted
+- Key warning: Avoid duplicate tool calls to maximize budget efficiency
+
+### Agent Autonomy
+
+The agent has **FULL AUTONOMY** in tile selection and exploration strategy:
+- No forced tile progression (unlike previous versions)
+- No "controller" directing which tile to work on
+- Agent chooses freely which tiles to explore and in what order
+- Agent controls own exploration depth per tile (no artificial limits)
+- Only constraint: 150-call budget enforced globally
 
 ### Decision Logic
 
-1. **Tile Traversal**: Start at tile index 0 (top-left). Automatically skip non-writable tiles and already-filled tiles.
-2. **Knowledge Base Query**: For the current tile at row `r`, column `c`:
-   - Query the KB for each candidate value 1-9: "Does KB entail `cell_r_c_has_v`?"
-   - Count how many candidates the KB entails as valid
-3. **Write Decision**: Only write when the KB entails exactly one valid candidate for the tile
-   - Constraint: **The agent MUST NOT write a value unless the KB entails it as the only possibility**
-   - This ensures writes are logically sound and reduces invalid moves
-4. **Candidate Discovery**: If fewer than 9 candidates remain, use `kb_entails()` to test each candidate and gather deductions
-5. **Board Updates**: When a tile is written:
-   - Add it to the KB as a fact: `kb_add_fact({"symbol": "cell_r_c_has_v", "positive": true})`
-   - This propagates constraints through the KB for future queries
-6. **Loop**: Move to the next tile in reading order (0-80). After tile 80, wrap to tile 0 and continue.
-   - The controller owns `current_tile_index` and shows it in the prompt as "Current tile: (row, col)". It is a guide; the agent is not blocked from acting on other tiles.
-   - The index advances after a `writeTile` or `eraseTile` call, or after 9 valid non-write calls without advancing (so the agent can explore every candidate on a tile). Non-writable and already-filled tiles are skipped.
-7. **Completion Check**: When the agent believes the board is solved, call `validatePuzzle()`
-8. **Inconsistency Detection**: If `kb_is_consistent()` returns false at any point, an error state has been reached (contradiction in KB or board state); report to agent and use `eraseTile()` to recover.
+1. **Board Discovery**: On first move, call readBoard() to see puzzle state
+2. **Tile Selection**: Choose any empty, writable tile to work on
+3. **Candidate Analysis**:
+   - Call getCellCandidates(row, col) to get all legal values
+   - Evaluate candidate list size
+4. **Candidate Validation**:
+   - If exactly 1 candidate: Proceed to write (Step 5)
+   - If 0 candidates: Choose different cell
+   - If 2-9 candidates: Either use kb_entails() to test each, or move to different cell
+5. **Write Decision**: Only write when KB entails exactly one candidate
+   - Constraint: **The agent MUST NOT write unless KB entails it as the only possibility**
+   - This ensures logical soundness and reduces invalid moves
+6. **Board Updates**: When tile is written:
+   - KB automatically updates with new fact
+   - Constraints propagate to other cells
+7. **Completion Check**: When agent believes puzzle solved, call validatePuzzle()
+8. **Error Recovery**: If kb_is_consistent() returns false:
+   - Indicates logical contradiction
+   - Use eraseTile() to remove conflicting values
+   - Continue solving
 
 ### Validation & Board State
 
@@ -92,6 +117,38 @@ After every write call:
 - Optionally check KB consistency with `kb_is_consistent()` to detect logical conflicts early
 
 `readBoard()` returns only the grid (no metadata about writability or notes).
+
+---
+
+## Tool Call Tracking & Reporting
+
+### Tool Call Recording
+
+Every tool call is tracked in the state's `tool_calls` list with:
+- **Type**: One of "executed", "failed", or "rejected"
+- **Name**: Tool name (for executed/failed calls)
+- **Parameters**: Input parameters (for executed/failed calls)
+- **Result/Error**: Result value or error message
+- **Call/Reason**: Full JSON and rejection reason (for rejected calls)
+
+### Call Types
+
+- **Executed**: Tool ran successfully and returned a result
+- **Failed**: Tool was parsed correctly but threw an exception during execution
+- **Rejected**: Tool call was invalid JSON or violated parameter constraints
+
+### Final Report Tool Analysis
+
+At termination, generate comprehensive tool call analysis:
+1. Ordered execution log showing all calls in sequence
+2. Summary statistics (total, executed, failed, rejected)
+3. Per-tool usage breakdown (count for each tool)
+
+This enables analysis of:
+- Agent's call patterns and exploration strategy
+- Efficiency of tool usage
+- Distribution across available tools
+- Error rates and failure modes
 
 ---
 
@@ -189,11 +246,12 @@ All tool calls must be JSON with this structure:
 ### Stored State Variables
 - `board_state`: Current puzzle board
 - `knowledge_base`: Proplogic KnowledgeBase instance (persistent per puzzle)
-- `current_tile_index`: Position tracking through empty tiles
 - `tiles_filled`: Count of filled tiles
 - `invalid_calls_count`: Separate counter for invalid tool calls
 - `total_calls_count`: Total tool calls made
 - `agent_messages`: Full trace of LLM responses and tool results
+- `tool_calls`: Ordered log of all tool executions with type, name, params, and results
+  (tracks executed, failed, and rejected calls for analysis)
 
 ### Debug Output
 - Print full trace of agent responses to show thought process
@@ -202,14 +260,40 @@ All tool calls must be JSON with this structure:
 - Show validation outcomes after each write
 
 ### Final Report
-When agent terminates, print a report containing:
-- **Final Board State**: Display the solved/final puzzle board
-- **Total Tool Calls**: Number of tool calls made
-- **Invalid Tool Calls**: Number of invalid tool calls
-- **Tiles Filled**: Count of tiles filled by the agent
-- **Board Validation**: Whether `validateIncompleteBoard()` and `validatePuzzle()` pass for final state
-- **KB Consistency**: Final state of knowledge base consistency
-- **Puzzle Solved**: Whether agent successfully completed and validated the puzzle (100% correct)
+
+When agent terminates, print and save a report containing:
+
+**Board and Metrics**:
+- Final Board State: Display the solved/final puzzle board
+- Total Tool Calls: Number of tool calls made
+- Invalid Tool Calls: Number of invalid tool calls
+- Tiles Filled: Count of tiles filled by the agent
+- Elapsed Time: Total execution time
+
+**Validation Results**:
+- validateIncompleteBoard(): Whether board is valid with empty tiles allowed
+- validatePuzzle(): Whether board is 100% complete and valid
+
+**Knowledge Base Status**:
+- KB Consistency: Whether knowledge base is consistent (no contradictions)
+
+**Tool Call Analysis** (NEW):
+- Ordered Execution Log: List of all tool calls in order with parameters
+  - Executed calls: toolName(param1,param2,...) -> result
+  - Failed calls: toolName(...) [FAILED: error_message]
+  - Rejected calls: Full JSON + rejection reason
+- Summary Statistics:
+  - Total calls made (executed + failed + rejected)
+  - Count of executed, failed, and rejected calls
+  - Breakdown by tool (count per tool name)
+
+**Puzzle Solve Status**:
+- Puzzle Solved: Whether agent completed and validated the puzzle (100% correct)
+- Tiles Correct: Number of tiles matching reference solution
+
+**Output File** (NEW):
+- Report is written to timestamped file: output/output_YYYY-MM-DD_HH-MM-SS.txt
+- Allows persistent analysis of agent behavior across multiple runs
 
 ---
 

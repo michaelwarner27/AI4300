@@ -38,28 +38,35 @@ class Board:
     """
     
     def __init__(self, board: list[list[int]]) -> None:
-        """
-        Initialize the Sudoku board from a starter configuration.
-        
-        Args:
-            board: A 9x9 list of lists containing integers 0-9,
-                   where 0 represents empty tiles.
-        """
-        self.grid = []
-        
-        # Initialize the 9x9 grid with Tile objects
-        for row in range(9):
-            grid_row = []
-            for col in range(9):
-                value = board[row][col]
-                # Convert 0 to None for empty tiles
-                if value == 0:
-                    tile = Tile(value=None, writable=True)
-                else:
-                    # Tiles with initial values are not writable
-                    tile = Tile(value=value, writable=False)
-                grid_row.append(tile)
-            self.grid.append(grid_row)
+         """
+         Initialize the Sudoku board from a starter configuration.
+         
+         Args:
+             board: A 9x9 list of lists containing integers 0-9,
+                    where 0 represents empty tiles.
+         """
+         self.grid = []
+         
+         # Initialize the 9x9 grid with Tile objects
+         for row in range(9):
+             grid_row = []
+             for col in range(9):
+                 value = board[row][col]
+                 # Convert 0 to None for empty tiles
+                 if value == 0:
+                     tile = Tile(value=None, writable=True)
+                 else:
+                     # Tiles with initial values are not writable
+                     tile = Tile(value=value, writable=False)
+                 grid_row.append(tile)
+             self.grid.append(grid_row)
+         
+         # Pre-populate notes for all empty tiles with their candidates
+         for row in range(9):
+             for col in range(9):
+                 if self.grid[row][col].value is None:
+                     candidates = self.getCandidates(row, col)
+                     self.grid[row][col].notes.extend(candidates)
 
     def readTile(self, row: int, column: int) -> int | None:
         """
@@ -105,51 +112,96 @@ class Board:
         return True
     
     def eraseTile(self, row: int, column: int) -> bool:
-        """
-        Erase a tile (set value to None) if it is writable.
-        
-        Args:
-            row: Row index (0-8)
-            column: Column index (0-8)
-            
-        Returns:
-            True if erase was successful, False otherwise
-        """
-        tile = self.grid[row][column]
-        
-        # Check if tile is writable
-        if not tile.writable:
-            return False
-        
-        # Erase the value
-        tile.value = None
-        return True
-    
-    def appendNote(self, row: int, column: int, value: int) -> None:
-        """
-        Append a note to a tile's notes list.
-        
-        Args:
-            row: Row index (0-8)
-            column: Column index (0-8)
-            value: Value to append to notes
-        """
-        tile = self.grid[row][column]
-        tile.notes.append(value)
+         """
+         Erase a tile (set value to None) if it is writable.
+         
+         Args:
+             row: Row index (0-8)
+             column: Column index (0-8)
+             
+         Returns:
+             True if erase was successful, False otherwise
+         """
+         tile = self.grid[row][column]
+         
+         # Check if tile is writable
+         if not tile.writable:
+             return False
+         
+         # Erase the value
+         tile.value = None
+         return True
+     
+    def getCandidates(self, row: int, column: int) -> list[int]:
+         """
+         Get all legally placeable values for a tile based on Sudoku constraints.
+         
+         Args:
+             row: Row index (0-8)
+             column: Column index (0-8)
+         
+         Returns:
+             List of integers (1-9) that are valid candidates for this tile.
+             Returns empty list if tile is already filled.
+         """
+         if self.grid[row][column].value is not None:
+             return []  # Tile already filled
+         
+         candidates = []
+         block = self.locateBlock(row, column)
+         for value in range(1, 10):
+             if not (self.checkIfInRow(row, value) or 
+                     self.checkIfInColumn(column, value) or 
+                     self.checkIfInBlock(block, value)):
+                 candidates.append(value)
+         return candidates
+     
+    def appendNote(self, row: int, column: int, values: list[int]) -> None:
+         """
+         Append notes to a tile's notes list.
+         
+         Args:
+             row: Row index (0-8)
+             column: Column index (0-8)
+             values: List of values to append to notes
+         """
+         tile = self.grid[row][column]
+         tile.notes.extend(values)
     
     def listNotes(self, row: int, column: int) -> list[int]:
+         """
+         Get the notes list for a tile.
+         
+         Args:
+             row: Row index (0-8)
+             column: Column index (0-8)
+             
+         Returns:
+             List of note values for the tile
+         """
+         return self.grid[row][column].notes
+    
+    def removeNote(self, row: int, column: int, values: list[int]) -> bool:
         """
-        Get the notes list for a tile.
+        Remove notes from a tile's notes list.
         
         Args:
             row: Row index (0-8)
             column: Column index (0-8)
+            values: List of values to remove from notes
             
         Returns:
-            List of note values for the tile
+            True if all values were successfully removed, False if any note didn't exist in the list
         """
-        return self.grid[row][column].notes
-    
+        tile = self.grid[row][column]
+        all_removed = True
+        for value in values:
+            try:
+                tile.notes.remove(value)
+            except ValueError:
+                all_removed = False
+        return all_removed
+     
     def checkIfInRow(self, row: int, value: int) -> bool:
         """
         Check if a value already exists in a row.
