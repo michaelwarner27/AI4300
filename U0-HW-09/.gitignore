@@ -1,3 +1,5 @@
 .env
 documents/*
 agents.md
+./chroma_db/*
+.venv
