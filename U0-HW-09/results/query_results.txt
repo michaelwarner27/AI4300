@@ -1,0 +1,544 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-02 07:34:11
+================================================================================
+
+Summary: 9/9 queries executed successfully
+Failed: 0
+================================================================================
+
+
+================================================================================
+Q1: Food Code Section Lookup
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+According to FDA Food Code 2026 sections 2-201.12(A)(1) and
+2-201.13(A)(1), what must the person in charge do when a food employee has
+vomiting or diarrhea from no known noninfectious condition, and when may that
+employee be reinstated?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+## Section 2-201.12(A)(1) — Exclusion Requirement
+
+According to FDA Food Code 2026, Section 2-201.12(A)(1) states that **except when the symptom is from a noninfectious condition**, the person in charge must **EXCLUDE** a food employee who is symptomatic with **vomiting or diarrhea**. In other words, if a food employee has vomiting or diarrhea and there is no known noninfectious cause, the person in charge must exclude that employee from working.
+
+This requirement is based on the public health rationale that it is necessary to exclude food employees symptomatic with diarrhea, vomiting, or jaundice, or suffering from a disease likely to be transmitted through contamination of food (Annex 3, page 383).
+
+## Section 2-201.13(A)(1) — Reinstatement Criteria
+
+Section 2-201.13(A)(1) addresses when an excluded food employee may be reinstated. Based on the available text, reinstatement requires that the excluded or restricted food employee **provides to the person in charge written medical documentation from a health practitioner** (the provision continues with additional conditions). The employee must also obtain clearance from the regulatory authority.
+
+## Additional Context
+
+- The person in charge must also **prohibit a conditional employee** who reports a listed symptom (including vomiting or diarrhea) from becoming a food employee until meeting the criteria in Section 2-201.13 (page 387).
+- Table 1a in Annex 3 provides a summary of requirements for symptomatic food employees, distinguishing between facilities serving a high-risk population (HSP) and those not serving an HSP (page 388).
+
+**Note:** Some of the retrieved text is partially truncated, particularly the full reinstatement criteria in 2-201.13(A)(1), so additional conditions beyond written medical documentation may apply.
+
+---
+
+Sources:
+- fda-food-code-2026.pdf (page 59): Symptomatic with vomiting or diarrhea (A) Except when the symptom is from a noninfectious condition, *EXCLUDE a *FOOD EMPLOYEE if the *FOOD EMPLOYEE is: (1) Symptomatic with vomiting or diarrhea;
+- fda-food-code-2026.pdf (page 63): from the *REGULATORY AUTHORITY and one of the following conditions is met: (1) The *EXCLUDED or *RESTRICTED *FOOD EMPLOYEE provides to the *PERSON IN CHARGE written medical documentation from a *HE...
+- fda-food-code-2026.pdf (page 387): The person in charge shall prohibit a conditional employee who reports a listed symptom from becoming a food employee until meeting the criteria listed in Section 2-201.13
+- fda-food-code-2026.pdf (page 383): It is necessary to exclude food employees symptomatic with diarrhea, vomiting, or jaundice, or suffering from a disease likely to be transmitted through contamination of food
+- fda-food-code-2026.pdf (page 388): Table 1a. Summary of Requirements for Symptomatic Food Employees
+
+
+================================================================================
+Q2: Employee Illness Procedure
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+A food employee begins vomiting during a shift. Using the *Employee Health and
+Personal Hygiene Handbook*, what should the employee and manager do immediately,
+and what is the earliest return to work?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+## Immediate Actions When a Food Employee Begins Vomiting
+
+### What the Employee Should Do (per the Employee Health and Personal Hygiene Handbook, p. 6):
+
+If vomiting occurs **at work**, the employee must:
+
+1. **Stop work immediately;**
+2. **Report to management; and**
+3. **Go home** and return after at least **24 hours** have passed since the vomiting and diarrhea symptoms ended.
+
+### What the Manager Should Do:
+
+The handbook (p. 7) addresses what a manager should do when a food employee reports symptoms. The manager must ensure the symptomatic employee is **excluded** from the operation (p. 31 confirms that vomiting triggers **exclusion**). The Person in Charge (PIC) must also consider:
+
+- Whether the employee is asymptomatic
+- Whether medical documentation is required
+- Whether regulatory authority (RA) approval is needed for the employee to return to work (p. 11)
+
+### Earliest Return to Work:
+
+The employee may return **after at least 24 hours have passed since the vomiting and diarrhea symptoms ended** (p. 6). 
+
+However, if the vomiting is linked to a confirmed diagnosis of STEC (Shiga toxin-producing *E. coli*), the return-to-work criteria are more stringent: symptoms must have resolved **and** more than **30 days** must have passed since the employee became asymptomatic, with RA approval required (p. 32).
+
+### Summary Table:
+
+| Scenario | Earliest Return |
+|----------|----------------|
+| Vomiting (general) | ≥ 24 hours after symptoms end |
+| Confirmed STEC | Symptoms resolved + >30 days asymptomatic + RA approval |
+
+---
+
+Sources:
+- fda-employee-health-personal-hygiene-handbook.pdf (page 6): If at work: • Stop work immediately; • Report to management; and • Go home and return after at least 24 hours have passed since the vomiting and diarrhea symptoms ended.
+- fda-employee-health-personal-hygiene-handbook.pdf (page 7): What should a manager do when a food employee reports sympt[oms]
+- fda-employee-health-personal-hygiene-handbook.pdf (page 11): are shed in the stool and vomit affects when a food employee can return to work. Considerations for the PIC include: • Was the employee asymptomatic? • Is medical documentation required? • Is regulato[ry authority approval required?]
+- fda-employee-health-personal-hygiene-handbook.pdf (page 31): Vomiting Exclud[ed]
+- fda-employee-health-personal-hygiene-handbook.pdf (page 32): Food employee symptoms of vomiting or diarrhea resolved and >30 days have passed since the food employee became asymptomatic (2-201.13(G)(2)). Yes ST[EC] Exclude Based on vomiting or diarrhea sym[ptoms]
+
+
+================================================================================
+Q3: Norovirus Reference Information
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+According to the *Bad Bug Book*, what is the estimated infective dose of
+norovirus, when do symptoms usually begin, what are the characteristic symptoms,
+and how can food workers contaminate ready-to-eat food?
+
+Status: insufficient_evidence_returned
+
+Response:
+--------------------------------------------------------------------------------
+⚠️  Insufficient Information
+
+While the Bad Bug Book (fda-bad-bug-book-second-edition.pdf, page 170) is referenced in the retrieved documents, the snippets provided do not contain the specific details requested: (1) the estimated infective dose of norovirus, (2) when symptoms usually begin (incubation period), or (3) the full list of characteristic symptoms. The Bad Bug Book snippet only partially addresses how food workers contaminate ready-to-eat food ("cases associated with consumption of ready-to-eat (RTE) foods contaminated by fo..." — cut off). The FDA Food Code references some related information (e.g., symptoms of "diarrhea or vomiting" and food handler contact with RTE foods), but the specific Bad Bug Book data on infective dose, incubation period timing, and characteristic symptom profile are not present in the retrieved snippets.
+
+However, here are the retrieved documents that may be relevant:
+
+Document 1:
+  Source: fda-food-code-2026.pdf (page 373)
+  Snippet: Proper hand hygiene and exclusion of food employees exhibiting 
+symptoms of norovirus disease (i.e., diarrhea or vomiting) are critical for 
+norovirus
+
+Document 2:
+  Source: fda-food-code-2026.pdf (page 420)
+  Snippet: FDA Food Code 2026 Annex 3. Public Health Reasons/Administrative 
+Guidelines 
+340 
+employees who reported having cleaned up vomitus were more likely t
+
+Document 3:
+  Source: fda-bad-bug-book-second-edition.pdf (page 170)
+  Snippet: 	 Route of entry: Foodborne norovirus illnesses have been epidemiologically linked into 
+three distinct classes: with cases associated with consumpti
+
+Document 4:
+  Source: fda-employee-health-personal-hygiene-handbook.pdf (page 20)
+  Snippet: Why are written procedures necessary?
+According to the CDC, Norovirus is the leading cause of foodborne illness outbreaks in the United 
+States.  More
+
+Document 5:
+  Source: fda-food-code-2026.pdf (page 438)
+  Snippet: The CDC now estimates that norovirus is the leading cause of foodborne illness in the 
+United States. Contaminated hands are a significant factor in t
+
+Document 6:
+  Source: fda-food-code-2026.pdf (page 419)
+  Snippet: cause of gastroenteritis in people of all ages and it is responsible for greater than 50% 
+of all foodborne gastroenteritis outbreaks. CDC estimates t
+
+Document 7:
+  Source: fda-bad-bug-book-second-edition.pdf (page 170)
+  Snippet: 4. 	Sources 
+NoV outbreaks have been associated with consumption of contaminated water, including 
+municipal water, well water, stream water, commerci
+
+Document 8:
+  Source: fda-food-code-2026.pdf (page 277)
+  Snippet: 627 . Pdf 
+27. Grahm, D.Y., X. Jiang, et al., 1994. Norwalk virus infection of volunteers: new 
+insights based on improved assays. J. of Infect. Disea
+
+Document 9:
+  Source: fda-food-code-2026.pdf (page 373)
+  Snippet: States. Food handler contact with raw or other ready-to-eat foods is the 
+most common scenario resulting in foodborne norovirus outbreaks. 
+Norovirus 
+
+Document 10:
+  Source: fda-employee-health-personal-hygiene-handbook.pdf (page 28)
+  Snippet: 26
+ Food employee is an asymptomatic shedder of Norovirus and should be excluded from working 
+ in a food establishment until medically cleared, or fo
+
+
+
+================================================================================
+Q4: Pathogen Growth Limits
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+According to Appendix 3, Table 3-A, compare *Salmonella* species and *Listeria
+monocytogenes* by minimum water activity, pH range, temperature range, maximum
+water-phase salt, and oxygen requirement.
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+## Comparison of *Salmonella* spp. and *Listeria monocytogenes* (Appendix 3, Table 3-A)
+
+| Parameter | *Listeria monocytogenes* | *Salmonella* spp. |
+|-----------|--------------------------|-------------------|
+| **Minimum water activity (a_w)** | 0.92 | 0.94 |
+| **pH range** | 4.4 – 9.4 | 3.7 – 9.5 |
+| **Temperature range** | 31.3°F (−0.4°C) – 113°F (45°C) | 41.4°F (5.2°C) – 115.2°F (46.2°C) |
+| **Maximum water-phase salt (%)** | 10% | 8% |
+| **Oxygen requirement** | Facultative anaerobe | Facultative anaerobe |
+
+### Key Takeaways:
+
+- **Water activity:** *Listeria monocytogenes* can grow at a slightly lower water activity (0.92) compared to *Salmonella* (0.94), meaning *Listeria* can tolerate slightly drier conditions.
+- **pH range:** *Salmonella* can grow at a lower minimum pH (3.7 vs. 4.4), making it more acid-tolerant on the low end. *Listeria* has a slightly narrower upper range (9.4 vs. 9.5).
+- **Temperature range:** *Listeria monocytogenes* can grow at much lower temperatures (down to −0.4°C, i.e., just below freezing), whereas *Salmonella* requires a minimum of 5.2°C. Both have similar upper limits (~45–46°C).
+- **Salt tolerance:** *Listeria* tolerates a higher maximum salt concentration (10%) than *Salmonella* (8%).
+- **Oxygen requirement:** Both are facultative anaerobes, meaning they can grow with or without oxygen.
+
+Overall, *Listeria monocytogenes* has a broader overall growth envelope (lower a_w, lower temperature, higher salt tolerance), while *Salmonella* is more acid-tolerant at the low pH end.
+
+---
+
+Sources:
+- fda-appendix-3-bacterial-pathogen-growth-inactivation.pdf (page 3): Listeria monocytogenes 0.92 4.4 9.4 10 31.3°F -0.4°C 113°F 45°C facultative anaerobe. Salmonella spp. 0.94 3.7 9.5 8 41.4°F 5.2°C 115.2°F 46.2°C facultative anaerobe
+- fda-appendix-3-bacterial-pathogen-growth-inactivation.pdf (page 1): Table 3-A contains information on the minimum water activity (aw), minimum and maximum pH, and minimum and maximum temperatures that limit growth for the bacterial pathogens
+
+
+================================================================================
+Q5: Utah Inspection Findings
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+In the Utah Risk Factor Study, which four inspection line items were more likely
+to be violations in summer, what were their rate ratios, and what limitations
+constrain interpretation of those findings?
+
+Status: insufficient_evidence_returned
+
+Response:
+--------------------------------------------------------------------------------
+⚠️  Insufficient Information
+
+While the retrieved documents clearly reference the relevant analysis (a table titled "Occurrence of Line Item Violations, Summer Months Compared to Non-Summer Months, 2016" on page 4, and discussion on page 6 mentioning lines 28 and 36 as more frequently in violation during summer months), the snippets do not capture the complete data needed to fully answer the question. Specifically:
+
+1. The actual rate ratios for the four summer-favoring line items are not included in the truncated snippets (the table header is visible but data rows are cut off).
+2. Only two of the four line items can be identified from the snippets (line 28 – toxic substances, and line 36), but not all four.
+3. Limitations are partially visible (e.g., "This analysis only represents a single" year, and notes about items being marked as part of other line items), but the full limitation discussion is truncated.
+
+The full table on page 4 and the complete discussion on pages 5–6 would be needed to provide a complete answer.
+
+However, here are the retrieved documents that may be relevant:
+
+Document 1:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 4)
+  Snippet: intervention. 
+ 
+ When looking at risk factors across all establishment categories, line 16 (Food-Contact Surfaces: 
+Cleaned/Sanitized) was the most m
+
+Document 2:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 4)
+  Snippet: marked more frequently in non-summer months as compared to summer months. 
+ 
+Occurrence of Line Item Violations, Summer Months Compared to Non-Summer 
+
+Document 3:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 6)
+  Snippet: data is needed before formulating a rationale for why the use or storage of toxic substances (line 28) 
+would be found in violation more frequently in
+
+Document 4:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 1)
+  Snippet: Utah Risk Factor Study 
+For Inspections Conducted in 2016 
+Analysis Conducted in 2017
+
+Document 5:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 3)
+  Snippet: Anecdotal evidence suggested that there may be seasonal variations in the frequency of line 
+item violations. To test this, rates of individual line i
+
+Document 6:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 2)
+  Snippet: Three primary analyses were conducted as part of this report.  First, overall line item violation 
+frequency distributions were measured.  Second, lin
+
+Document 7:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 3)
+  Snippet: A total of 48,592 food inspection violations were reported as part of approximately 22,946 
+inspections in 17,349 establishments (not including tempor
+
+Document 8:
+  Source: fda-food-code-2026.pdf (page 623)
+  Snippet: achieving a desirable change of behavior. For example, in jurisdictions using a 44-item 
+inspection report in which only observed violations are marke
+
+Document 9:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 3)
+  Snippet: correlations. 
+ 
+Results: 
+Violations per Category  (See Appendix A for the bar charts and comparisons) 
+ Linking line items to either a risk or inter
+
+Document 10:
+  Source: utah-risk-factor-study-2016-2017.pdf (page 5)
+  Snippet: currently being used.  This does not mean these items are not being checked during inspections, but 
+that they are being marked as part of other line 
+
+
+
+================================================================================
+Q6: Cross-Document Food-Employee Scenario
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+A food employee with no diagnosis and no known noninfectious condition vomited
+while preparing ready-to-eat salads in a nursing home. Using the FDA Food Code
+2026 and the *Bad Bug Book*, explain the required employee disposition, the
+earliest conditions for return, and why possible norovirus transmission is a
+concern. Treat vomiting as a symptom; the scenario supplies no norovirus
+diagnosis.
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+## Required Employee Disposition
+
+Under the **FDA Food Code 2026, Section 2-201.12(A)(1)** (page 59), a food employee who is **symptomatic with vomiting** must be **excluded** from the food establishment—unless the symptom is attributable to a noninfectious condition. Since the scenario explicitly states there is no known noninfectious condition and no diagnosis, **exclusion is mandatory**. The Person in Charge (PIC) is responsible for enforcing this requirement (page 420).
+
+Because a **nursing home** serves a **Highly Susceptible Population (HSP)**, the exclusion requirement applies with the most stringent interpretation (page 31 of the Employee Health Handbook; page 405 of the Food Code).
+
+---
+
+## Earliest Conditions for Return
+
+The FDA Food Code 2026 provides return pathways depending on the situation:
+
+1. **Symptom-based return (no diagnosis):** The excluded employee may return when:
+   - Written medical documentation from a health care practitioner states the employee is free of the condition, **or**
+   - The regulatory authority determines the employee is no longer infectious (page 63).
+
+2. **If norovirus is later confirmed or suspected (HSP facility):** Per Section 2-201.13(B)(1)(a) (page 66), **more than 48 hours** must have passed since the last day the employee was symptomatic. In HSP settings (page 405), additional regulatory authority approval may be required before return.
+
+3. **Asymptomatic shedding concern:** The Employee Health and Personal Hygiene Handbook (page 28) notes that a food employee can be an **asymptomatic shedder of norovirus** and should remain excluded until medically cleared or for at least 24 hours from the date of diagnosis—underscoring that symptom resolution alone may not eliminate transmission risk.
+
+The Employee Health Handbook's Table (page 31) confirms that for vomiting, **RA (Regulatory Authority) approval is required to return to work** in HSP facilities.
+
+---
+
+## Why Norovirus Transmission Is a Concern
+
+Several factors converge to make this scenario particularly dangerous:
+
+| Factor | Explanation |
+|--------|-------------|
+| **Vomiting is a hallmark norovirus symptom** | The PIC must consider norovirus as a probable etiology when vomiting occurs with no other explanation (page 420). |
+| **Ready-to-eat salads** | No "kill step" (cooking) follows the employee's handling, so any viral contamination is directly ingested by consumers. |
+| **High infectivity** | The exclusion rationale is based on "high infectivity and/or severe medical consequences" (page 384). Norovirus requires very few viral particles to cause illness. |
+| **Asymptomatic shedding** | An employee can shed virus even after symptoms resolve (page 28), meaning the infectious period may extend well beyond visible illness. |
+| **Highly Susceptible Population** | Nursing home residents (elderly, immunocompromised) face severe outcomes including dehydration, hospitalization, and death from norovirus. |
+
+---
+
+## Summary
+
+| Element | Requirement |
+|---------|-------------|
+| **Disposition** | Exclusion (mandatory in HSP facility) |
+| **Earliest return** | ≥48 hours symptom-free + medical clearance + RA approval (HSP) |
+| **Key risk** | Norovirus transmission via RTE food to vulnerable residents, with no kill step and potential for asymptomatic shedding |
+
+The combination of a symptomatic employee, a no-kill-step food vehicle, and a highly susceptible consumer population makes immediate exclusion and rigorous return criteria essential public health controls.
+
+---
+
+Sources:
+- fda-food-code-2026.pdf (page 59): Except when the symptom is from a noninfectious condition, *EXCLUDE a *FOOD EMPLOYEE if the *FOOD EMPLOYEE is: (1) Symptomatic with vomiting or diarrhea
+- fda-food-code-2026.pdf (page 63): The *EXCLUDED or *RESTRICTED *FOOD EMPLOYEE provides to the *PERSON IN CHARGE written medical documentation from a *HEALTH CARE PRACTITIONER
+- fda-food-code-2026.pdf (page 66): Norovirus (1) Norovirus and one of the following conditions are met: (a) More than 48 hours have passed since the last day the *FOOD EMPLOYEE was symptomatic
+- fda-food-code-2026.pdf (page 384): The exclusion is based on the high infectivity, and/or the severe medical consequences to individuals infected with these organisms.
+- fda-food-code-2026.pdf (page 405): In a food establishment that serves a highly susceptible population, food employees who are diagnosed with norovirus
+- fda-food-code-2026.pdf (page 420): The Food Code specifies that the Person in Charge is to exclude or restrict a food employee who exhibits, or reports a symptom, or who reports a diagnosed illness or a history of exposure to norovirus
+- fda-employee-health-personal-hygiene-handbook.pdf (page 28): Food employee is an asymptomatic shedder of Norovirus and should be excluded from working in a food establishment until medically cleared, or for at least 24 hours from the date of the diagnosis
+- fda-employee-health-personal-hygiene-handbook.pdf (page 31): Vomiting Exclusion... RA Approval Required to Return to Work
+
+
+================================================================================
+Q7: Source Authority And Version
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+The *Employee Health and Personal Hygiene Handbook* refers to the 2017 Food
+Code, while the corpus also includes the 2026 Food Code. Which source should
+control an answer about the current FDA model-code rule for a vomiting employee,
+and how may the handbook still be used?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+## Which Source Controls
+
+The **2026 FDA Food Code** should control any answer about the current FDA model-code rule for a vomiting employee. It is the most recent edition of the Code and contains the latest amendments, including revised Public Health Reasons for Part 2-2 (p. 724), new sections such as § 2-502.11 "Clean-up of Vomitus" (p. 718), and the updated Table 1a "Summary of Requirements for Symptomatic Food Employees" (p. 388).
+
+## Why the Handbook Alone Is Not Controlling
+
+The *Employee Health and Personal Hygiene Handbook* explicitly cross-references the **2017** FDA Food Code—for example, directing readers to "section 2-201.12, Tables 1a-4 in Annex 3…of the 2017 Food Code" (p. 12) and to "the 2017 FDA Food Code" (p. 10). Because those references point to a superseded edition, the handbook's citations cannot be treated as authoritative for the *current* model-code rule.
+
+## How the Handbook May Still Be Used
+
+The handbook remains valuable as a **supplementary training and decision-support aid**:
+
+- It states that its purpose is to "encourage practices and behaviors that can help prevent food employees from spreading viruses" and that the public-health community "may find useful when training staff and addressing employee health and hygiene matters" (p. 3).
+- It provides simplified decision trees and tables (e.g., Tables 1a and 1b) to make exclusion/restriction decisions easier for operators (p. 10).
+- It notes that the information "has been updated to reflect the most current full edition" (p. 3), suggesting it is intended to track the latest Code even though some in-text citations still name the 2017 edition.
+
+## Practical Recommendation
+
+Use the **2026 Food Code** (particularly § 2-201.12 and Annex 3, Table 1a) as the authoritative source for the current exclusion/restriction rule for vomiting employees. Use the handbook as a convenient, plain-language training companion, but verify any specific regulatory citation against the 2026 Code since the handbook's cross-references may lag behind the latest amendments.
+
+---
+
+Sources:
+- fda-food-code-2026.pdf (page 388): FDA Food Code 2026 Annex 3. Public Health Reasons/Administrative Guidelines 308 Table 1a. Summary of Requirements for Symptomatic Food Employees Symptom Exclusion or Restriction (Facilities Ser
+- fda-food-code-2026.pdf (page 724): FDA Food Code 2026 Summary of Changes Summary-644 2-2 Amended Public Health Reasons for Part 2-2 to revise paragraphs 1-6 and 8-9 for grammatical and editorial accuracy. Additionally, updated t
+- fda-food-code-2026.pdf (page 718): FDA Food Code 2026 Summary of Changes Summary-638 2-502 Added new subPart 2-502; to include the previous contamination event response procedures. 2-502.11 Added new § 2-502.11 Clean-up of V
+- fda-employee-health-personal-hygiene-handbook.pdf (page 3): The information in this handbook has been updated to reflect the most current full edit…public health community may find useful when training staff and addressing employee health and hygiene matters.
+- fda-employee-health-personal-hygiene-handbook.pdf (page 10): To simplify when to exclude or restrict employees, refer to the decision trees and tables that are available in this handbook as well as the 2017 FDA Food Code.
+- fda-employee-health-personal-hygiene-handbook.pdf (page 12): Further details are available in this handbook and in section 2-201.12, Tables 1a-4 in Annex 3: Public Health Reasons/Administrative Guidelines of the 2017 Food Code.
+
+
+================================================================================
+Q8: Insufficient Jurisdictional Evidence
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+What Utah regulation currently adopts the FDA Food Code 2026, and what penalties
+does it impose on a restaurant that violates employee-illness rules?
+
+Status: insufficient_evidence_returned
+
+Response:
+--------------------------------------------------------------------------------
+⚠️  Insufficient Information
+
+The retrieved documents are all from the FDA Food Code 2026 itself and do not reference any specific Utah regulation that adopts the FDA Food Code 2026. While the documents discuss general compliance and enforcement provisions (including penalties and employee illness policy documentation under § 2-501.11), none of them identify a Utah state regulation or describe Utah-specific penalties for violating employee-illness rules. The question requires knowledge of Utah's specific administrative rules, which are not present in the provided documents.
+
+However, here are the retrieved documents that may be relevant:
+
+Document 1:
+  Source: fda-food-code-2026.pdf (page 251)
+  Snippet: (C) Allows serious or repeated code violations to remain uncorrected beyond time 
+frames for correction *APPROVED, directed, or ordered by the *REGULA
+
+Document 2:
+  Source: fda-food-code-2026.pdf (page 730)
+  Snippet: FDA Food Code 2026  Summary of Changes 
+Summary-650 
+o Amended item #5 to include § 2-501.11 Employee Illness Policy 
+Documentation under the applicab
+
+Document 3:
+  Source: fda-food-code-2026.pdf (page 672)
+  Snippet: OPERATE A FOOD ESTABLISHMENT; AND PROVIDING FOR THE RESTRICTION OR EXCLUSION 
+OF EMPLOYEES, THE EXAMINATION AND CONDEMNATION OF FOOD, AND THE ENFORCEM
+
+Document 4:
+  Source: fda-food-code-2026.pdf (page 724)
+  Snippet: FDA Food Code 2026  Summary of Changes 
+Summary-644 
+2-2  
+Amended Public Health Reasons for Part 2-2 to revise paragraphs 1-6 and 8-9 for 
+grammatica
+
+Document 5:
+  Source: fda-food-code-2026.pdf (page 263)
+  Snippet: enforce the provisions of this Code or its administrative orders and according 
+to *LAW collect penalties and fees for violations.  
+(B) In addition t
+
+Document 6:
+  Source: fda-food-code-2026.pdf (page 179)
+  Snippet: FDA Food Code 2026  Chapter 8. Compliance and Enforcement 
+151 
+Chapter 8. Compliance and 
+Enforcement  
+Parts:   
+8-1 Code Applicability 
+8-2 Plan Su
+
+Document 7:
+  Source: fda-food-code-2026.pdf (page 25)
+  Snippet: FDA Food Code 2026  Contents 
+xxiii 
+Annex 3. Public Health Reasons/Administrative Guidelines ................................. 265 
+Chapter 1. Purpos
+
+Document 8:
+  Source: fda-food-code-2026.pdf (page 27)
+  Snippet: FDA Food Code 2026  Contents 
+xxv 
+Chapter 8. Compliance and Enforcement ............................................................. 641 
+Annex 1. C
+
+Document 9:
+  Source: fda-food-code-2026.pdf (page 275)
+  Snippet: FDA Food Code 2026   Annex 2. References 
+195 
+Restaurant, and Retail Food Store Facility Types (2009). Available at 
+https://www.fda.gov/Food/Guidanc
+
+Document 10:
+  Source: fda-food-code-2026.pdf (page 251)
+  Snippet: FDA Food Code 2026  Annex 1. Compliance and Enforcement 
+171 
+8-901 Criteria for Seeking Remedies 
+8-901.10 Conditions Warranting Remedy.  
+The *REGUL
+
+
+
+================================================================================
+Q9: Off-Topic Evidence Boundary
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+Who is the strongest Avenger, and what evidence establishes that ranking?
+
+Status: no_results_found
+
+Response: (empty)
+
+================================================================================
+END OF RESULTS
+================================================================================

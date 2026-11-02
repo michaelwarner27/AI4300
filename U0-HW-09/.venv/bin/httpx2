@@ -1,0 +1,6 @@
+#!/home/michael24/4300-CS/U0-HW-09/.venv/bin/python3
+import sys
+from httpx2._main import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())
