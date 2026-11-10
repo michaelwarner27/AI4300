@@ -1,0 +1,15 @@
+.env
+# documents/
+agents.md
+chroma_db/
+.venv/
+.pyc
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.egg-info/
+build/
+dist/
+*.egg
