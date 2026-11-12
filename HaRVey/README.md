@@ -12,15 +12,16 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 ## Project Structure
 
 ```
-/U0-HW-09/
+/HaRVey/
 ├── documents/                       # Source PDFs
 ├── chroma_db/                       # Vector database storage
+├── extracted_diagrams/              # Extracted images from PDFs
 ├── src/
 │   ├── config.py                    # Configuration loader (.env)
 │   ├── data_models.py               # Type-safe dataclasses
 │   ├── ingestion/
-│   │   ├── nodes.py                 # Ingestion node implementations
-│   │   ├── tools.py                 # PDFParser, TextChunker, EmbeddingService, ChromaVectorStore
+│   │   ├── nodes.py                 # Ingestion node implementations (6 pipeline + 3 management)
+│   │   ├── tools.py                 # Tool classes (DocumentHasher, TableExtractor, etc.)
 │   │   └── graph.py                 # LangGraph pipeline definition
 │   ├── query/
 │   │   ├── nodes.py                 # Query node implementations
@@ -32,9 +33,11 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 │   ├── test_queries.py              # Query pipeline test suite
 │   ├── verify_ingestion.py          # Ingestion verification
 │   └── check_models.py              # Model availability check
-├── main.py                          # Ingestion pipeline entry point
+├── ingestion_main.py                # Ingestion pipeline entry point
 ├── query_main.py                    # Query pipeline entry point
+├── manage_documents.py              # CLI tool for document management
 ├── .env.example                     # Configuration template
+├── example.env.example              # Comprehensive config example
 └── README.md                        # This file
 ```
 
@@ -59,6 +62,28 @@ python ingestion_main.py
 
 Processes all PDFs in `documents/`, generates embeddings, and stores in Chroma.
 
+**Automatic change detection:**
+- First run: All documents processed and stored with their file hash
+- Subsequent runs: Unchanged documents automatically skipped
+- Disable with: `ENABLE_CHANGE_DETECTION=false`
+
+### Manage Ingested Documents
+
+After ingestion, use the CLI tool to list, delete, or update documents:
+
+```bash
+# List all documents
+python manage_documents.py --list
+
+# Delete a document
+python manage_documents.py --delete outdated.pdf
+
+# Prepare document for re-ingestion
+python manage_documents.py --update ./documents/report.pdf
+```
+
+See [Document Management](#document-management) section for details.
+
 ### Run Queries
 
 ```bash
@@ -79,19 +104,28 @@ python tests/check_models.py          # Check model availability
 
 ## Ingestion Pipeline (6 Nodes)
 
-1. **load_documents** - Discover all PDFs in `documents/`
-2. **parse_documents** - Extract text using pypdf
-3. **extract_metadata** - Attach document metadata (filename, author, date)
+1. **load_documents** - Discover all PDFs, calculate hashes, detect changes
+2. **parse_documents** - Extract text, tables, and diagrams
+3. **extract_metadata** - Extract headings, timestamps, PDF metadata
 4. **chunk_text** - Split into 512-char chunks with 50-char overlap
-5. **generate_embeddings** - Generate vectors via embedding service API
+5. **generate_embeddings** - Generate vectors via embedding service with retry logic
 6. **store_vectors** - Persist to Chroma with metadata indexing
 
 **Features:**
-- Real PDF parsing with pypdf
+- Real PDF parsing with pypdf + pdfplumber
+- Table extraction (pdfplumber) and diagram extraction (embedded images via pypdf, vector figures rendered via PyMuPDF with text captions)
+- File hash-based change detection (skips unchanged documents)
+- Automatic retry with exponential backoff (3 attempts)
 - Batch embedding API calls (32 chunks per request)
+- Real-time progress bars
 - Persistent vector storage in Chroma
 - Skip-and-continue error handling
-- Comprehensive logging
+- Comprehensive logging with detailed metrics
+
+**Change Detection:**
+- First run: Processes all PDFs; each chunk is stored in Chroma with its file's SHA256 hash
+- Subsequent runs: Automatically skips unchanged documents
+- Can be disabled with `ENABLE_CHANGE_DETECTION=false`
 
 ---
 
@@ -121,29 +155,121 @@ python tests/check_models.py          # Check model availability
 Create `.env` from `.env.example`:
 
 ```env
-# Embedding Service
+# Embedding Service (required)
 EMBEDDING_BASE_URL=http://golem:4000/v1
 EMBEDDING_MODEL=Qwen3-Embedding-8B
 EMBEDDING_API_KEY=your_api_key
 
-# LLM Service
+# Retry Logic (optional, defaults shown)
+EMBEDDING_MAX_RETRIES=3
+EMBEDDING_RETRY_BACKOFF_BASE=2.0
+
+# Table Extraction (optional, defaults shown)
+ENABLE_TABLE_EXTRACTION=true
+TABLE_MIN_CONFIDENCE=0.5
+
+# Change Detection (optional, defaults shown)
+ENABLE_CHANGE_DETECTION=true
+CHANGE_DETECTION_LOG_LEVEL=critical
+
+# Progress Tracking (optional, defaults shown)
+SHOW_PROGRESS_BAR=true
+
+# LLM Service (optional, for query pipeline)
 LLM_BASE_URL=http://golem:4000/v1
 LLM_MODEL=Qwen3.8-27B
 LLM_API_KEY=your_api_key
 
-# Chunking
+# Chunking (optional, defaults shown)
 CHUNK_SIZE=512
 CHUNK_OVERLAP=50
 
-# Vector Database
+# Vector Database (optional, defaults shown)
 CHROMA_PERSIST_DIRECTORY=./chroma_db
 CHROMA_COLLECTION_NAME=vector_ingestion_collection
 
-# Document Processing
+# Document Processing (optional, defaults shown)
 DOCUMENT_INPUT_DIR=./documents
 ```
 
 **Security:** Never commit `.env` or API keys. Use only on institutional network with HTTP endpoints.
+
+**Change Detection Details:**
+- First run: Processes all PDFs; the SHA256 hash is stored on each chunk in Chroma (no separate hash file)
+- Subsequent runs: Compares the file hash against Chroma and skips unchanged documents
+- Documents are stored all-or-nothing: if any chunk fails embedding or storage, nothing is saved for that file, so it is retried next run
+- Unchanged files logged as warnings (configurable with `CHANGE_DETECTION_LOG_LEVEL`)
+
+---
+
+## Document Management
+
+After documents are ingested, use the CLI tool to manage them:
+
+### List Documents
+
+View all documents currently in the vector database:
+
+```bash
+python manage_documents.py --list
+```
+
+Output:
+```
+================================================================================
+Document Name                            Chunks       Ingested At                   
+================================================================================
+report.pdf                               245          2024-11-12T10:30:45.123456
+whitepaper.pdf                           512          2024-11-12T10:35:12.789012
+================================================================================
+
+Total: 2 document(s) in vector database
+```
+
+### Delete Document
+
+Remove a document and all its vectors from Chroma:
+
+```bash
+python manage_documents.py --delete report.pdf
+```
+
+Output:
+```
+Deleting document: report.pdf
+Are you sure? This action cannot be undone. (y/n): y
+
+Success! Deleted 245 vectors for 'report.pdf'
+```
+
+### Update Document
+
+Delete old vectors and prepare for re-ingestion:
+
+```bash
+python manage_documents.py --update ./documents/report.pdf
+```
+
+Output:
+```
+Preparing to update document: report.pdf
+Delete old vectors and prepare for re-ingestion? (y/n): y
+
+Success! Deleted 245 old vectors for 'report.pdf'
+
+Next steps:
+  1. Modify report.pdf if needed
+  2. Ensure the file is in ./documents/
+  3. Run: python ingestion_main.py
+```
+
+**Workflow for updating a document**:
+1. Run the delete/prepare command above
+2. Modify the PDF file (optional)
+3. Run `python ingestion_main.py` to re-ingest
+4. Change detection automatically detects the modification
+
+For detailed usage and options, see [Post-Ingestion Document Management](./requirments/ingestion.md#post-ingestion-document-management) in ingestion.md.
 
 ---
 
@@ -171,7 +297,9 @@ Both pipelines use LangGraph's state management to flow data through nodes with 
 
 ## Dependencies
 
-- `pypdf` - PDF text extraction
+- `pypdf` - PDF text extraction and embedded image extraction
+- `pdfplumber` - Table extraction
+- `pymupdf` - Vector figure detection and rendering (AGPL-3.0 licensed)
 - `langchain` - Text splitting and embeddings
 - `langgraph` - Agent workflow orchestration
 - `chromadb` - Vector database

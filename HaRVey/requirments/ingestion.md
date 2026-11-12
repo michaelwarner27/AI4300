@@ -1,10 +1,10 @@
 # Vector Ingestion Pipeline
 
-This document describes the LangGraph-based ingestion pipeline that processes PDF documents and converts them into embeddings stored in a vector database.
+This document describes the LangGraph-based ingestion pipeline that processes PDF documents and converts them into embeddings stored in a vector database. The pipeline includes advanced features for table extraction, diagram detection, change tracking, and post-ingestion document management.
 
 ## Overview
 
-The ingestion pipeline reads PDF documents from a local directory, extracts text content, splits it into manageable chunks, generates embeddings, and persists them to Chroma for retrieval-based applications.
+The ingestion pipeline reads PDF documents from a local directory, extracts text content (including tables and diagrams), splits it into manageable chunks, generates embeddings with automatic retry logic, and persists them to Chroma for retrieval-based applications. It supports change detection to skip re-processing unchanged files and provides document lifecycle management (add, delete, update).
 
 ### Architecture Diagram
 
@@ -12,23 +12,28 @@ The ingestion pipeline reads PDF documents from a local directory, extracts text
 PDF Documents
     ↓
 ┌─────────────────────────┐
-│  load_documents         │ Discover PDFs in input directory
+│  load_documents         │ Discover PDFs, calculate hashes
+│                         │ (skip unchanged with detection)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  parse_documents        │ Extract text content with pypdf
+│  parse_documents        │ Extract text, tables, diagrams
+│                         │ (using pdfplumber + pypdf)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  extract_metadata       │ Attach source information
+│  extract_metadata       │ Attach structure & enriched metadata
+│                         │ (headings, timestamps, hashes)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  chunk_text             │ Split into overlapping chunks
+│  chunk_text             │ Split text + create table & diagram chunks
+│                         │ (with section context)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  generate_embeddings    │ Call embedding service API
+│  generate_embeddings    │ Embed with retry logic (3 retries)
+│                         │ (exponential backoff on failure)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
@@ -36,6 +41,14 @@ PDF Documents
 └─────────────┬───────────┘
               ↓
         Pipeline Complete
+              ↓
+┌─────────────────────────┐
+│  list_documents         │ Query ingested documents
+├─────────────────────────┤
+│  delete_document        │ Remove document + vectors
+├─────────────────────────┤
+│  update_document        │ Re-ingest changed document
+└─────────────────────────┘
 ```
 
 ---
@@ -65,41 +78,60 @@ PDF Documents
 
 ### 2. parse_documents
 
-**Purpose**: Extract text content from PDF files using pypdf.
+**Purpose**: Extract text content, tables, and diagrams from PDF files.
 
-**Inputs**: List of Document objects (empty content)
+**Inputs**: List of Document objects with file hashes
 
-**Outputs**: ParsedDocument objects with extracted text organized by page
+**Outputs**: ParsedDocument objects with text, tables, and diagram metadata
 
 **Responsibilities**:
-- Extract all text from each PDF page
+- Extract all text from each PDF page using pypdf
+- Extract structured table data using pdfplumber (if enabled)
+- Extract diagrams as viewable image files into `extracted_diagrams/` (see Diagram Extraction below)
 - Preserve page boundaries and text structure
 - Extract optional metadata (author, creation date) from PDF properties
 - Handle parsing errors gracefully without stopping the pipeline
+- Track table and diagram counts in metadata
+
+**Configuration**:
+- `ENABLE_TABLE_EXTRACTION=true` - Extract tables as structured data
+- `TABLE_MIN_CONFIDENCE=0.5` - Confidence threshold for table detection
 
 **Key Functions**:
 - Uses `pypdf` library for text extraction
+- Uses `pdfplumber` for table detection and extraction
+- Uses `pypdf` + `PyMuPDF` for diagram extraction
 - Maintains per-page text organization
 - Handles encoding issues and malformed PDFs
+
+**Diagram Extraction**:
+- Embedded raster images are extracted with `pypdf` as `{stem}_p{page}_img{N}.{ext}`; images under 50px on either side are dropped
+- Vector drawings (which pypdf cannot see) are found with PyMuPDF `cluster_drawings()`, then each region is rendered at 150 dpi to `{stem}_p{page}_fig{N}.png`; regions under 40pt are ignored
+- Each `DiagramMetadata` records `page`, `image_path`, `type` (file format), `kind` (`raster` or `vector_figure`) and a `caption` built from the text inside the figure region (e.g. `FIG. 5 Roof Opening Dimensions Are Nominal`)
+- Figures found close together may merge into one crop
+- Previously extracted files for a document are deleted before re-extracting, so re-ingesting never leaves stale images
 
 ---
 
 ### 3. extract_metadata
 
-**Purpose**: Attach source and processing metadata to documents.
+**Purpose**: Attach enriched metadata including document structure and content analysis.
 
-**Inputs**: ParsedDocument objects with content
+**Inputs**: ParsedDocument objects with content, tables, and diagrams
 
-**Outputs**: ParsedDocument objects with enriched metadata
+**Outputs**: ParsedDocument objects with comprehensive metadata
 
 **Responsibilities**:
 - Extract creation date and author from PDF metadata
-- Add processing timestamp
+- Extract section heading structure from document text
+- Add processing/extraction timestamp
 - Ensure metadata completeness for downstream filtering
 - Skip documents with missing optional metadata (don't fail the pipeline)
+- Track page count and heading hierarchy
 
 **Key Functions**:
 - Extracts PDF properties via pypdf
+- Detects section headings using regex patterns
 - Generates processing timestamps
 - Validates metadata availability
 
@@ -107,32 +139,43 @@ PDF Documents
 
 ### 4. chunk_text
 
-**Purpose**: Split document text into fixed-size overlapping chunks suitable for embedding.
+**Purpose**: Split document text into chunks, with special handling for tables and diagrams.
 
-**Inputs**: ParsedDocument objects with content
+**Inputs**: ParsedDocument objects with content, tables, and diagrams
 
-**Outputs**: TextChunk objects with metadata
+**Outputs**: TextChunk objects with chunk-type and source metadata
 
 **Responsibilities**:
 - Split text using LangChain's `RecursiveCharacterTextSplitter`
+- Create separate chunks for table content (preserves structure)
+- Create reference chunks for diagrams (links to extracted images)
 - Apply configured chunk size (default: 512 characters) and overlap (default: 50 characters)
 - Map chunks back to original pages and document sources
+- Preserve section heading context in chunk metadata
 - Skip documents that produce no valid chunks (with logging)
 
 **Configuration**:
 - Chunk size and overlap are tunable via `.env` variables
 - Parameters: `CHUNK_SIZE=512`, `CHUNK_OVERLAP=50`
 
+**Chunk Types** (`chunk_sequence` runs continuously across all three, so chunk IDs stay unique):
+- `text` - Regular text chunks
+- `table` - One chunk per meaningful table, never split. Content is `Table from {file}, page N:` followed by the markdown table. A strict filter drops junk tables (drawn boxes, empty grids, labels): a table needs at least 2 rows, 2 columns, 6 cells with text, and 60% of cells filled
+- `diagram_reference` - `Figure on page N of {file}: {caption}`. Metadata holds `diagram_path` and `diagram_kind`. Diagrams with no caption get no chunk (see `flaws.md`)
+
+Pages in all chunk metadata are 1-indexed. Each chunk also stores `file_hash`, `ingested_at` and `total_chunks` (used by `store_vectors` as a completeness check).
+
 **Key Functions**:
-- Creates metadata for each chunk including page number and sequence
+- Creates metadata for each chunk including page, type, and sequence
 - Preserves document context through overlap
 - Validates chunk content before inclusion
+- Tracks section headings in chunk context
 
 ---
 
 ### 5. generate_embeddings
 
-**Purpose**: Convert text chunks into vector embeddings via a configured embedding service.
+**Purpose**: Convert text chunks into vector embeddings with automatic retry logic.
 
 **Inputs**: TextChunk objects
 
@@ -140,19 +183,25 @@ PDF Documents
 
 **Responsibilities**:
 - Call embedding service API with batch requests (32 chunks per batch for efficiency)
+- Implement exponential backoff retry logic (3 retries, 2^attempt seconds)
 - Handle API errors and timeouts gracefully
-- Skip chunks that fail embedding (with logging)
+- Skip chunks that fail embedding after all retries (with logging)
 - Validate response format and vector dimensions
+- Show progress bar with real-time processing updates
 
 **Configuration**:
 - Service URL: `EMBEDDING_BASE_URL`
 - Model: `EMBEDDING_MODEL` (e.g., Qwen3-Embedding-8B)
 - Authentication: API key from `EMBEDDING_API_KEY`
 - Timeout: 30 seconds per request
+- Retry settings: `EMBEDDING_MAX_RETRIES=3`, `EMBEDDING_RETRY_BACKOFF_BASE=2`
+- Progress: `SHOW_PROGRESS_BAR=true`
 
 **Key Functions**:
 - Uses HTTP requests for API communication
-- Implements batch processing for efficiency
+- Implements exponential backoff retry (1s, 2s, 4s waits)
+- Batch processing for efficiency
+- Real-time progress tracking
 - Error handling maintains pipeline continuity
 
 ---
@@ -192,23 +241,34 @@ The pipeline uses a central `IngestionState` object that flows through all nodes
 ```python
 @dataclass
 class IngestionState:
-    documents: list[Document]              # Original documents
+    # Core data
+    documents: list[Document]              # Original documents with hashes
     chunks: list[TextChunk]                # Text chunks with embeddings
     errors: list[dict]                     # Accumulated errors
     config: IngestionConfig                # Configuration reference
     status: str                            # Pipeline status
-    documents_loaded: int                  # Progress counters
+    
+    # Progress counters
+    documents_loaded: int
     documents_parsed: int
     chunks_created: int
     embeddings_generated: int
     vectors_stored: int
+    
+    # New: Enhanced tracking
+    documents_skipped_duplicate: int       # Unchanged documents skipped
+    tables_extracted: int                  # Tables found and extracted
+    diagrams_found: int                    # Diagrams detected
+    batches_re_embedded: int               # Batches processed with retry
 ```
 
 Each node receives this state, processes its data, and returns updated state for the next node. This enables:
-- Progress tracking throughout the pipeline
+- Real-time progress tracking throughout the pipeline
+- Change detection (skip re-processing unchanged documents)
 - Error accumulation without stopping
 - Configuration availability in all nodes
 - Clear data flow and dependency management
+- Metrics for table and diagram extraction
 
 ---
 
@@ -240,6 +300,21 @@ EMBEDDING_BASE_URL=http://golem:4000/v1
 EMBEDDING_MODEL=Qwen3-Embedding-8B
 EMBEDDING_API_KEY=your_api_key
 
+# Retry Logic
+EMBEDDING_MAX_RETRIES=3                  # Max retry attempts
+EMBEDDING_RETRY_BACKOFF_BASE=2           # Exponential backoff (2^attempt)
+
+# Table Extraction
+ENABLE_TABLE_EXTRACTION=true              # Extract tables as structured data
+TABLE_MIN_CONFIDENCE=0.5                  # pdfplumber detection confidence
+
+# Change Detection
+ENABLE_CHANGE_DETECTION=true              # Skip unchanged documents
+CHANGE_DETECTION_LOG_LEVEL=critical       # Log level for warnings
+
+# Progress Tracking
+SHOW_PROGRESS_BAR=true                    # Display progress bars
+
 # LLM Service (optional, for query pipeline)
 LLM_BASE_URL=http://golem:4000/v1
 LLM_MODEL=Qwen3.8-Flash-Next
@@ -261,26 +336,39 @@ DOCUMENT_INPUT_DIR=./documents
 
 ## Running the Pipeline
 
+### Standard Pipeline Execution
+
 ```bash
 # Navigate to project
-cd /home/michael24/4300-CS/U0-HW-09
+cd /home/michael24/4300-CS/HaRVey
 
 # Activate virtual environment
 source .venv/bin/activate
 
 # Run ingestion pipeline
-python main.py
+python ingestion_main.py
 ```
 
 **Expected Output**:
 - Configuration loads successfully
-- All 6 nodes execute in sequence
+- All 6 nodes execute in sequence with progress bars
 - Summary displays statistics:
-  - Documents loaded, parsed
+  - Documents loaded (and number skipped as unchanged)
+  - Documents parsed
+  - Tables extracted
+  - Diagrams found
   - Chunks created
-  - Embeddings generated
+  - Embeddings generated (with retry counts)
   - Vectors stored
   - Any errors encountered
+
+**Change Detection**:
+- Source of truth is Chroma: every chunk stores `file_hash`, `ingested_at` and `total_chunks` in its metadata (no separate hash file)
+- On first run: All documents processed and stored with their file hash
+- On subsequent runs: a document is skipped when its hash already in Chroma matches the file
+- Documents are stored all-or-nothing in `store_vectors`: if any chunk fails embedding or storage, the document is not saved (or is rolled back), so it is retried on the next run
+- Unchanged document log: `"Skipping unchanged document: example.pdf"`
+- To disable: Set `ENABLE_CHANGE_DETECTION=false` in `.env`
 
 ---
 
@@ -297,6 +385,16 @@ python main.py
 ✅ **Batch Processing** - Embeddings processed in batches of 32 for efficiency
 
 ✅ **Persistent Storage** - Vectors stored persistently for retrieval across sessions
+
+✅ **Automatic Retry** - Exponential backoff retry (3 attempts) for embedding API calls
+
+✅ **Change Detection** - File hash-based change tracking prevents re-processing unchanged documents
+
+✅ **Table Awareness** - Tables extracted as structured data and embedded separately
+
+✅ **Diagram Support** - Diagram detection and image extraction for future agent access
+
+✅ **Progress Visibility** - Per-node progress bars show real-time advancement
 
 ---
 
@@ -332,13 +430,183 @@ def validate_chunks(state: IngestionState) -> dict[str, Any]:
 
 | File | Purpose |
 |------|---------|
-| `src/config.py` | Configuration loading from .env |
-| `src/data_models.py` | Data structures (Document, TextChunk, IngestionState, etc.) |
-| `src/ingestion/nodes.py` | 6 node function implementations |
-| `src/ingestion/tools.py` | Tool classes (PDFParser, TextChunker, EmbeddingService, ChromaVectorStore) |
-| `src/ingestion/graph.py` | LangGraph pipeline definition |
+| `src/config.py` | Configuration loading from .env (enhanced with retry, table, change-detection options) |
+| `src/data_models.py` | Data structures (Document, TextChunk, IngestionState, TableData, DiagramMetadata) |
+| `src/ingestion/nodes.py` | 9 node function implementations (6 pipeline + 3 document management) |
+| `src/ingestion/tools.py` | Tool classes (DocumentHasher, TableExtractor, DiagramExtractor, HeadingExtractor, EmbeddingService with retry, ChromaVectorStore) |
+| `src/ingestion/graph.py` | LangGraph pipeline definition with new nodes and edges |
 | `src/utils/logging.py` | Logging configuration |
 | `main.py` | Entry point and pipeline execution |
+
+---
+
+## Post-Ingestion Document Management
+
+After documents are ingested into the vector database, use the `manage_documents.py` CLI tool to query, delete, or update them. This tool provides a user-friendly interface for document lifecycle management.
+
+### Using the CLI Tool
+
+```bash
+# List all ingested documents
+python manage_documents.py --list
+
+# Delete a document and all its vectors
+python manage_documents.py --delete report.pdf
+
+# Prepare a document for re-ingestion
+python manage_documents.py --update ./documents/report.pdf
+```
+
+---
+
+### 7. list_documents - List Ingested Documents
+
+**Purpose**: Query all documents currently stored in the vector database.
+
+**Command**:
+```bash
+python manage_documents.py --list
+```
+
+**Output Example**:
+```
+================================================================================
+Document Name                            Chunks       Ingested At                   
+================================================================================
+report.pdf                               245          2024-11-12T10:30:45.123456
+whitepaper.pdf                           512          2024-11-12T10:35:12.789012
+research.pdf                             189          2024-11-12T10:40:23.456789
+================================================================================
+
+Total: 3 document(s) in vector database
+```
+
+**Information Returned**:
+- Document filename
+- Number of chunks/vectors stored
+- Ingestion timestamp
+- File hash (for change detection)
+
+**Use Cases**:
+- Inventory of ingested documents
+- Verify successful ingestion
+- Check document status before update/delete
+- Monitor storage usage
+
+---
+
+### 8. delete_document - Remove a Document
+
+**Purpose**: Remove a document and all associated vectors from Chroma.
+
+**Command**:
+```bash
+python manage_documents.py --delete report.pdf
+```
+
+**Interaction Flow**:
+```
+Deleting document: report.pdf
+Are you sure? This action cannot be undone. (y/n): y
+
+Success! Deleted 245 vectors for 'report.pdf'
+```
+
+**Behavior**:
+- Checks if document exists in database
+- Asks for confirmation before deletion
+- Deletes all chunks matching the document name from Chroma
+- Logs deletion count to console
+- Gracefully handles case where document not found
+
+**Use Cases**:
+- Remove outdated or incorrect documents
+- Clean up storage space
+- Delete documents that have been superseded
+- Manage document versions
+
+**Important Notes**:
+- Only removes vectors from the database
+- The PDF file in `./documents/` is NOT affected
+- This action cannot be undone (deleted vectors are permanently removed)
+- Confirmation is required before deletion
+
+---
+
+### 9. update_document - Prepare for Re-ingestion
+
+**Purpose**: Delete old vectors and prepare a document for re-ingestion.
+
+**Command**:
+```bash
+python manage_documents.py --update ./documents/report.pdf
+```
+
+**Interaction Flow**:
+```
+Preparing to update document: report.pdf
+Delete old vectors and prepare for re-ingestion? (y/n): y
+
+Success! Deleted 245 old vectors for 'report.pdf'
+
+Next steps:
+  1. Modify report.pdf if needed
+  2. Ensure the file is in ./documents/
+  3. Run: python ingestion_main.py
+
+The document will be re-ingested with its latest version.
+```
+
+**Workflow**:
+
+1. **Delete old vectors**:
+   ```bash
+   python manage_documents.py --update ./documents/report.pdf
+   ```
+
+2. **Modify the PDF** (optional):
+   - Edit, correct, or update the PDF file
+   - Save changes to the same location
+
+3. **Re-ingest the document**:
+   ```bash
+   python ingestion_main.py
+   ```
+   - The change detection system automatically detects the updated file
+   - Only the modified document is re-processed through the pipeline
+
+**Behavior**:
+- Validates that the file exists and is a PDF
+- Checks if document exists in database
+- Asks for confirmation before deletion
+- Deletes all existing vectors for the document
+- Returns count of deleted vectors
+- Does NOT automatically re-ingest (by design)
+- Provides clear next steps
+
+**Use Cases**:
+- Update document with corrected information
+- Fix incomplete ingestion (if error occurred first time)
+- Refresh with new extraction methods (e.g., better table detection)
+- Handle document version changes
+
+**Alternative: Using Change Detection**:
+Instead of manually calling `update_document()`, you can rely on automatic change detection:
+1. Modify the PDF file (in-place or replace)
+2. Run `python ingestion_main.py`
+3. Change detection automatically re-processes the modified document (no manual deletion needed)
+
+This is the recommended approach for most document updates.
+
+---
+
+## Document Management Quick Reference
+
+| Operation | Command | Use Case |
+|-----------|---------|----------|
+| **List** | `python manage_documents.py --list` | View all documents, verify ingestion status |
+| **Delete** | `python manage_documents.py --delete <name>` | Remove outdated/incorrect documents |
+| **Update** | `python manage_documents.py --update <path>` | Delete old vectors, prepare for re-ingestion |
 
 ---
 

@@ -1,0 +1,339 @@
+================================================================================
+                    HARVEY INGESTION PIPELINE ARCHITECTURE
+                              QUICK REFERENCE
+================================================================================
+
+1. PIPELINE FLOW
+================================================================================
+
+    PDF Directory
+         |
+         v
+    [load_documents]  → Discovers PDFs, extracts metadata
+         |
+         v
+    [parse_documents]  → Extracts text from each PDF
+         |
+         v
+    [chunk_text]       → Splits text into overlapping chunks
+         |
+         v
+    [generate_embeddings] → Calls embedding API, gets vectors
+         |
+         v
+    [store_vectors]    → Persists vectors to Chroma DB
+         |
+         v
+    Chroma Database (persistent)
+
+
+2. NODE RESPONSIBILITIES & ERROR HANDLING
+================================================================================
+
+Node 1: load_documents
+  Input:  IngestionState(documents=[], config=loaded)
+  Output: state.documents = [ParsedDocument, ...]
+  Pattern: Fail-fast (no documents = error)
+  Errors:  Directory not found, no PDFs in directory
+  Metrics: documents_loaded
+
+Node 2: parse_documents
+  Input:  state.documents (with no content)
+  Output: state.documents (with content + pages)
+  Pattern: Skip-and-continue (PDF parse fails → skip, continue)
+  Errors:  Individual PDFs fail, accumulated
+  Metrics: documents_parsed
+
+Node 3: chunk_text
+  Input:  state.documents (with content)
+  Output: state.chunks = [TextChunk, ...]
+  Pattern: Skip-and-continue (chunking fails → skip, continue)
+  Errors:  Individual document chunking fails
+  Metrics: chunks_created
+
+Node 4: generate_embeddings
+  Input:  state.chunks (no embeddings)
+  Output: state.chunks (with embedding vectors)
+  Pattern: Batch processing + skip-and-continue
+  Errors:  Batch API calls fail, skip batch, continue
+  Metrics: embeddings_generated
+  Note:   32 chunks per API call
+
+Node 5: store_vectors
+  Input:  state.chunks (with embeddings)
+  Output: Vectors persisted to Chroma
+  Pattern: Batch processing + skip-and-continue
+  Errors:  Batch storage fails, skip batch, continue
+  Metrics: vectors_stored
+  Note:   5000 chunks per Chroma batch (limit: 5461)
+
+
+3. TOOL CLASSES
+================================================================================
+
+PDFLoader
+  Purpose:  Discover PDFs and extract metadata
+  Methods:  load_documents(dir) → list[ParsedDocument]
+  Features: Case-insensitive file discovery
+            PyPDF metadata extraction
+            Graceful fallback for malformed PDFs
+
+PDFParser
+  Purpose:  Extract text from PDF pages
+  Methods:  parse_document(path) → (full_text, per_page_texts)
+  Features: Page-by-page extraction
+            Maintains page boundaries
+            Handles image-only pages
+
+TextChunker
+  Purpose:  Split text into overlapping chunks
+  Methods:  chunk_document(doc) → list[TextChunk]
+  Features: LangChain RecursiveCharacterTextSplitter
+            Hierarchical splitting: ["\n\n", "\n", " ", ""]
+            Preserves page numbers for each chunk
+
+EmbeddingService
+  Purpose:  Call embedding API
+  Methods:  embed_batch(texts) → list[list[float]]
+  Features: OpenAI-compatible API format
+            Bearer token auth
+            30 second timeout
+            Batch processing
+
+ChromaVectorStore
+  Purpose:  Persistent vector storage and search
+  Methods:  initialize_collection()
+            store_chunks(chunks) → int (stored count)
+            query_similarity(embedding, k=10) → list[dict]
+  Features: Cosine similarity distance
+            Metadata-based filtering
+            Batch storage (5000 per batch)
+            Persistent filesystem storage
+
+
+4. DATA MODELS
+================================================================================
+
+IngestionState (state passed through pipeline)
+  ├── documents: list[ParsedDocument]
+  ├── chunks: list[TextChunk]
+  ├── errors: list[str]
+  ├── config: IngestionConfig
+  ├── status: str
+  └── metrics: documents_loaded, documents_parsed, chunks_created, ...
+
+ParsedDocument
+  ├── content: str (full text)
+  ├── metadata: DocumentMetadata
+  └── pages: list[str] (per-page text)
+
+DocumentMetadata
+  ├── filename: str
+  ├── total_pages: int
+  ├── processing_timestamp: str
+  ├── author: str | None
+  └── creation_date: str | None
+
+TextChunk
+  ├── content: str (text content)
+  ├── metadata: ChunkMetadata
+  └── embedding: list[float] | None
+
+ChunkMetadata
+  ├── source_filename: str
+  ├── page_number: int (1-indexed)
+  ├── chunk_sequence: int (0-indexed)
+  ├── start_char_index: int
+  └── end_char_index: int
+
+IngestionConfig
+  ├── embedding_base_url: str
+  ├── embedding_model: str
+  ├── embedding_api_key: str
+  ├── chunk_size: int
+  ├── chunk_overlap: int
+  ├── chroma_persist_directory: str
+  ├── chroma_collection_name: str
+  └── document_input_dir: str
+
+
+5. ERROR HANDLING PATTERNS
+================================================================================
+
+Skip-and-Continue Pattern (nodes 2, 3, 4, 5)
+  ┌─────────────────────────────────────┐
+  │ for item in items:                  │
+  │   try:                              │
+  │     result = process(item)          │
+  │     results.append(result)          │
+  │   except Exception as e:            │
+  │     errors.append(str(e))           │
+  │     logger.warning(str(e))          │
+  │     # Continue to next item         │
+  │                                     │
+  │ return {                            │
+  │   "results": results,               │
+  │   "errors": errors,                 │
+  │   "status": "step_complete"         │
+  │ }                                   │
+  └─────────────────────────────────────┘
+
+Fail-Fast Pattern (nodes 1, 5 critical operations)
+  ┌─────────────────────────────────────┐
+  │ try:                                │
+  │   critical_result = ...             │
+  │ except FatalError as e:             │
+  │   errors.append(str(e))             │
+  │   return {                          │
+  │     "result": [],                   │
+  │     "status": "failed",             │
+  │     "errors": errors                │
+  │   }                                 │
+  └─────────────────────────────────────┘
+
+Batch Processing Pattern (nodes 4, 5)
+  ┌─────────────────────────────────────┐
+  │ batch_size = 32                     │
+  │ for i in range(0, len(items), sz):  │
+  │   batch = items[i:i+sz]             │
+  │   try:                              │
+  │     process_batch(batch)            │
+  │   except Exception as e:            │
+  │     errors.append(str(e))           │
+  │     # Skip this batch, continue     │
+  └─────────────────────────────────────┘
+
+
+6. KEY CONFIGURATION VALUES
+================================================================================
+
+From .env file:
+  EMBEDDING_BASE_URL=http://localhost:4000/v1
+  EMBEDDING_MODEL=Qwen3-Embedding-8B
+  EMBEDDING_API_KEY=<token>
+  
+  LLM_BASE_URL=<for future use>
+  LLM_MODEL=<for future use>
+  LLM_API_KEY=<for future use>
+  
+  CHUNK_SIZE=1024 (characters per chunk)
+  CHUNK_OVERLAP=100 (overlap between chunks)
+  
+  CHROMA_PERSIST_DIRECTORY=./chroma_db
+  CHROMA_COLLECTION_NAME=vector_ingestion_collection
+  
+  DOCUMENT_INPUT_DIR=./documents
+
+
+7. STATE FLOW EXAMPLE
+================================================================================
+
+Initial State:
+  documents=[]
+  chunks=[]
+  errors=[]
+  status="initialized"
+  documents_loaded=0
+  documents_parsed=0
+  chunks_created=0
+  embeddings_generated=0
+  vectors_stored=0
+
+After load_documents:
+  documents=[ParsedDocument("report.pdf"), ParsedDocument("guide.pdf")]
+  documents_loaded=2
+  status="documents_loaded"
+
+After parse_documents:
+  documents[0].content="PDF text for report..."
+  documents[0].pages=["Page 1 text", "Page 2 text", ...]
+  documents_parsed=2
+  status="documents_parsed"
+
+After chunk_text:
+  chunks=[TextChunk(...), TextChunk(...), ...]
+  chunks_created=245
+  status="text_chunked"
+
+After generate_embeddings:
+  chunks[0].embedding=[0.123, 0.456, ...]  # 768-dim vector
+  embeddings_generated=245
+  status="embeddings_generated"
+
+After store_vectors:
+  vectors_stored=245
+  status="pipeline_complete"
+
+
+8. ENTRY POINT
+================================================================================
+
+File: ingestion_main.py
+
+1. Load config from .env
+2. Create initial IngestionState with config
+3. Create graph with create_ingestion_graph(config)
+4. Invoke graph: result = graph.invoke(initial_state)
+5. Process results and print summary
+
+Execution:
+  $ python ingestion_main.py
+
+
+9. LIMITATIONS & GAPS
+================================================================================
+
+Critical Issues:
+  [X] No retry logic on API failures
+  [X] No conditional execution (always runs all nodes)
+  [X] No progress tracking during execution
+  [X] Character position mapping is approximate
+  [X] Fixed 30-second timeout not configurable
+
+Known Limitations:
+  [X] No OCR for scanned PDFs
+  [X] OpenAI-format API only (no other embedding formats)
+  [X] No metadata filtering in query (post-filter in app code)
+  [X] No bulk delete operations
+  [X] Unique IDs assume no special chars in filenames
+  [X] No structured error types (all strings)
+  [X] No distributed processing
+
+Recommended Improvements (priority order):
+  1. Add retry logic with exponential backoff
+  2. Add conditional node execution
+  3. Implement progress callbacks
+  4. Add input validation/sanitization
+  5. Add metadata filtering to vector query
+
+
+10. EXTENSION PATTERNS
+================================================================================
+
+To Add New Node:
+  1. Create function in nodes.py following pattern:
+     def new_step(state: IngestionState) -> dict[str, Any]: ...
+  2. Add to graph in graph.py:
+     graph.add_node("new_step", new_step)
+     graph.add_edge("prev_node", "new_step")
+     graph.add_edge("new_step", "next_node")
+  3. Update IngestionState if new fields needed
+  4. Update ingestion_main.py to report new metrics
+
+To Add New Tool:
+  1. Create class in tools.py with:
+     - Comprehensive __init__ docstring
+     - Public methods with full docstrings
+     - Error handling with specific exceptions
+     - Debug logging for operations
+  2. Use in node functions:
+     tool = NewTool(config)
+     result = tool.method(input)
+
+Logging Pattern:
+  logger.info("High-level progress")     # Start/end of nodes
+  logger.warning("Recoverable errors")   # Skip items, continue
+  logger.error("Critical failures")      # Process-level errors
+  logger.debug("Detailed operations")    # Internal details
+
+================================================================================

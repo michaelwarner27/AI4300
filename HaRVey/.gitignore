@@ -1,9 +1,10 @@
 .env
-# documents/
+documents/
 agents.md
 chroma_db/
 .venv/
 .pyc
+extracted_diagrams/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

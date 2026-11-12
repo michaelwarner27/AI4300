@@ -10,7 +10,15 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 import requests
 import chromadb
 from chromadb.config import Settings
-from src.data_models import TextChunk, ChunkMetadata, ParsedDocument, DocumentMetadata
+import hashlib
+import json
+import re
+from datetime import datetime
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
+from src.data_models import TextChunk, ChunkMetadata, ParsedDocument, DocumentMetadata, TableData, DiagramMetadata
 from src.utils.logging import get_logger
 
 logger = get_logger()
@@ -298,9 +306,14 @@ class TextChunker:
                         chunk_sequence=chunk_idx,
                         start_char_index=char_index,
                         end_char_index=char_index + len(chunk_text),
+                        file_hash=document.metadata.file_hash,
+                        ingested_at=document.metadata.processing_timestamp,
                     ),
                 )
                 chunks.append(chunk)
+            
+            for chunk in chunks:
+                chunk.metadata.total_chunks = len(chunks)
             
             logger.debug(
                 f"Created {len(chunks)} chunks from {filename} "
@@ -311,6 +324,125 @@ class TextChunker:
             logger.error(f"Error chunking {filename}: {str(e)}")
             raise
         
+        return chunks
+    
+    # --- Strict junk-table filter -------------------------------------------
+    MIN_TABLE_ROWS = 2
+    MIN_TABLE_COLS = 2
+    MIN_TABLE_FILLED_CELLS = 6      # cells that contain real text
+    MIN_TABLE_FILL_RATIO = 0.6      # filled cells / total cells
+    
+    @classmethod
+    def is_meaningful_table(cls, table: TableData) -> bool:
+        """
+        Decide whether an extracted table is worth embedding.
+        
+        pdfplumber reports drawn boxes, diagram labels and empty grids as
+        tables. A table must have at least 2 rows and 2 columns, at least 6
+        cells containing text, and at least 60% of its cells filled.
+        """
+        if table.row_count < cls.MIN_TABLE_ROWS or table.col_count < cls.MIN_TABLE_COLS:
+            return False
+        
+        cells = [str(cell or "").strip() for row in table.raw_data for cell in row]
+        if not cells:
+            return False
+        
+        filled = sum(1 for cell in cells if any(ch.isalnum() for ch in cell))
+        return filled >= cls.MIN_TABLE_FILLED_CELLS and filled / len(cells) >= cls.MIN_TABLE_FILL_RATIO
+    
+    def chunk_tables(self, document: ParsedDocument, start_sequence: int) -> list[TextChunk]:
+        """
+        Create one chunk per meaningful table. Tables are never split.
+        
+        Args:
+            document: Parsed document with extracted tables
+            start_sequence: chunk_sequence number for the first table chunk
+        
+        Returns:
+            List of table TextChunks (pages are 1-indexed)
+        """
+        filename = document.metadata.filename
+        chunks: list[TextChunk] = []
+        skipped = 0
+        
+        for table in document.tables:
+            if not self.is_meaningful_table(table):
+                skipped += 1
+                continue
+            
+            page_number = table.page + 1  # TableData.page is 0-indexed
+            chunks.append(TextChunk(
+                content=f"Table from {filename}, page {page_number}:\n{table.content}",
+                metadata=ChunkMetadata(
+                    source_filename=filename,
+                    page_number=page_number,
+                    chunk_sequence=start_sequence + len(chunks),
+                    chunk_type="table",
+                    table_rows=table.row_count,
+                    table_cols=table.col_count,
+                    file_hash=document.metadata.file_hash,
+                    ingested_at=document.metadata.processing_timestamp,
+                ),
+            ))
+        
+        if skipped:
+            logger.debug(f"Skipped {skipped} junk tables in {filename}")
+        return chunks
+    
+    def chunk_diagrams(self, document: ParsedDocument, start_sequence: int) -> list[TextChunk]:
+        """
+        Create one reference chunk per diagram that has a caption.
+        
+        Diagrams without a caption have nothing to search on, so they get no
+        chunk (their image files and parsed metadata are kept).
+        
+        Args:
+            document: Parsed document with extracted diagrams
+            start_sequence: chunk_sequence number for the first diagram chunk
+        
+        Returns:
+            List of diagram_reference TextChunks (pages are 1-indexed)
+        """
+        filename = document.metadata.filename
+        chunks: list[TextChunk] = []
+        
+        for diagram in document.diagrams:
+            caption = diagram.caption.strip()
+            if not caption:
+                continue
+            
+            page_number = diagram.page + 1  # DiagramMetadata.page is 0-indexed
+            chunks.append(TextChunk(
+                content=f"Figure on page {page_number} of {filename}: {caption}",
+                metadata=ChunkMetadata(
+                    source_filename=filename,
+                    page_number=page_number,
+                    chunk_sequence=start_sequence + len(chunks),
+                    chunk_type="diagram_reference",
+                    diagram_path=diagram.image_path,
+                    diagram_kind=diagram.kind,
+                    file_hash=document.metadata.file_hash,
+                    ingested_at=document.metadata.processing_timestamp,
+                ),
+            ))
+        
+        return chunks
+    
+    def chunk_all(self, document: ParsedDocument) -> list[TextChunk]:
+        """
+        Produce every chunk for a document: text, then tables, then diagrams.
+        
+        chunk_sequence runs continuously across all three types so chunk IDs
+        ({filename}_{page}_{seq}) stay unique, and total_chunks is set once on
+        the combined list (store_vectors uses it as a completeness check).
+        """
+        chunks = self.chunk_document(document)
+        chunks.extend(self.chunk_tables(document, start_sequence=len(chunks)))
+        chunks.extend(self.chunk_diagrams(document, start_sequence=len(chunks)))
+        
+        for chunk in chunks:
+            chunk.metadata.total_chunks = len(chunks)
         return chunks
     
     def _find_page_number(
@@ -650,6 +782,12 @@ class ChromaVectorStore:
                             "chunk_sequence": chunk.metadata.chunk_sequence,
                             "start_char_index": chunk.metadata.start_char_index,
                             "end_char_index": chunk.metadata.end_char_index,
+                            "file_hash": chunk.metadata.file_hash,
+                            "ingested_at": chunk.metadata.ingested_at,
+                            "total_chunks": chunk.metadata.total_chunks,
+                            "chunk_type": chunk.metadata.chunk_type,
+                            "diagram_path": chunk.metadata.diagram_path,
+                            "diagram_kind": chunk.metadata.diagram_kind,
                         }
                         
                         ids.append(chunk_id)
@@ -658,7 +796,7 @@ class ChromaVectorStore:
                         metadatas.append(metadata_dict)
                     
                     # Store batch in Chroma
-                    self.collection.add(
+                    self.collection.upsert(
                         ids=ids,
                         embeddings=embeddings,
                         documents=documents,
@@ -803,3 +941,407 @@ class ChromaVectorStore:
             error_msg = f"Failed to query vector store: {str(e)}"
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
+
+
+    def get_stored_hash(self, filename: str) -> str | None:
+        """
+        Return the file hash stored in Chroma for a document, if any.
+        
+        Chroma is the source of truth for change detection: a hash only exists
+        here if the document's vectors were actually stored.
+        
+        Args:
+            filename: Source PDF filename
+        
+        Returns:
+            SHA256 hash string, or None if the document is not stored
+            (or was stored before hashes were persisted).
+        """
+        if self.collection is None:
+            raise RuntimeError("Collection not initialized. Call initialize_collection() first.")
+        
+        results = self.collection.get(
+            where={"source_filename": {"$eq": filename}},
+            limit=1,
+            include=["metadatas"],
+        )
+        metadatas = results.get("metadatas") or []
+        if not metadatas or not metadatas[0]:
+            return None
+        return metadatas[0].get("file_hash") or None
+    
+    def delete_document(self, filename: str) -> int:
+        """
+        Delete every chunk belonging to a document.
+        
+        Args:
+            filename: Source PDF filename
+        
+        Returns:
+            Number of chunks deleted
+        """
+        if self.collection is None:
+            raise RuntimeError("Collection not initialized. Call initialize_collection() first.")
+        
+        where = {"source_filename": {"$eq": filename}}
+        existing = self.collection.get(where=where, include=[])
+        count = len(existing.get("ids", []))
+        if count:
+            self.collection.delete(where=where)
+        return count
+
+
+class DocumentHasher:
+    """Calculate content-based hashes for change detection."""
+    
+    @staticmethod
+    def calculate_file_hash(file_path: Path) -> str:
+        """
+        Calculate SHA256 hash of file content.
+        
+        Args:
+            file_path: Path to file
+        
+        Returns:
+            SHA256 hash as hex string
+        """
+        import hashlib
+        sha256_hash = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+        return sha256_hash.hexdigest()
+
+
+class HeadingExtractor:
+    """Extract document structure (section headings)."""
+    
+    @staticmethod
+    def extract_headings(text: str) -> list[str]:
+        """
+        Detect common heading patterns in extracted text.
+        
+        Args:
+            text: Full document text
+        
+        Returns:
+            List of detected headings in order
+        """
+        import re
+        
+        headings = []
+        lines = text.split('\n')
+        
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+            
+            # Skip empty lines
+            if not line_stripped:
+                continue
+            
+            # Markdown headings (#, ##, ###, etc.)
+            if line_stripped.startswith('#'):
+                heading = line_stripped.lstrip('#').strip()
+                if heading:
+                    headings.append(heading)
+            
+            # Underlined headings (=== or ---)
+            elif i + 1 < len(lines):
+                next_line = lines[i + 1].strip()
+                if re.match(r'^[=\-]{3,}$', next_line):
+                    if line_stripped:
+                        headings.append(line_stripped)
+            
+            # Numbered sections (1. Introduction, 1.1 Overview, etc.)
+            elif re.match(r'^\d+(\.\d+)*\s+[A-Z]', line_stripped):
+                headings.append(line_stripped)
+            
+            # ALL CAPS headings (but not too long, limit to 80 chars)
+            elif (line_stripped.isupper() and 
+                  len(line_stripped) < 80 and 
+                  len(line_stripped) > 2):
+                # Avoid matching pure punctuation or common sentences
+                non_alpha_count = sum(1 for c in line_stripped if not c.isalpha() and c != ' ')
+                if non_alpha_count < len(line_stripped) * 0.3:  # Less than 30% non-alpha
+                    headings.append(line_stripped)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_headings = []
+        for heading in headings:
+            if heading not in seen:
+                seen.add(heading)
+                unique_headings.append(heading)
+        
+        return unique_headings
+
+
+class TableExtractor:
+    """Extract tables from PDFs using pdfplumber."""
+    
+    def __init__(self, min_confidence: float = 0.5):
+        """
+        Initialize table extractor.
+        
+        Args:
+            min_confidence: Minimum confidence threshold for table detection
+        """
+        if pdfplumber is None:
+            raise ImportError("pdfplumber is not installed. Install it with: pip install pdfplumber")
+        self.min_confidence = min_confidence
+    
+    def extract_tables_from_pdf(self, file_path: Path) -> list[TableData]:
+        """
+        Extract all tables from PDF and return as structured data.
+        
+        Args:
+            file_path: Path to PDF file
+        
+        Returns:
+            List of TableData objects with markdown formatting
+        """
+        tables = []
+        
+        try:
+            with pdfplumber.open(file_path) as pdf:
+                for page_num, page in enumerate(pdf.pages):
+                    page_tables = page.extract_tables()
+                    
+                    if page_tables:
+                        for table_idx, table_data in enumerate(page_tables):
+                            # Skip empty tables
+                            if not table_data or len(table_data) == 0:
+                                continue
+                            
+                            # Convert to markdown format
+                            markdown_table = self._convert_to_markdown(table_data)
+                            
+                            tables.append(TableData(
+                                content=markdown_table,
+                                page=page_num,
+                                page_position=table_idx,
+                                row_count=len(table_data),
+                                col_count=len(table_data[0]) if table_data else 0,
+                                raw_data=table_data
+                            ))
+        
+        except Exception as e:
+            logger.error(f"Error extracting tables from {file_path.name}: {e}")
+            # Return empty list on error, don't fail the pipeline
+        
+        return tables
+    
+    @staticmethod
+    def _convert_to_markdown(table_data: list[list[str]]) -> str:
+        """
+        Convert table to markdown format for embedding.
+        
+        Args:
+            table_data: 2D list of table cells
+        
+        Returns:
+            Markdown-formatted table string
+        """
+        if not table_data or len(table_data) == 0:
+            return ""
+        
+        lines = []
+        
+        # Header row (first row)
+        header_cells = [str(cell).strip() if cell else "" for cell in table_data[0]]
+        lines.append("| " + " | ".join(header_cells) + " |")
+        
+        # Separator row
+        col_count = len(table_data[0])
+        lines.append("|" + "|".join(["---"] * col_count) + "|")
+        
+        # Data rows
+        for row in table_data[1:]:
+            row_cells = [str(cell).strip() if cell else "" for cell in row]
+            lines.append("| " + " | ".join(row_cells) + " |")
+        
+        return "\n".join(lines)
+
+
+class DiagramExtractor:
+    """
+    Extract diagrams from PDFs as viewable image files.
+    
+    Two sources are combined:
+    - Embedded raster images, extracted with pypdf (tiny ones are dropped).
+    - Vector drawings, which pypdf cannot see. PyMuPDF groups a page's vector
+      paths into figure regions and each region is rendered to a cropped PNG.
+    
+    Each figure gets a caption built from the text inside its region
+    (e.g. "FIG. 5 Roof Opening Dimensions Are Nominal"), so diagram chunks can
+    be found by what they show.
+    """
+    
+    MIN_RASTER_PIXELS = 50      # drop embedded images smaller than this (px, either side)
+    MIN_REGION_POINTS = 40      # drop vector regions smaller than this (pt, either side)
+    REGION_MARGIN_POINTS = 6    # padding around a vector figure crop
+    RENDER_DPI = 150
+    MAX_CAPTION_CHARS = 300
+    
+    def __init__(self, output_dir: Path = Path("./extracted_diagrams")):
+        """
+        Initialize diagram extractor.
+        
+        Args:
+            output_dir: Directory to save extracted images
+        """
+        self.output_dir = output_dir
+        self.output_dir.mkdir(exist_ok=True, parents=True)
+    
+    def clear_document_diagrams(self, file_path: Path) -> int:
+        """
+        Delete previously extracted diagram files for a document.
+        
+        Called before re-extracting so files from an older version (or from an
+        older extraction method) don't linger.
+        
+        Returns:
+            Number of files removed
+        """
+        pattern = re.compile(rf"^{re.escape(file_path.stem)}_p\d+_(img|fig)\d+\.\w+$")
+        removed = 0
+        for existing in self.output_dir.iterdir():
+            if existing.is_file() and pattern.match(existing.name):
+                existing.unlink()
+                removed += 1
+        return removed
+    
+    def extract_all_diagrams(self, file_path: Path) -> list[DiagramMetadata]:
+        """
+        Extract every diagram (embedded raster images and vector figures).
+        
+        Args:
+            file_path: Path to PDF file
+        
+        Returns:
+            List of DiagramMetadata objects ordered by page then position
+        """
+        removed = self.clear_document_diagrams(file_path)
+        if removed:
+            logger.debug(f"Removed {removed} stale diagram files for {file_path.name}")
+        
+        diagrams: list[DiagramMetadata] = []
+        
+        try:
+            import pymupdf
+        except ImportError:
+            pymupdf = None
+            logger.warning("pymupdf not installed: vector figures will not be extracted")
+        
+        try:
+            reader = PdfReader(file_path)
+            mu_doc = pymupdf.open(file_path) if pymupdf else None
+        except Exception as e:
+            logger.error(f"Error opening {file_path.name} for diagram extraction: {e}")
+            return diagrams
+        
+        try:
+            for page_num in range(len(reader.pages)):
+                page_diagrams = self._extract_raster(reader, file_path, page_num)
+                if mu_doc is not None:
+                    page_diagrams.extend(
+                        self._extract_vector_figures(mu_doc, file_path, page_num)
+                    )
+                for position, diagram in enumerate(page_diagrams):
+                    diagram.position_index = position
+                diagrams.extend(page_diagrams)
+        finally:
+            if mu_doc is not None:
+                mu_doc.close()
+        
+        return diagrams
+    
+    def _extract_raster(
+        self, reader: PdfReader, file_path: Path, page_number: int
+    ) -> list[DiagramMetadata]:
+        """Extract embedded raster images from one page using pypdf."""
+        diagrams: list[DiagramMetadata] = []
+        
+        try:
+            images = reader.pages[page_number].images
+        except Exception as e:
+            logger.debug(f"Could not list images on page {page_number} of {file_path.name}: {e}")
+            return diagrams
+        
+        for image in images:
+            try:
+                # pypdf names images like "Im8.jpg" / "Im0.png" with the real format
+                ext = Path(image.name).suffix.lower() or ".png"
+                
+                width, height = image.image.size
+                if min(width, height) < self.MIN_RASTER_PIXELS:
+                    logger.debug(
+                        f"Skipping {width}x{height} image on page {page_number} of {file_path.name}"
+                    )
+                    continue
+                
+                name = f"{file_path.stem}_p{page_number}_img{len(diagrams)}{ext}"
+                image_path = self.output_dir / name
+                image_path.write_bytes(image.data)
+                
+                diagrams.append(DiagramMetadata(
+                    page=page_number,
+                    position_index=len(diagrams),
+                    image_path=str(image_path),
+                    caption="",
+                    type=ext.lstrip("."),
+                    kind="raster",
+                ))
+            except Exception as e:
+                logger.debug(f"Skipping image on page {page_number} of {file_path.name}: {e}")
+        
+        return diagrams
+    
+    def _extract_vector_figures(
+        self, mu_doc: Any, file_path: Path, page_number: int
+    ) -> list[DiagramMetadata]:
+        """Render each vector-drawing region on one page to a cropped PNG."""
+        import pymupdf
+        
+        diagrams: list[DiagramMetadata] = []
+        
+        try:
+            page = mu_doc[page_number]
+            regions = [
+                r for r in page.cluster_drawings()
+                if r.width >= self.MIN_REGION_POINTS and r.height >= self.MIN_REGION_POINTS
+            ]
+            # Reading order: top to bottom, then left to right
+            regions.sort(key=lambda r: (round(r.y0), r.x0))
+        except Exception as e:
+            logger.debug(f"Could not detect vector figures on page {page_number} of {file_path.name}: {e}")
+            return diagrams
+        
+        margin = self.REGION_MARGIN_POINTS
+        for region in regions:
+            try:
+                clip = pymupdf.Rect(
+                    region.x0 - margin, region.y0 - margin,
+                    region.x1 + margin, region.y1 + margin,
+                ) & page.rect
+                
+                pixmap = page.get_pixmap(clip=clip, dpi=self.RENDER_DPI)
+                name = f"{file_path.stem}_p{page_number}_fig{len(diagrams)}.png"
+                image_path = self.output_dir / name
+                pixmap.save(str(image_path))
+                
+                words = page.get_text(clip=clip).split()
+                caption = " ".join(words)[: self.MAX_CAPTION_CHARS]
+                
+                diagrams.append(DiagramMetadata(
+                    page=page_number,
+                    position_index=len(diagrams),
+                    image_path=str(image_path),
+                    caption=caption,
+                    type="png",
+                    kind="vector_figure",
+                ))
+            except Exception as e:
+                logger.debug(f"Skipping vector figure on page {page_number} of {file_path.name}: {e}")
+        
+        return diagrams
