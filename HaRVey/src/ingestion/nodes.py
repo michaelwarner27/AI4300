@@ -3,6 +3,7 @@ LangGraph node implementations for the vector ingestion pipeline.
 Each node processes documents through one stage of the pipeline.
 """
 
+import hashlib
 from typing import Any
 from datetime import datetime
 from pathlib import Path
@@ -191,7 +192,7 @@ def parse_documents(state: IngestionState) -> dict[str, Any]:
     
     if state.config and state.config.enable_table_extraction:
         try:
-            table_extractor = TableExtractor(min_confidence=state.config.table_min_confidence)
+            table_extractor = TableExtractor()
         except ImportError as e:
             logger.warning(f"TableExtractor unavailable: {e}")
     
@@ -742,6 +743,17 @@ def store_vectors(state: IngestionState) -> dict[str, Any]:
     }
 
 
+def document_id(filename: str) -> str:
+    """
+    Short, stable ID for a document, derived from its filename.
+    
+    Chroma has no document-level ID (chunks are keyed by source filename), so
+    the ID is the first 8 hex characters of the filename's SHA256. The same
+    filename always gives the same ID, including after re-ingestion.
+    """
+    return hashlib.sha256(filename.encode("utf-8")).hexdigest()[:8]
+
+
 def list_documents(state: IngestionState) -> dict[str, Any]:
     """
     List all documents currently stored in the vector database.
@@ -794,6 +806,7 @@ def list_documents(state: IngestionState) -> dict[str, Any]:
                 doc_name = metadata["source_filename"]
                 if doc_name not in unique_docs:
                     unique_docs[doc_name] = {
+                        "id": document_id(doc_name),
                         "name": doc_name,
                         "chunk_count": 0,
                         "ingested_at": metadata.get("ingested_at", "unknown"),
@@ -801,7 +814,7 @@ def list_documents(state: IngestionState) -> dict[str, Any]:
                     }
                 unique_docs[doc_name]["chunk_count"] += 1
         
-        documents_in_store = list(unique_docs.values())
+        documents_in_store = sorted(unique_docs.values(), key=lambda d: d["name"].lower())
         
         logger.info(f"list_documents: Found {len(documents_in_store)} documents in store")
     

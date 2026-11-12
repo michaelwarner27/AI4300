@@ -1,4 +1,4 @@
-# U0-HW-09: Vector Ingestion & Semantic Query Pipeline
+# HaRVey: Vector Ingestion & Semantic Query Pipeline
 
 A complete vector ingestion and semantic search pipeline built with LangGraph for processing PDF documents, generating embeddings, and enabling intelligent querying through a ReAct agent.
 
@@ -31,13 +31,13 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 │       └── logging.py               # Logging configuration
 ├── tests/
 │   ├── test_queries.py              # Query pipeline test suite
-│   ├── verify_ingestion.py          # Ingestion verification
+│   ├── verify_ingestion.py          # Ingestion pipeline verification (no embedding server needed)
 │   └── check_models.py              # Model availability check
 ├── ingestion_main.py                # Ingestion pipeline entry point
 ├── query_main.py                    # Query pipeline entry point
 ├── manage_documents.py              # CLI tool for document management
-├── .env.example                     # Configuration template
-├── example.env.example              # Comprehensive config example
+├── example.env.example              # Configuration template (copy to .env)
+├── requirements.txt                 # Python dependencies
 └── README.md                        # This file
 ```
 
@@ -48,9 +48,10 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 ### Setup
 
 ```bash
-cd /home/michael24/4300-CS/U0-HW-09
+cd /home/michael24/4300-CS/HaRVey
 source .venv/bin/activate
-cp .env.example .env
+pip install -r requirements.txt
+cp example.env.example .env
 # Edit .env with your API keys and endpoints
 ```
 
@@ -75,7 +76,8 @@ After ingestion, use the CLI tool to list, delete, or update documents:
 # List all documents
 python manage_documents.py --list
 
-# Delete a document
+# Delete a document by ID (shown in --list) or by filename
+python manage_documents.py --delete a1b2c3d4
 python manage_documents.py --delete outdated.pdf
 
 # Prepare document for re-ingestion
@@ -96,7 +98,8 @@ Interactive query interface using the ingested vector database.
 
 ```bash
 python tests/test_queries.py          # Execute all required queries
-python tests/verify_ingestion.py      # Verify ingestion pipeline
+python tests/verify_ingestion.py      # Self-contained ingestion checks (fixture PDF, temp Chroma, fake embeddings)
+python tests/verify_ingestion.py --live   # ...plus a sanity check of your real Chroma database
 python tests/check_models.py          # Check model availability
 ```
 
@@ -152,7 +155,7 @@ python tests/check_models.py          # Check model availability
 
 ## Configuration
 
-Create `.env` from `.env.example`:
+Create `.env` from `example.env.example`:
 
 ```env
 # Embedding Service (required)
@@ -166,7 +169,6 @@ EMBEDDING_RETRY_BACKOFF_BASE=2.0
 
 # Table Extraction (optional, defaults shown)
 ENABLE_TABLE_EXTRACTION=true
-TABLE_MIN_CONFIDENCE=0.5
 
 # Change Detection (optional, defaults shown)
 ENABLE_CHANGE_DETECTION=true
@@ -216,28 +218,32 @@ python manage_documents.py --list
 
 Output:
 ```
-================================================================================
-Document Name                            Chunks       Ingested At                   
-================================================================================
-report.pdf                               245          2024-11-12T10:30:45.123456
-whitepaper.pdf                           512          2024-11-12T10:35:12.789012
-================================================================================
+====================================================================================================
+ID         Document Name                                Chunks   Ingested At                   
+====================================================================================================
+a1b2c3d4   report.pdf                                   245      2026-11-12T10:30:45.123456
+e5f6a7b8   whitepaper.pdf                               512      2026-11-12T10:35:12.789012
+====================================================================================================
 
 Total: 2 document(s) in vector database
+Delete with: python manage_documents.py --delete <ID or filename>
 ```
 
 ### Delete Document
 
-Remove a document and all its vectors from Chroma:
+Remove a document and all its vectors from Chroma. Use the ID from `--list` (handy for long filenames) or the filename itself:
 
 ```bash
+python manage_documents.py --delete a1b2c3d4
 python manage_documents.py --delete report.pdf
 ```
 
 Output:
 ```
-Deleting document: report.pdf
-Are you sure? This action cannot be undone. (y/n): y
+Document: report.pdf
+ID:       a1b2c3d4
+Chunks:   245
+Delete this document and all its vectors? This cannot be undone. (y/n): y
 
 Success! Deleted 245 vectors for 'report.pdf'
 ```
@@ -306,7 +312,7 @@ Both pipelines use LangGraph's state management to flow data through nodes with 
 - `requests` - HTTP API calls
 - `python-dotenv` - Environment configuration
 
-Install with: `pip install -r src/requirements.txt` (if file exists)
+Install with: `pip install -r requirements.txt`
 
 ---
 

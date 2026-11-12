@@ -33,7 +33,6 @@ class IngestionConfig:
     
     # Table extraction configuration
     enable_table_extraction: bool = True
-    table_min_confidence: float = 0.5
     
     # Change detection configuration
     enable_change_detection: bool = True
@@ -93,7 +92,6 @@ def load_config(env_file: str | None = None) -> IngestionConfig:
         "EMBEDDING_MAX_RETRIES": ("EMBEDDING_MAX_RETRIES", "3"),
         "EMBEDDING_RETRY_BACKOFF_BASE": ("EMBEDDING_RETRY_BACKOFF_BASE", "2.0"),
         "ENABLE_TABLE_EXTRACTION": ("ENABLE_TABLE_EXTRACTION", "true"),
-        "TABLE_MIN_CONFIDENCE": ("TABLE_MIN_CONFIDENCE", "0.5"),
         "ENABLE_CHANGE_DETECTION": ("ENABLE_CHANGE_DETECTION", "true"),
         "CHANGE_DETECTION_LOG_LEVEL": ("CHANGE_DETECTION_LOG_LEVEL", "critical"),
         "SHOW_PROGRESS_BAR": ("SHOW_PROGRESS_BAR", "true"),
@@ -128,7 +126,6 @@ def load_config(env_file: str | None = None) -> IngestionConfig:
     config_values["CHUNK_OVERLAP"] = int(config_values["CHUNK_OVERLAP"])
     config_values["EMBEDDING_MAX_RETRIES"] = int(config_values["EMBEDDING_MAX_RETRIES"])
     config_values["EMBEDDING_RETRY_BACKOFF_BASE"] = float(config_values["EMBEDDING_RETRY_BACKOFF_BASE"])
-    config_values["TABLE_MIN_CONFIDENCE"] = float(config_values["TABLE_MIN_CONFIDENCE"])
     
     # Convert boolean values
     config_values["ENABLE_TABLE_EXTRACTION"] = config_values["ENABLE_TABLE_EXTRACTION"].lower() == "true"
@@ -148,7 +145,6 @@ def load_config(env_file: str | None = None) -> IngestionConfig:
         chunk_size=config_values["CHUNK_SIZE"],
         chunk_overlap=config_values["CHUNK_OVERLAP"],
         enable_table_extraction=config_values["ENABLE_TABLE_EXTRACTION"],
-        table_min_confidence=config_values["TABLE_MIN_CONFIDENCE"],
         enable_change_detection=config_values["ENABLE_CHANGE_DETECTION"],
         change_detection_log_level=config_values["CHANGE_DETECTION_LOG_LEVEL"],
         show_progress_bar=config_values["SHOW_PROGRESS_BAR"],

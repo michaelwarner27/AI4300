@@ -95,7 +95,6 @@ PDF Documents
 
 **Configuration**:
 - `ENABLE_TABLE_EXTRACTION=true` - Extract tables as structured data
-- `TABLE_MIN_CONFIDENCE=0.5` - Confidence threshold for table detection
 
 **Key Functions**:
 - Uses `pypdf` library for text extraction
@@ -306,7 +305,6 @@ EMBEDDING_RETRY_BACKOFF_BASE=2           # Exponential backoff (2^attempt)
 
 # Table Extraction
 ENABLE_TABLE_EXTRACTION=true              # Extract tables as structured data
-TABLE_MIN_CONFIDENCE=0.5                  # pdfplumber detection confidence
 
 # Change Detection
 ENABLE_CHANGE_DETECTION=true              # Skip unchanged documents
@@ -436,7 +434,8 @@ def validate_chunks(state: IngestionState) -> dict[str, Any]:
 | `src/ingestion/tools.py` | Tool classes (DocumentHasher, TableExtractor, DiagramExtractor, HeadingExtractor, EmbeddingService with retry, ChromaVectorStore) |
 | `src/ingestion/graph.py` | LangGraph pipeline definition with new nodes and edges |
 | `src/utils/logging.py` | Logging configuration |
-| `main.py` | Entry point and pipeline execution |
+| `ingestion_main.py` | Entry point and pipeline execution |
+| `manage_documents.py` | CLI for listing, deleting and updating ingested documents |
 
 ---
 
@@ -470,18 +469,19 @@ python manage_documents.py --list
 
 **Output Example**:
 ```
-================================================================================
-Document Name                            Chunks       Ingested At                   
-================================================================================
-report.pdf                               245          2024-11-12T10:30:45.123456
-whitepaper.pdf                           512          2024-11-12T10:35:12.789012
-research.pdf                             189          2024-11-12T10:40:23.456789
-================================================================================
+====================================================================================================
+ID         Document Name                                Chunks   Ingested At                   
+====================================================================================================
+a1b2c3d4   report.pdf                                   245      2026-11-12T10:30:45.123456
+e5f6a7b8   whitepaper.pdf                               512      2026-11-12T10:35:12.789012
+====================================================================================================
 
-Total: 3 document(s) in vector database
+Total: 2 document(s) in vector database
+Delete with: python manage_documents.py --delete <ID or filename>
 ```
 
 **Information Returned**:
+- Document ID (8 characters, derived from the filename, stable across re-ingestion)
 - Document filename
 - Number of chunks/vectors stored
 - Ingestion timestamp
@@ -499,25 +499,27 @@ Total: 3 document(s) in vector database
 
 **Purpose**: Remove a document and all associated vectors from Chroma.
 
-**Command**:
+**Command** (by document ID from `--list`, or by filename):
 ```bash
+python manage_documents.py --delete a1b2c3d4
 python manage_documents.py --delete report.pdf
 ```
 
 **Interaction Flow**:
 ```
-Deleting document: report.pdf
-Are you sure? This action cannot be undone. (y/n): y
+Document: report.pdf
+ID:       a1b2c3d4
+Chunks:   245
+Delete this document and all its vectors? This cannot be undone. (y/n): y
 
 Success! Deleted 245 vectors for 'report.pdf'
 ```
 
 **Behavior**:
-- Checks if document exists in database
-- Asks for confirmation before deletion
-- Deletes all chunks matching the document name from Chroma
-- Logs deletion count to console
-- Gracefully handles case where document not found
+- Resolves the argument as a filename first, then as a document ID (case-insensitive)
+- Exits with an error if nothing matches
+- Shows the document name, ID and chunk count, then asks for confirmation
+- Deletes all chunks for that document from Chroma
 
 **Use Cases**:
 - Remove outdated or incorrect documents
@@ -605,7 +607,7 @@ This is the recommended approach for most document updates.
 | Operation | Command | Use Case |
 |-----------|---------|----------|
 | **List** | `python manage_documents.py --list` | View all documents, verify ingestion status |
-| **Delete** | `python manage_documents.py --delete <name>` | Remove outdated/incorrect documents |
+| **Delete** | `python manage_documents.py --delete <ID or filename>` | Remove outdated/incorrect documents |
 | **Update** | `python manage_documents.py --update <path>` | Delete old vectors, prepare for re-ingestion |
 
 ---
@@ -614,7 +616,7 @@ This is the recommended approach for most document updates.
 
 **Error: ".env file not found"**
 - Ensure `.env` exists in project root
-- Check you're running from `/home/michael24/4300-CS/U0-HW-09`
+- Check you're running from `/home/michael24/4300-CS/HaRVey`
 
 **Error: "Missing required environment variables"**
 - Verify all variables in `src/config.py` are set in `.env`

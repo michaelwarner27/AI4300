@@ -16,7 +16,7 @@ This guide will help you set up and use the vector ingestion and query pipelines
 ### 1. Create Virtual Environment
 
 ```bash
-cd /home/michael24/4300-CS/U0-HW-09
+cd /home/michael24/4300-CS/HaRVey
 python3 -m venv .venv
 source .venv/bin/activate
 ```
@@ -24,7 +24,7 @@ source .venv/bin/activate
 ### 2. Install Dependencies
 
 ```bash
-pip install -r src/requirements.txt
+pip install -r requirements.txt
 ```
 
 Dependencies include:
@@ -83,7 +83,7 @@ cp /path/to/your/files/*.pdf ./documents/
 Process PDFs and load them into the vector database:
 
 ```bash
-python main.py
+python ingestion_main.py
 ```
 
 **Output**:
@@ -167,7 +167,7 @@ python3 query_main.py -i
 cp /path/to/new/files/*.pdf ./documents/
 
 # 2. Re-run ingestion pipeline
-python main.py
+python ingestion_main.py
 
 # 3. Verify new documents are indexed
 python3 query_main.py "Your test query" -v
@@ -278,7 +278,7 @@ Sources:
 
 **Solution**: Create `.env` in project root with required variables
 ```bash
-cd /home/michael24/4300-CS/U0-HW-09
+cd /home/michael24/4300-CS/HaRVey
 # Create/edit .env file with configuration
 ```
 
@@ -326,7 +326,7 @@ ls -la ./chroma_db/
 
 # Or reset database
 rm -rf ./chroma_db/
-python main.py  # Recreate database
+python ingestion_main.py  # Recreate database
 ```
 
 ---
@@ -403,7 +403,7 @@ See configuration in `src/query/nodes.py` for tunable parameters.
 ## Getting Help
 
 **Check logs** for detailed error information:
-- Ingestion logs print to console during `python main.py`
+- Ingestion logs print to console during `python ingestion_main.py`
 - Query logs print during `python3 query_main.py "query"`
 - Use verbose flag `-v` for additional debugging: `query_main.py "query" -v`
 

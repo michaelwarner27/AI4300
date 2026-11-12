@@ -1046,11 +1046,8 @@ class HeadingExtractor:
                     headings.append(heading)
             
             # Underlined headings (=== or ---)
-            elif i + 1 < len(lines):
-                next_line = lines[i + 1].strip()
-                if re.match(r'^[=\-]{3,}$', next_line):
-                    if line_stripped:
-                        headings.append(line_stripped)
+            elif i + 1 < len(lines) and re.match(r'^[=\-]{3,}$', lines[i + 1].strip()):
+                headings.append(line_stripped)
             
             # Numbered sections (1. Introduction, 1.1 Overview, etc.)
             elif re.match(r'^\d+(\.\d+)*\s+[A-Z]', line_stripped):
@@ -1079,16 +1076,10 @@ class HeadingExtractor:
 class TableExtractor:
     """Extract tables from PDFs using pdfplumber."""
     
-    def __init__(self, min_confidence: float = 0.5):
-        """
-        Initialize table extractor.
-        
-        Args:
-            min_confidence: Minimum confidence threshold for table detection
-        """
+    def __init__(self) -> None:
+        """Initialize table extractor. Requires pdfplumber."""
         if pdfplumber is None:
             raise ImportError("pdfplumber is not installed. Install it with: pip install pdfplumber")
-        self.min_confidence = min_confidence
     
     def extract_tables_from_pdf(self, file_path: Path) -> list[TableData]:
         """

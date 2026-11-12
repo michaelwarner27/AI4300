@@ -6,8 +6,9 @@ Provides commands to list, delete, and update documents without modifying the pi
 
 Usage:
     python manage_documents.py --list
-    python manage_documents.py --delete report.pdf
-    python manage_documents.py --update report.pdf
+    python manage_documents.py --delete a1b2c3d4        # by document ID (see --list)
+    python manage_documents.py --delete report.pdf      # or by filename
+    python manage_documents.py --update ./documents/report.pdf
     python manage_documents.py --help
 """
 
@@ -42,23 +43,23 @@ def cmd_list() -> int:
             print("No documents found in vector database.")
             return 0
         
-        print("\n" + "=" * 80)
-        print(f"{'Document Name':<40} {'Chunks':<10} {'Ingested At':<30}")
-        print("=" * 80)
+        print("\n" + "=" * 100)
+        print(f"{'ID':<10} {'Document Name':<44} {'Chunks':<8} {'Ingested At':<30}")
+        print("=" * 100)
         
         for doc in documents:
             name = doc.get("name", "unknown")
-            chunk_count = doc.get("chunk_count", 0)
-            ingested_at = doc.get("ingested_at", "unknown")
+            if len(name) > 43:
+                name = name[:40] + "..."
             
-            # Truncate long names
-            if len(name) > 39:
-                name = name[:36] + "..."
-            
-            print(f"{name:<40} {chunk_count:<10} {ingested_at:<30}")
+            print(
+                f"{doc.get('id', ''):<10} {name:<44} "
+                f"{doc.get('chunk_count', 0):<8} {doc.get('ingested_at', 'unknown'):<30}"
+            )
         
-        print("=" * 80)
+        print("=" * 100)
         print(f"\nTotal: {len(documents)} document(s) in vector database")
+        print("Delete with: python manage_documents.py --delete <ID or filename>")
         
         return 0
     
@@ -73,12 +74,28 @@ def cmd_list() -> int:
         return 1
 
 
-def cmd_delete(document_name: str) -> int:
+def resolve_document(identifier: str, documents: list[dict]) -> dict | None:
+    """
+    Find a stored document by filename or by ID.
+    
+    An exact filename match wins; otherwise the identifier is compared
+    (case-insensitively) against document IDs.
+    """
+    for doc in documents:
+        if doc["name"] == identifier:
+            return doc
+    for doc in documents:
+        if doc.get("id", "").lower() == identifier.lower():
+            return doc
+    return None
+
+
+def cmd_delete(identifier: str) -> int:
     """
     Delete a document and all its associated vectors from the database.
     
     Args:
-        document_name: Name of the document to delete (e.g., "report.pdf")
+        identifier: Document ID (from --list) or filename (e.g., "report.pdf")
     
     Returns:
         Exit code (0 for success, 1 for error)
@@ -87,35 +104,32 @@ def cmd_delete(document_name: str) -> int:
         config = load_config()
         state = IngestionState(config=config)
         
-        # First, verify the document exists
-        result = list_documents(state)
-        documents = result.get("documents_in_store", [])
-        doc_exists = any(d["name"] == document_name for d in documents)
+        documents = list_documents(state).get("documents_in_store", [])
+        doc = resolve_document(identifier, documents)
         
-        if not doc_exists:
-            print(f"Warning: Document '{document_name}' not found in database.")
-            response = input("Continue with delete anyway? (y/n): ").strip().lower()
-            if response != 'y':
-                print("Delete cancelled.")
-                return 0
+        if doc is None:
+            print(f"Error: no document with ID or filename '{identifier}' in the database.")
+            print("Run 'python manage_documents.py --list' to see stored documents.")
+            return 1
         
-        # Confirm deletion
-        print(f"\nDeleting document: {document_name}")
-        response = input("Are you sure? This action cannot be undone. (y/n): ").strip().lower()
+        print(f"\nDocument: {doc['name']}")
+        print(f"ID:       {doc['id']}")
+        print(f"Chunks:   {doc['chunk_count']}")
+        response = input("Delete this document and all its vectors? This cannot be undone. (y/n): ").strip().lower()
         
         if response != 'y':
             print("Delete cancelled.")
             return 0
         
-        # Perform deletion
-        result = delete_document(state, document_name)
-        deleted_count = result.get("deleted_vectors", 0)
+        result = delete_document(state, doc["name"])
         errors = result.get("errors", [])
         
         if errors:
             logger.warning(f"Errors during deletion: {errors}")
+            print(f"Error deleting document: {errors[-1].get('error', errors[-1])}")
+            return 1
         
-        print(f"\nSuccess! Deleted {deleted_count} vectors for '{document_name}'")
+        print(f"\nSuccess! Deleted {result.get('deleted_vectors', 0)} vectors for '{doc['name']}'")
         return 0
     
     except FileNotFoundError as e:
@@ -222,12 +236,13 @@ def main() -> int:
         epilog="""
 Examples:
   python manage_documents.py --list
+  python manage_documents.py --delete a1b2c3d4
   python manage_documents.py --delete report.pdf
   python manage_documents.py --update ./documents/report.pdf
 
 Operations:
   --list      List all ingested documents
-  --delete    Remove a document and its vectors
+  --delete    Remove a document and its vectors (by ID or filename)
   --update    Delete old vectors and prepare for re-ingestion
         """
     )
@@ -241,8 +256,8 @@ Operations:
     )
     group.add_argument(
         "--delete",
-        metavar="DOCUMENT_NAME",
-        help="Delete a document by name (e.g., 'report.pdf')"
+        metavar="ID_OR_NAME",
+        help="Delete a document by ID (shown by --list) or by filename (e.g., 'report.pdf')"
     )
     group.add_argument(
         "--update",

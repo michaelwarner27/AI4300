@@ -1,2 +1,1 @@
-Add Document IDs in manage_documents.py --list for easy deletion
 Query side: pass chunk_type, diagram_path and diagram_kind through src/query/nodes.py (currently only 3 metadata keys are read) so a diagram-lookup tool can return the image

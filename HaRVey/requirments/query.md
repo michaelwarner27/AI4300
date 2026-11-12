@@ -474,7 +474,7 @@ python3 update_model.py           # Change the model
 - Increase timeout values if services are slow
 
 **Error: "No documents found"**
-- Run ingestion pipeline first: `python main.py`
+- Run ingestion pipeline first: `python ingestion_main.py`
 - Verify documents are in `./documents/` directory
 - Check Chroma database exists at `CHROMA_PERSIST_DIRECTORY`
 

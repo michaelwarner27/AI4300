@@ -26,10 +26,14 @@ A diagram with no caption has nothing to search on, so no `diagram_reference` ch
 
 ## Tables
 
-- **`TABLE_MIN_CONFIDENCE` does nothing.** pdfplumber has no confidence score. The setting is read from `.env` but never used. Table quality is decided by the junk filter in `TextChunker.is_meaningful_table` instead.
 - **Table text is duplicated.** A kept table is embedded as a `table` chunk and its text also appears inside the regular text chunks. Intentional, but it can return two hits for one table.
 - **Table filter thresholds are tuned to one manual.** It requires at least 2 rows, 2 columns, 6 cells with text and 60% of cells filled. 28 tables were found and 5 kept. Other PDFs may need different thresholds.
 - **Whole tables are never split.** The largest table here is about 2,150 characters, far above `CHUNK_SIZE` (512). Very large tables could exceed the embedding model's input limit.
+
+## Section headings
+
+- **Heading detection is noisy.** `HeadingExtractor` treats any short ALL CAPS line as a heading. On the Dometic manual it finds the real sections (INTRODUCTION, SPECIFICATIONS, INSTALLATION INSTRUCTIONS, MAINTENANCE, WIRING DIAGRAMS) but also addresses, model numbers and spec values ("120 Vac", "8 Wood Screws", "HGFE"). Headings are stored in document metadata only, not on chunks.
+- **`1. Introduction` style headings are not detected,** only `1.1 Introduction`. This is deliberate: numbered instruction steps ("1. Remove the cover") would otherwise all count as headings.
 
 ## Query side
 
@@ -39,13 +43,10 @@ A diagram with no caption has nothing to search on, so no `diagram_reference` ch
 
 - **Existing Chroma data is out of date.** Chunks ingested before the hash/metadata change have no `file_hash`, `ingested_at` or `chunk_type`. Delete and re-ingest those documents.
 - **Stale diagram files.** `extracted_diagrams/` still contains files from the old extractor (for example `..._Manual_p18_img0.png`, which are unreadable). Cleanup only removes files matching the current document's name, so these stay until deleted by hand.
-- **`.document_hashes.json` is unused.** Change detection now reads the hash from Chroma. The file can be deleted.
 - **Exploration clutter in the repo root.** `INDEX.md`, `EXPLORATION_SUMMARY.md`, `ingestion_architecture_summary.txt` and `ingestion_exploration_report.md` were generated during the initial exploration and are not part of the project.
 
 ## Code and docs
 
 - **Page index mismatch between models.** `TableData.page` and `DiagramMetadata.page` are 0-indexed while `ChunkMetadata.page_number` is 1-indexed. `TextChunker` converts them, but anything else reading the parsed models must do the same.
 - **`update_document` does not update.** It deletes the old vectors and tells you to re-run ingestion. The name suggests it re-ingests.
-- **README install and config instructions are wrong.** It says `pip install -r src/requirements.txt` (the file is `requirements.txt` in the project root) and `cp .env.example .env` (the template is `example.env.example`).
-- **`requirments/ingestion.md` still references `/home/michael24/4300-CS/U0-HW-09`** in its troubleshooting section.
 - **The `tests/` scripts were not updated** for the new chunk metadata or chunk types.
