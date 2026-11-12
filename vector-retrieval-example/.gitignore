@@ -1,0 +1,10 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+chroma_db/
+manifest.json
+dist/
+documents/*.pdf
+documents/**/*.pdf
+*.Identifier 

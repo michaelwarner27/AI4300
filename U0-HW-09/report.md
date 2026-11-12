@@ -3,9 +3,9 @@
 ## Repository Information
 **Name:** Michael Warner
 
-**Repository URL:** `git@github.com:michaelwarner27/AI4300.git`
+**Repository URL:** `https://github.com/michaelwarner27/AI4300/`
 
-**Commit Hash:**
+**Commit Hash:** `https://github.com/michaelwarner27/AI4300/commit/7a51275a41927005c324eeb6994dbb3d898379d3`
 
 ## Agent Description
 ### Task
