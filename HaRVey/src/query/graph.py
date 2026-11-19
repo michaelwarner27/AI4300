@@ -11,6 +11,8 @@ from src.query.nodes import (
     embed_query,
     vector_store_search,
     generate_response,
+    search_more,
+    route_after_generate,
     process_tool_call,
 )
 from src.utils.logging import get_logger
@@ -59,7 +61,9 @@ def create_query_graph(config: IngestionConfig) -> StateGraph:
     vector_store_search (query Chroma with K=10 and similarity filtering)
       ↓
     [Conditional: Results found?]
-      ├─ YES → generate_response (LLM synthesis with sources)
+      ├─ YES → generate_response (LLM turn with tools) ◄─┐
+      │          ├─ search_documents → search_more ──────┘  (max 3 rounds)
+      │          └─ final answer → process_tool_call
       └─ NO → output (skip LLM, return status)
       ↓
     END
@@ -72,7 +76,8 @@ def create_query_graph(config: IngestionConfig) -> StateGraph:
     Timeouts:
     - embed_query: 30 seconds (via EmbeddingService)
     - vector_store_search: 30 seconds (via Chroma)
-    - generate_response: 120 seconds (via LLMService)
+    - generate_response: 120 seconds per LLM call (via LLMService); the agent
+      loop as a whole stops searching after AGENT_DEADLINE_SECONDS
     
     Args:
         config: IngestionConfig object with pipeline configuration
@@ -85,11 +90,12 @@ def create_query_graph(config: IngestionConfig) -> StateGraph:
     # Create state graph with QueryState as the state schema
     graph = StateGraph(QueryState)
     
-    # Add all 5 nodes to the graph
+    # Add all 6 nodes to the graph
     graph.add_node("user_query", user_query)
     graph.add_node("embed_query", embed_query)
     graph.add_node("vector_store_search", vector_store_search)
     graph.add_node("generate_response", generate_response)
+    graph.add_node("search_more", search_more)
     graph.add_node("process_tool_call", process_tool_call)
     
     # Set entry point (first node)
@@ -109,13 +115,22 @@ def create_query_graph(config: IngestionConfig) -> StateGraph:
         }
     )
     
-    # Connect generate_response to tool call processor
-    graph.add_edge("generate_response", "process_tool_call")
+    # Agent loop: a search_documents call runs search_more and returns to the LLM;
+    # any other outcome (final answer, or no tool call) goes to the formatter.
+    graph.add_conditional_edges(
+        "generate_response",
+        route_after_generate,
+        {
+            "search": "search_more",
+            "finish": "process_tool_call",
+        }
+    )
+    graph.add_edge("search_more", "generate_response")
     
     # Connect tool processor to end
     graph.add_edge("process_tool_call", "__end__")
     
-    logger.info("Graph structure created with 4 nodes and conditional routing")
+    logger.info("Graph structure created with 6 nodes and conditional routing")
     
     # Compile and return the graph
     compiled_graph = graph.compile()
@@ -164,7 +179,7 @@ def execute_query_pipeline(
     
     # Execute the pipeline
     try:
-        result_dict = graph.invoke(initial_state)
+        result_dict = graph.invoke(initial_state, config={"recursion_limit": 40})
         
         # Reconstruct QueryState from result dict
         # graph.invoke() returns a dict with updated fields
@@ -177,6 +192,9 @@ def execute_query_pipeline(
             errors=result_dict.get("errors", []),
             config=result_dict.get("config", config),
             status=result_dict.get("status", "unknown"),
+            messages=result_dict.get("messages", []),
+            search_round=result_dict.get("search_round", 0),
+            started_at=result_dict.get("started_at"),
         )
         
         logger.info(f"Query pipeline completed with status: {final_state.status}")

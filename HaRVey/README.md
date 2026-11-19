@@ -17,6 +17,7 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 ├── chroma_db/                       # Vector database storage
 ├── extracted_diagrams/              # Extracted images from PDFs
 ├── src/
+│   ├── requirements.txt             # Python dependencies
 │   ├── config.py                    # Configuration loader (.env)
 │   ├── data_models.py               # Type-safe dataclasses
 │   ├── ingestion/
@@ -31,13 +32,13 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 │       └── logging.py               # Logging configuration
 ├── tests/
 │   ├── test_queries.py              # Query pipeline test suite
-│   ├── verify_ingestion.py          # Ingestion pipeline verification (no embedding server needed)
-│   └── check_models.py              # Model availability check
+│   ├── verify_query_loop.py         # Query agent-loop verification (no servers needed)
+│   └── verify_ingestion.py          # Ingestion pipeline verification (no embedding server needed)
 ├── ingestion_main.py                # Ingestion pipeline entry point
 ├── query_main.py                    # Query pipeline entry point
 ├── manage_documents.py              # CLI tool for document management
 ├── example.env.example              # Configuration template (copy to .env)
-├── requirements.txt                 # Python dependencies
+├── setup.py                         # Package install (harvey-ingest, harvey-query entry points)
 └── README.md                        # This file
 ```
 
@@ -50,7 +51,7 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 ```bash
 cd /home/michael24/4300-CS/HaRVey
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r src/requirements.txt
 cp example.env.example .env
 # Edit .env with your API keys and endpoints
 ```
@@ -100,7 +101,7 @@ Interactive query interface using the ingested vector database.
 python tests/test_queries.py          # Execute all required queries
 python tests/verify_ingestion.py      # Self-contained ingestion checks (fixture PDF, temp Chroma, fake embeddings)
 python tests/verify_ingestion.py --live   # ...plus a sanity check of your real Chroma database
-python tests/check_models.py          # Check model availability
+python tests/verify_query_loop.py     # Offline checks of the query agent loop (search_documents, steps)
 ```
 
 ---
@@ -132,13 +133,14 @@ python tests/check_models.py          # Check model availability
 
 ---
 
-## Query Pipeline (5 Nodes)
+## Query Pipeline (6 Nodes)
 
 1. **user_query** - Validate and prepare user input
 2. **embed_query** - Generate embedding for query
 3. **vector_store_search** - Retrieve top-K similar documents (K=10)
 4. **generate_response** - LLM with tool calling to synthesize answer
-5. **process_tool_call** - Format and return response with sources
+5. **search_more** - Agent loop: runs the LLM's `search_documents` calls (optional filename/page filters, max 3 rounds), adds new chunks and returns to `generate_response`
+6. **process_tool_call** - Format and return response with sources
 
 **Features:**
 - Semantic similarity search
@@ -148,7 +150,9 @@ python tests/check_models.py          # Check model availability
 - Fallback handling for edge cases
 
 **Available Tools:**
-- `respond_to_user` - Return answer with sources
+- `search_documents` - Fetch more context from the vector store (non-terminal; the agent continues afterwards)
+- `read_page` - Read every passage on a page range in reading order (non-terminal; shares the 3-round budget with `search_documents`)
+- `respond_to_user` - Return answer with sources and optional numbered `steps`; optional `diagram_refs` adds a `Diagrams:` block with absolute paths to matching extracted diagram images
 - `insufficient_evidence` - Indicate lack of supporting evidence
 
 ---
@@ -177,10 +181,14 @@ CHANGE_DETECTION_LOG_LEVEL=critical
 # Progress Tracking (optional, defaults shown)
 SHOW_PROGRESS_BAR=true
 
+# Agent search cutoff for search_documents (optional; 0.0 = none)
+SEARCH_MIN_SIMILARITY=0.0
+
 # LLM Service (optional, for query pipeline)
 LLM_BASE_URL=http://golem:4000/v1
 LLM_MODEL=Qwen3.8-27B
 LLM_API_KEY=your_api_key
+LLM_REASONING_EFFORT=low   # low (default), medium or high
 
 # Chunking (optional, defaults shown)
 CHUNK_SIZE=512
@@ -312,7 +320,7 @@ Both pipelines use LangGraph's state management to flow data through nodes with 
 - `requests` - HTTP API calls
 - `python-dotenv` - Environment configuration
 
-Install with: `pip install -r requirements.txt`
+Install with: `pip install -r src/requirements.txt`
 
 ---
 

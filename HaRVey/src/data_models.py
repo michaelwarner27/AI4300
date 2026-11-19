@@ -150,14 +150,16 @@ class QueryResult:
     content: str
     metadata: ChunkMetadata
     similarity_score: float
+    is_neighbor: bool = False  # Fetched as context next to a hit, not matched itself
 
 
 @dataclass
 class ToolCall:
     """Tool call made by LLM."""
     
-    tool_name: str  # "respond_to_user" or "insufficient_evidence"
+    tool_name: str  # "respond_to_user", "insufficient_evidence" or "search_documents"
     parameters: dict  # Tool parameters
+    tool_call_id: str | None = None  # Provider id, echoed back in the tool result message
 
 
 @dataclass
@@ -182,3 +184,6 @@ class QueryState:
     errors: list[str] = field(default_factory=list)  # Accumulated error messages
     config: IngestionConfig | None = None  # Configuration
     status: str = "initialized"  # Current pipeline status
+    messages: list[dict] = field(default_factory=list)  # LLM conversation (agent loop)
+    search_round: int = 0  # Number of search_documents calls executed
+    started_at: float | None = None  # Wall-clock start of the agent loop (time.time())

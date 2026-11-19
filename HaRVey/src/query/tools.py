@@ -4,6 +4,7 @@ Re-exports and wraps tools from ingestion pipeline for query operations.
 """
 
 import json
+import os
 import requests
 from src.ingestion.tools import EmbeddingService, ChromaVectorStore
 from src.utils.logging import get_logger
@@ -39,7 +40,8 @@ class LLMService:
         self.model = model
         self.api_key = api_key
         self.max_tokens = max_tokens
-        self.reasoning = "low"
+        # Set LLM_REASONING_EFFORT in .env (e.g. low / medium / high); .env is loaded by load_config()
+        self.reasoning = os.getenv("LLM_REASONING_EFFORT", "").strip().lower() or "low"
         logger.debug(f"LLMService initialized: {base_url}, model={model}, max_tokens={max_tokens}")
     
 
@@ -68,33 +70,86 @@ class LLMService:
             ValueError: Invalid response
         """
         logger.debug(f"LLMService.generate_with_tools() called")
-        response_data = self._call_llm_api(system_prompt, user_message, temperature, tools=tools)
-        
+        result = self.chat_with_tools(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            tools=tools,
+            temperature=temperature,
+        )
+        return {"tool_name": result["tool_name"], "parameters": result["parameters"]}
+
+    def chat_with_tools(
+        self,
+        messages: list[dict],
+        tools: list[dict],
+        temperature: float = 0.7,
+    ) -> dict:
+        """
+        Multi-turn tool calling over an explicit message list.
+
+        Args:
+            messages: Full conversation (system/user/assistant/tool messages)
+            tools: List of tool definitions
+            temperature: LLM temperature
+
+        Returns:
+            Dict with tool_name, parameters, tool_call_id and assistant_message.
+            assistant_message is the assistant turn (restricted to the first tool
+            call) to append to the conversation before the matching tool result.
+
+        Raises:
+            ConnectionError: Connection failed
+            ValueError: Invalid response
+        """
+        response_data = self._call_llm_api(temperature=temperature, tools=tools, messages=messages)
+
         message = response_data["choices"][0]["message"]
-        
+
         # Check for tool calls in response
         if "tool_calls" not in message or not message["tool_calls"]:
             # Log the full message content when tool calls are missing
             logger.warning(f"No tool calls in LLM response. Message content: {json.dumps(message, indent=2)}")
             raise ValueError("No tool calls in LLM response")
-        
+
         tool_call = message["tool_calls"][0]
         try:
-            return {
-                "tool_name": tool_call["function"]["name"],
-                "parameters": json.loads(tool_call["function"]["arguments"])
-            }
+            parameters = json.loads(tool_call["function"]["arguments"])
+            tool_name = tool_call["function"]["name"]
         except (KeyError, json.JSONDecodeError) as e:
             # Log the tool call that failed to parse
             logger.error(f"Failed to parse tool call: {json.dumps(tool_call, indent=2)}. Error: {str(e)}")
             raise ValueError(f"Failed to parse tool call: {str(e)}") from e
-    
+
+        tool_call_id = tool_call.get("id") or "call_0"
+        # Keep only the first tool call so every call in the history gets a tool result
+        assistant_message = {
+            "role": "assistant",
+            "content": message.get("content") or "",
+            "tool_calls": [{
+                "id": tool_call_id,
+                "type": "function",
+                "function": {
+                    "name": tool_name,
+                    "arguments": tool_call["function"]["arguments"],
+                },
+            }],
+        }
+        return {
+            "tool_name": tool_name,
+            "parameters": parameters,
+            "tool_call_id": tool_call_id,
+            "assistant_message": assistant_message,
+        }
+
     def _call_llm_api(
         self,
-        system_prompt: str,
-        user_message: str,
+        system_prompt: str | None = None,
+        user_message: str | None = None,
         temperature: float = 0.7,
         tools: list[dict] | None = None,
+        messages: list[dict] | None = None,
     ) -> dict:
         """
         Internal method to call LLM API with optional tools.
@@ -111,12 +166,14 @@ class LLMService:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        payload = {
-            "model": self.model,
-            "messages": [
+        if messages is None:
+            messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
-            ],
+            ]
+        payload = {
+            "model": self.model,
+            "messages": messages,
             "max_tokens": self.max_tokens,
             "temperature": temperature,
             "reasoning_effort": self.reasoning,

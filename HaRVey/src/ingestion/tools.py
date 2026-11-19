@@ -838,9 +838,13 @@ class ChromaVectorStore:
         query_embedding: list[float],
         k: int = 10,
         min_similarity_score: float | None = None,
+        where: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
         Query the vector store for semantically similar documents.
+
+        An optional Chroma ``where`` metadata filter (e.g. restrict to one
+        source_filename or a page_number range) narrows the candidates.
         
         Performs a similarity search on the stored embeddings using the provided
         query embedding vector. Returns the top K most similar documents along
@@ -887,11 +891,14 @@ class ChromaVectorStore:
             logger.debug(f"Querying vector store for top {k} results (min_similarity={min_similarity_score})")
             
             # Query the collection
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=k,
-            )
-            
+            query_kwargs: dict[str, Any] = {
+                "query_embeddings": [query_embedding],
+                "n_results": k,
+            }
+            if where:
+                query_kwargs["where"] = where
+            results = self.collection.query(**query_kwargs)
+
             # Transform Chroma results into our format
             # Chroma returns results in format:
             # {"ids": [[...]], "documents": [[...]], "metadatas": [[...]], "distances": [[...]]}
@@ -942,6 +949,45 @@ class ChromaVectorStore:
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
+
+    def get_chunks(self, where: dict[str, Any]) -> list[dict[str, Any]]:
+        """
+        Fetch stored chunks by metadata filter alone (no similarity search).
+
+        Used to read whole pages and to fetch neighbouring chunks. Results use
+        the same shape as query_similarity (similarity_score is 0.0 because no
+        query is involved) and are returned in reading order: by page, then
+        chunk_sequence.
+
+        Args:
+            where: Chroma metadata filter (e.g. filename and page range)
+
+        Raises:
+            RuntimeError: If the collection is not initialized or the query fails
+            ValueError: If where is empty (refuses to dump the whole collection)
+        """
+        if not self.collection:
+            raise RuntimeError("Collection not initialized. Call initialize_collection() first.")
+        if not where:
+            raise ValueError("A metadata filter is required")
+        try:
+            data = self.collection.get(where=where, include=["documents", "metadatas"])
+        except Exception as e:
+            error_msg = f"Failed to fetch chunks from vector store: {str(e)}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
+
+        items = [
+            {"id": chunk_id, "content": document, "metadata": metadata, "similarity_score": 0.0}
+            for chunk_id, document, metadata in zip(
+                data.get("ids") or [], data.get("documents") or [], data.get("metadatas") or []
+            )
+        ]
+        items.sort(key=lambda r: (
+            r["metadata"].get("page_number", 0),
+            r["metadata"].get("chunk_sequence", 0),
+        ))
+        return items
 
     def get_stored_hash(self, filename: str) -> str | None:
         """

@@ -28,10 +28,14 @@ User Query (Input)
       YES               NO
       ↓                 ↓
 ┌──────────────┐    [Skip to Output]
-│generate_     │         ↓
-│response      │    Final Response
-│(LLM + tools)│
-└──────┬───────┘
+│generate_     │◄────────┐   ↓
+│response      │         │  Final Response
+│(LLM + tools) │         │
+└──────┬───────┘   ┌─────┴────────┐
+       │ search_   │ search_more  │ Run search_documents,
+       │ documents │ (max 3 rounds)│ append new chunks
+       ├──────────►└──────────────┘
+       │ final answer
        ↓
 ┌──────────────┐
 │process_      │ Handle tool call
@@ -40,6 +44,8 @@ User Query (Input)
        ↓
   Final Response (Output)
 ```
+
+`generate_response` is an agent turn. If the LLM calls `search_documents`, `search_more` runs the search, adds the results to the conversation and returns to `generate_response`. Any final answer (`respond_to_user` / `insufficient_evidence`) goes to `process_tool_call`.
 
 ---
 
@@ -107,7 +113,7 @@ User Query (Input)
 - Connect to Chroma collection with configured persistence directory
 - Search for K nearest neighbors (default: 10 results)
 - Filter results by minimum similarity score (default: 0.5)
-- Extract and return full metadata for each result (filename, page, chunk content)
+- Extract and return full metadata for each result (filename, page, chunk content, plus `chunk_type`, `diagram_kind` and `diagram_path` for diagram chunks; these three are read with defaults so older records still load)
 - Handle no-results case gracefully (status: `no_results_found`)
 - Handle database connection errors
 
@@ -156,9 +162,13 @@ User Query (Input)
 - Restricts responses to document content (no hallucination)
 - Guides source attribution format
 
+**Neighbor context**: after the vector search, each of the top 5 text hits (`NEIGHBOR_TOP_HITS`) also brings the chunks immediately before and after it (`chunk_sequence` ±1, `NEIGHBOR_RADIUS`), so a retrieval returns at most 10 matches + 10 neighbors. Headings are often split from the text they introduce, and PDF text can be out of reading order. Results are listed in reading order and neighbors are flagged `"neighbor": true`.
+
+**Diagram context**: each retrieved document is sent to the LLM with a numeric `ref`, its `chunk_type`, and, for `diagram_reference` chunks, `diagram_kind` and `diagram_path`. The LLM selects diagrams by `ref` through `diagram_refs`; it never supplies file paths.
+
 **Tool Calls**:
 
-The LLM returns one of two tool calls:
+The LLM makes one tool call per turn. `search_documents` is non-terminal (the loop continues); the other two end the turn:
 
 **Tool 1: respond_to_user**
 ```json
@@ -169,11 +179,43 @@ The LLM returns one of two tool calls:
     {"filename": "doc.pdf", "page": 5, "snippet": "..."},
     {"filename": "doc2.pdf", "page": 12, "snippet": "..."}
   ],
-  "include_sources": true
+  "include_sources": true,
+  "steps": [
+    {"instruction": "Mount the bracket", "source_filename": "doc.pdf", "page": 5}
+  ],
+  "diagram_refs": [3, 7]
 }
 ```
 
-**Tool 2: insufficient_evidence**
+`steps` is optional: ordered step-by-step instructions for procedural questions, rendered as a numbered `Steps:` list between the answer and the sources.
+
+`diagram_refs` is optional: `ref` values of retrieved `diagram_reference` documents whose images should be shown.
+
+**Tool 2: search_documents** (non-terminal)
+```json
+{
+  "name": "search_documents",
+  "query": "mounting bracket installation",
+  "filename": "doc.pdf",
+  "page_start": 4,
+  "page_end": 8,
+  "k": 5
+}
+```
+Only `query` is required. `k` defaults to 5 (max 10).
+
+**Tool 3: read_page** (non-terminal)
+```json
+{
+  "name": "read_page",
+  "filename": "doc.pdf",
+  "page_start": 16,
+  "page_end": 17
+}
+```
+`page_start` and `filename` are required; `page_end` defaults to `page_start` and is clamped to 3 pages. Pages are PDF page numbers (the `page` shown in documents), which can differ from the printed page numbers.
+
+**Tool 4: insufficient_evidence**
 ```json
 {
   "name": "insufficient_evidence",
@@ -181,6 +223,27 @@ The LLM returns one of two tool calls:
   "query": "Original user query"
 }
 ```
+
+---
+
+### 4b. search_more (agent loop: search_documents / read_page)
+
+**Purpose**: Execute the LLM's `search_documents` or `read_page` call and feed new context back to the LLM.
+
+**Inputs**: `search_documents` (`query`, optional `filename`, `page_start`, `page_end`, `k`) or `read_page` (`filename`, `page_start`, optional `page_end`) tool call
+
+**Outputs**: Updated `search_results` and `messages`; control returns to `generate_response`
+
+**Responsibilities**:
+- `search_documents`: embed the search text and query Chroma with an optional metadata filter (`source_filename`, `page_number` range). The similarity cutoff is `SEARCH_MIN_SIMILARITY` (default 0.0 = none; `k` limits results), unlike the first retrieval (0.6)
+- `read_page`: fetch every chunk on a page range (max 3 pages per call) by metadata only, in reading order, with no similarity step. Chunks already in context are not repeated; their refs are listed. Use it when a heading was found without the text that belongs to it
+- Filenames are matched leniently (exact, or a unique substring of a filename in context; omitted when only one document is in context)
+- Skip chunks already retrieved (key: filename + chunk sequence) so each passage is shown once
+- Append new chunks to `search_results`; existing `ref` numbers never shift, new chunks continue the numbering (so `diagram_refs` stay valid)
+- Add the result as a `tool` message to the conversation (full chunk text)
+- Report search failures or empty results to the LLM as the tool result instead of aborting
+
+**Limits**: at most `MAX_SEARCH_ROUNDS` (3) tool rounds in total (`search_documents` and `read_page` share the budget) and `AGENT_DEADLINE_SECONDS` (300 s) since the first LLM turn. After either limit both tools are no longer offered and the LLM is told to answer.
 
 ---
 
@@ -204,11 +267,12 @@ The LLM returns one of two tool calls:
 - Extract synthesized answer and sources
 - Format as: "Answer\n\n---\n\nSources:\n- filename (page X): snippet"
 - Omit sources if `include_sources=false`
+- If `diagram_refs` is present, append `\nDiagrams:\n- filename (page X, kind): /absolute/path/to/image`. Refs that are out of range, not `diagram_reference` chunks, or whose image file is missing are dropped. Paths are resolved against the project root (falling back to `extracted_diagrams/<filename>`), so they work from any working directory. The block is shown even when `include_sources=false`.
 - Preserve snippet content exactly as provided by LLM
 
 **Handler: insufficient_evidence**
-- Format as: "⚠️ Insufficient Information\n\nExplanation\n\nHowever, here are retrieved documents:\n..."
-- Display all retrieved documents with snippets
+- Format as: "⚠️ Insufficient Information\n\nExplanation\n\nHowever, here is the most relevant document that was retrieved:\n\n  Source: ...\n  Snippet: ..."
+- Display only the single most relevant retrieved document (highest-scoring direct hit; neighbor chunks excluded) with its source and snippet
 - Reference original query in output
 
 ---
@@ -224,6 +288,10 @@ class QueryState:
     query_validated: bool                  # Validation flag
     query_embedding: list[float]           # Query vector
     search_results: list[QueryResult]      # Retrieved documents
+    tool_call: ToolCall | None             # Latest LLM tool call
+    messages: list[dict]                   # LLM conversation (agent loop)
+    search_round: int                      # search_documents calls executed
+    started_at: float | None               # Start time of the agent loop
     final_response: str                    # Formatted response
     errors: list[str]                      # Error log
     status: str                            # Pipeline status
@@ -234,6 +302,8 @@ class QueryState:
 - `query_validated` - Query passed validation
 - `query_embedded` - Embedding generated
 - `search_completed` - Vector search completed
+- `tool_call_received` - LLM returned a tool call
+- `search_more_completed` - A `search_documents` round finished
 - `response_generated` - LLM response generated
 - `response_generated_with_errors` - Response generated but with errors
 - `no_results_found` - No documents matched query
@@ -287,11 +357,18 @@ LLM_API_KEY=your_api_key
 CHROMA_PERSIST_DIRECTORY=./chroma_db
 CHROMA_COLLECTION_NAME=vector_ingestion_collection
 
+# Agent search (optional)
+SEARCH_MIN_SIMILARITY=0.0
+LLM_REASONING_EFFORT=medium
+
 # Document Input (for ingestion pipeline)
 DOCUMENT_INPUT_DIR=./documents
 ```
 
 **Tunable Parameters** (in `src/query/nodes.py`):
+- `MAX_SEARCH_ROUNDS`, `AGENT_DEADLINE_SECONDS` - Agent loop limits (default: 3, 300 s)
+- `SEARCH_DEFAULT_K`, `SEARCH_MAX_K` - Results per `search_documents` call (default: 5, 10)
+- `NEIGHBOR_RADIUS`, `NEIGHBOR_TOP_HITS`, `READ_PAGE_MAX_PAGES` - Neighbor chunks per hit, how many top hits get neighbors, pages per `read_page` (default: 1, 5, 3)
 - `DEFAULT_K` - Number of results to retrieve (default: 10)
 - `DEFAULT_MIN_SIMILARITY_SCORE` - Similarity threshold (default: 0.5)
 - `DEFAULT_MAX_TOKENS` - Max LLM response length (default: 2048)
@@ -439,9 +516,12 @@ tool_call    response
 - `user_query` - Immediate (no external calls)
 - `embed_query` - 30 seconds
 - `vector_store_search` - 30 seconds
-- `generate_response` - 120 seconds
+- `generate_response` - 120 seconds per LLM call
+- `search_more` - embedding 30 seconds + Chroma search
 
-**Pipeline Total Timeout**: 2 minutes (120 seconds)
+**Agent loop**: each LLM call has the 120 s timeout; searching stops after 3 rounds or 300 s, then the LLM must give a final answer. Worst case is several LLM calls.
+
+**Pipeline Total Timeout**: none enforced across the whole run
 
 **Timeout Handling**: Errors logged and propagated to next nodes
 
@@ -451,10 +531,11 @@ tool_call    response
 
 | File | Purpose |
 |------|---------|
-| `src/query/nodes.py` | 5 node implementations |
+| `src/query/nodes.py` | 6 node implementations (incl. `search_more`) |
 | `src/query/tools.py` | Embedding and LLM service integrations |
 | `src/query/graph.py` | LangGraph pipeline definition |
 | `query_main.py` | Entry point and query execution |
+| `tests/verify_query_loop.py` | Offline checks of the agent loop (scripted LLM, fake embeddings) |
 | `check_models.py` | Display available models |
 | `update_model.py` | Interactive model selection |
 

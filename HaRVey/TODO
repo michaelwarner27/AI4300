@@ -1,1 +1,7 @@
-Query side: pass chunk_type, diagram_path and diagram_kind through src/query/nodes.py (currently only 3 metadata keys are read) so a diagram-lookup tool can return the image
+Ingestion improvements for retrieval quality (found while debugging the "maintenance" query on PDF page 16 / printed page 13):
+
+1. Fix reading order at ingestion. Two-column pages are extracted out of order (e.g. the "MAINTENANCE / GENERAL INFORMATION" headings land at the end of page 16 while their content is earlier on the page). Try pymupdf sort=True or block-based extraction for multi-column pages. Requires re-ingestion.
+2. Store printed page labels. Add a page_label field to ChunkMetadata/Chroma (PDF page 16 is printed as 13), tell the LLM about it, and let page filters / read_page accept either number. Requires re-ingestion.
+3. Prepend section context to each chunk before embedding (e.g. "Section: MAINTENANCE, page 16 (printed 13)"). ChunkMetadata.section_headings exists but appears unused. Requires re-ingestion.
+4. Repair garbled diagram captions from font-encoding problems (e.g. page 18 caption "(/(&+($7 + & / 7+(50267$7 ..."): detect non-text captions and skip them or fall back to OCR.
+5. Consider larger chunks or heading-aware splitting (512-char chunks cut procedures mid-sentence).

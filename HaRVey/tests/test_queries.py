@@ -2,9 +2,9 @@
 Test suite for querying the agent with all required queries.
 
 This script:
-1. Parses queries from U0-HW-09-required-queries.md
-2. Executes each query through the query pipeline
-3. Captures results to results/query_results.txt
+1. Parses queries from tests/test-queries.md
+2. Executes each query through the HaRVey query pipeline
+3. Captures results to tests/results/query_results.txt
 """
 
 import re
@@ -42,7 +42,7 @@ def parse_queries_from_markdown(markdown_file: str) -> dict:
         if not lines:
             continue
         
-        # First line is the header (e.g., "Q1: Food Code Section Lookup")
+        # First line is the header (e.g., "Q1: Basic - CCC2 diagnostic mode entry")
         header = lines[0]
         
         # Extract query ID and title
@@ -176,11 +176,11 @@ def main() -> None:
     """
     # Get paths
     script_dir = Path(__file__).parent
-    queries_file = script_dir / "U0-HW-09-required-queries.md"
+    queries_file = script_dir / "test-queries.md"
     output_file = script_dir / "results" / "query_results.txt"
     
     print("\n" + "=" * 80)
-    print("QUERY TEST SUITE")
+    print("HARVEY QUERY TEST SUITE")
     print("=" * 80)
     
     # Parse queries

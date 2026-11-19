@@ -110,7 +110,12 @@ def print_detailed_query_result(result) -> None:
             print(f"    Filename: {doc.metadata.source_filename}")
             print(f"    Page Number: {doc.metadata.page_number}")
             print(f"    Chunk Sequence: {doc.metadata.chunk_sequence}")
-            print(f"    Similarity Score: {doc.similarity_score:.6f}")
+            print(f"    Chunk Type: {doc.metadata.chunk_type}")
+            if doc.is_neighbor:
+                print(f"    Match: neighbor / page read (context, not scored)")
+            else:
+                print(f"    Match: direct hit")
+                print(f"    Similarity Score: {doc.similarity_score:.6f}")
             print(f"    Char Range: {doc.metadata.start_char_index}-{doc.metadata.end_char_index}")
             print(f"    Content Length: {len(doc.content)} characters")
             print(f"    Content:\n{doc.content}\n")
