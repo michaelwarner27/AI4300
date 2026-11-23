@@ -23,8 +23,20 @@ from src.data_models import (
 )
 from src.ingestion.layout import TextRepair, looks_garbled
 from src.utils.logging import get_logger
+from src.utils.part_numbers import (
+    extract_part_numbers, filename_part_keys, join_keys, normalize_part, part_family, part_keys,
+)
 
 logger = get_logger()
+
+
+def _cosine(a: list[float], b: Any) -> float:
+    """Cosine similarity of two vectors (matches Chroma's 1 - cosine distance)."""
+    b = [float(x) for x in b]
+    dot = sum(x * y for x, y in zip(a, b))
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(y * y for y in b) ** 0.5
+    return dot / (na * nb) if na and nb else 0.0
 
 
 class PDFLoader:
@@ -443,9 +455,14 @@ class TextChunker:
         chunks = self.chunk_document(document)
         chunks.extend(self.chunk_tables(document, start_sequence=len(chunks)))
         chunks.extend(self.chunk_diagrams(document, start_sequence=len(chunks)))
-        
+
+        # Codes in the filename (e.g. "457915", "CCC2") tag every chunk of the
+        # manual, so an exact part-number search can always find the right one
+        doc_keys = filename_part_keys(document.metadata.filename)
         for chunk in chunks:
             chunk.metadata.total_chunks = len(chunks)
+            keys = part_keys(chunk.content)
+            chunk.metadata.part_numbers = keys + [k for k in doc_keys if k not in keys]
         return chunks
 
 
@@ -766,6 +783,8 @@ class ChromaVectorStore:
                             "diagram_kind": chunk.metadata.diagram_kind,
                             # Chroma metadata values must be scalars, so the path is joined
                             "section_path": " > ".join(chunk.metadata.section_headings or []),
+                            # "|KEY1|KEY2|" (scalar); see src/utils/part_numbers.join_keys
+                            "part_numbers": join_keys(chunk.metadata.part_numbers),
                         }
                         
                         ids.append(chunk_id)
@@ -927,6 +946,137 @@ class ChromaVectorStore:
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
+    def hybrid_search(
+        self,
+        query_text: str,
+        query_embedding: list[float],
+        k: int = 10,
+        min_similarity_score: float | None = None,
+        where: dict[str, Any] | None = None,
+        alpha: float = 0.6,
+        candidates: int = 30,
+        part_boost: float = 0.3,
+        bm25_saturation: float = 10.0,
+        specific_part_max: int = 20,
+    ) -> list[dict[str, Any]]:
+        """
+        Dense + lexical (BM25 and exact part-number) search, blended.
+
+        Candidates are the union of the top `candidates` dense hits, the top
+        `candidates` BM25 hits, and every chunk containing a *specific* part
+        number from the query. Each gets
+
+            score = alpha * cosine + (1 - alpha) * bm25 / (bm25 + bm25_saturation)
+                    + boost
+
+        The BM25 term saturates instead of being scaled to the best hit, so an
+        off-topic query whose best keyword match is weak stays weak.
+
+        Part-number keys (src/utils/part_numbers.part_keys) count as
+        *specific* when at most `specific_part_max` chunks contain them
+        ("45791570X", "E1"); those chunks get the full `part_boost`, bypass the
+        cutoff, and at least one chunk per specific key is always returned.
+        Broad keys, such as a manual-wide "457915" or "CCC2" that tag every
+        chunk of a manual, only add a quarter boost to steer towards the
+        right manual.
+
+        Cutoff: a chunk is kept when its cosine OR its blended score reaches
+        min_similarity_score, so nothing a dense-only search would return is
+        lost. If the lexical index cannot be built, this falls back to
+        query_similarity.
+
+        Returns query_similarity-shaped dicts, best first, with
+        similarity_score set to the blended score plus "dense_score",
+        "bm25_score", "match_type" ("exact_part" | "hybrid" | "dense" |
+        "lexical") and "matched_parts" (query part numbers found in the chunk).
+        """
+        if not self.collection:
+            raise RuntimeError("Collection not initialized. Call initialize_collection() first.")
+
+        dense = self.query_similarity(query_embedding, k=max(candidates, k), where=where)
+
+        def _dense_only() -> list[dict[str, Any]]:
+            out = [
+                {**r, "dense_score": r["similarity_score"], "bm25_score": 0.0,
+                 "match_type": "dense", "matched_parts": []}
+                for r in dense
+                if min_similarity_score is None or r["similarity_score"] >= min_similarity_score
+            ]
+            return out[:k]
+
+        if not (query_text or "").strip():
+            return _dense_only()
+        try:
+            from src.query.lexical import get_lexical_index
+            index = get_lexical_index(self.collection, (self.persist_directory, self.collection_name))
+            allowed = set(self.collection.get(where=where, include=[])["ids"]) if where else None
+            lexical = dict(index.bm25_search(query_text, candidates, allowed))
+            query_parts = extract_part_numbers(query_text)
+            key_to_part: dict[str, str] = {}
+            for part in query_parts:
+                for key in (normalize_part(part), part_family(part)):
+                    if key:
+                        key_to_part.setdefault(key, part)
+            exact = index.exact_part_hits(list(key_to_part), allowed)
+            specific = {key for key in key_to_part if len(index.parts.get(key, ())) <= specific_part_max}
+        except Exception as e:
+            logger.warning(f"hybrid_search: lexical search unavailable, using dense only: {e}")
+            return _dense_only()
+
+        # Gather every candidate; fetch the ones dense search did not return
+        by_id: dict[str, dict[str, Any]] = {r["id"]: dict(r) for r in dense}
+        wanted = set(lexical) | {cid for cid, keys in exact.items() if specific.intersection(keys)}
+        missing = [cid for cid in wanted if cid not in by_id]
+        if missing:
+            data = self.collection.get(ids=missing, include=["documents", "metadatas", "embeddings"])
+            for cid, doc, meta, emb in zip(data["ids"], data["documents"], data["metadatas"], data["embeddings"]):
+                by_id[cid] = {
+                    "id": cid, "content": doc, "metadata": meta,
+                    "similarity_score": _cosine(query_embedding, emb),
+                }
+        dense_ids = {r["id"] for r in dense}
+
+        results: list[dict[str, Any]] = []
+        for cid, r in by_id.items():
+            cosine = r["similarity_score"]
+            raw_bm25 = lexical.get(cid, 0.0)
+            keys = exact.get(cid, [])
+            is_specific = bool(specific.intersection(keys))
+            boost = part_boost if is_specific else (part_boost / 4 if keys else 0.0)
+            score = alpha * cosine + (1 - alpha) * raw_bm25 / (raw_bm25 + bm25_saturation) + boost
+
+            if (not is_specific and min_similarity_score is not None
+                    and cosine < min_similarity_score and score < min_similarity_score):
+                continue
+            if is_specific:
+                match_type = "exact_part"
+            elif cid in dense_ids and raw_bm25 > 0:
+                match_type = "hybrid"
+            else:
+                match_type = "dense" if cid in dense_ids else "lexical"
+            results.append({
+                **r,
+                "similarity_score": score,
+                "dense_score": cosine,
+                "bm25_score": raw_bm25,
+                "match_type": match_type,
+                "matched_parts": sorted({key_to_part[key] for key in keys if key in specific}),
+            })
+
+        results.sort(key=lambda r: r["similarity_score"], reverse=True)
+        top = results[:k]
+        # Guarantee: every specific part number in the query is represented
+        for key in specific:
+            if not any(key_to_part[key] in r["matched_parts"] for r in top):
+                best = next((r for r in results if key_to_part[key] in r["matched_parts"]), None)
+                if best is not None:
+                    top.append(best)
+
+        logger.info(
+            f"hybrid_search: {len(top)} results from {len(by_id)} candidates "
+            f"({len(dense)} dense, {len(lexical)} bm25, specific parts={sorted(specific)})"
+        )
+        return top
 
     def get_chunks(self, where: dict[str, Any]) -> list[dict[str, Any]]:
         """

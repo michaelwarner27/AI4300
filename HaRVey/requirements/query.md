@@ -1,10 +1,10 @@
 # Vector Query Pipeline
 
-This document describes the LangGraph-based query pipeline that retrieves semantically similar passages from the vector database and generates LLM-powered answers with source attribution. It supports multi-turn conversations, an agent loop that can search and read more of the documents, section-aware context, and diagram display.
+This document describes the LangGraph-based query pipeline that retrieves relevant passages from the vector database with hybrid (semantic + keyword + exact part-number) search and generates LLM-powered answers with source attribution. It supports multi-turn conversations, an agent loop that can search and read more of the documents, section-aware context, and diagram display.
 
 ## Overview
 
-The query pipeline accepts a user question (optionally with earlier turns of the conversation), rewrites follow-ups into standalone search queries, embeds the query, searches the vector database, and lets an LLM answer with tool calls. The LLM can run further searches, read whole sections or pages, and finally answers with cited sources, optional step-by-step instructions and optional diagrams, or reports that the documents do not cover the question.
+The query pipeline accepts a user question (optionally with earlier turns of the conversation), rewrites follow-ups into standalone search queries, embeds the query, searches the vector database (dense similarity blended with BM25 and exact part-number matching, see [hybrid_search.md](hybrid_search.md)), and lets an LLM answer with tool calls. The LLM can run further searches, read whole sections or pages, and finally answers with cited sources, optional step-by-step instructions and optional diagrams, or reports that the documents do not cover the question.
 
 Every passage carries the **section** it came from (its heading path in the source document, e.g. `MAINTENANCE > A. Air Filter`), set at ingestion. The LLM sees it, can read a whole section with `read_section`, and citations show it.
 
@@ -27,7 +27,8 @@ User Query (+ chat history)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  vector_store_search    │ Query Chroma (top 10, score ≥ 0.5)
+│  vector_store_search    │ Hybrid search: dense + BM25 +
+│                         │ exact part numbers (top 10)
 │                         │ + same-section neighbor chunks
 └─────────────┬───────────┘
               ↓
@@ -132,17 +133,21 @@ User Query (+ chat history)
 
 ### 4. vector_store_search
 
-**Purpose**: Query the Chroma vector database for semantically similar passages.
+**Purpose**: Retrieve the most relevant passages with hybrid search: semantic similarity combined with keyword (BM25) and exact part-number matching.
 
-**Inputs**: Query embedding vector
+**Inputs**: Query embedding vector + query text (`retrieval_query`, falling back to the original query: the same text that was embedded)
 
-**Outputs**: Top K results (plus neighbor chunks) with metadata and similarity scores
+**Outputs**: Top K results (plus neighbor chunks) with metadata, blended scores and a score breakdown
 
 **Responsibilities**:
 - Connect to the Chroma collection
-- Search for the K nearest chunks (`DEFAULT_K` = 10)
-- Drop results below `SEARCH_MIN_SIMILARITY` from `.env` (default `DEFAULT_MIN_SIMILARITY` = 0.5; the same cutoff is used by `search_documents`). Relevant chunks score about 0.55 and up, off-topic queries about 0.4 at best
-- Read each result's metadata: filename, page, chunk sequence, character range, and (with defaults, so older records still load) `chunk_type`, `diagram_kind`, `diagram_path` and `section_path`. `section_path` (`"A > B"`) is split back into `ChunkMetadata.section_headings`
+- Run `ChromaVectorStore.hybrid_search` for the top K chunks (`DEFAULT_K` = 10). Full details in [hybrid_search.md](hybrid_search.md):
+  - Candidates: top 30 dense hits, top 30 BM25 hits, and every chunk containing a specific part number from the query (`457915.70X`, `8330-733`, `E1`)
+  - Score: `HYBRID_ALPHA` (0.6) × cosine + 0.4 × saturated BM25, + `PART_BOOST` (0.3) for chunks containing a specific query part number
+  - Chunks with a specific query part number always pass the cutoff and at least one per part number is returned
+  - Falls back to dense-only results if the lexical index can't be built
+- Cutoff `SEARCH_MIN_SIMILARITY` from `.env` (default `DEFAULT_MIN_SIMILARITY` = 0.5; the same cutoff is used by `search_documents`): a chunk is kept when its cosine **or** its blended score reaches it, so everything dense-only search returned is still returned. Relevant chunks score about 0.55 and up on cosine, off-topic queries about 0.4 at best
+- Read each result's metadata: filename, page, chunk sequence, character range, and (with defaults, so older records still load) `chunk_type`, `diagram_kind`, `diagram_path`, `section_path` and `part_numbers`. `section_path` (`"A > B"`) is split back into `ChunkMetadata.section_headings`; the hybrid breakdown goes to `QueryResult.dense_score`, `bm25_score`, `match_type` and `matched_parts`
 - Add neighbor chunks (see below)
 - Handle the no-results case gracefully (status: `no_results_found`)
 - Handle database connection errors
@@ -153,6 +158,7 @@ User Query (+ chat history)
 - Persist directory: `CHROMA_PERSIST_DIRECTORY`
 - Collection name: `CHROMA_COLLECTION_NAME`
 - K: 10, min similarity: `SEARCH_MIN_SIMILARITY` (default 0.5)
+- Hybrid weights: `HYBRID_ALPHA` (0.6), `HYBRID_CANDIDATES` (30), `PART_BOOST` (0.3)
 
 ---
 
@@ -202,13 +208,16 @@ User Query (+ chat history)
 - `section`: present when the chunk has one. The duplicate `Section: ...` line that ingestion puts in the chunk text is removed from `text`
 - `neighbor`: `true` for neighbor chunks and passages from `read_section` / `read_page`
 - `earlier_turn`: `true` for documents carried over from earlier turns
-- `diagram_kind`, `diagram_path`: only on `diagram_reference` chunks
+- `matched_part`: present when the passage contains a specific model / part / error code from the search query (e.g. `"457915.70X"`)
+- `diagram_kind`: only on `diagram_reference` chunks (no `diagram_path`: the LLM picks diagrams by ref)
+- Scores are not sent to the LLM
 
 **System prompt behavior**:
 - Answer only from the documents; prefer `respond_to_user` when they are relevant
 - Use earlier turns to understand follow-ups, but answer from documents, not earlier answers
 - Use `page` (the PDF page, which can differ from the printed page) for citations and filters
 - Use `section` to tell which procedure, component or model a passage belongs to; don't mix steps from different sections unless the question needs both
+- When the question names a specific model or part number, answer from passages for that exact number (`matched_part`) and don't substitute another model's specifications
 - Give procedures as `steps`, one action each, in order, with citations
 - When context is incomplete (missing steps, "see section X", a heading without its content): call `read_section` for a section whose start was found, `read_page` when a document has no section, otherwise `search_documents`; never repeat the same call
 - Select diagrams by `ref` only; never invent refs or file paths
@@ -258,7 +267,7 @@ Only `answer` is required.
   "k": 5
 }
 ```
-Only `query` is required. `k` defaults to 5 (max 10).
+Only `query` is required. `k` defaults to 5 (max 10). The tool description asks the LLM to include any exact model, part or error code in `query`, since the search also matches them exactly.
 
 **Tool 3: read_section** (non-final)
 ```json
@@ -301,7 +310,7 @@ Both fields are required. `section` can be a full section path, or just a headin
 **Outputs**: Updated `search_results` and `messages`; control returns to `generate_response`
 
 **Responsibilities**:
-- `search_documents`: embed the search text and query Chroma with an optional metadata filter (`source_filename`, `page_number` range). The similarity cutoff is `SEARCH_MIN_SIMILARITY` (default 0.5), the same one the first retrieval uses
+- `search_documents`: embed the search text and run the same hybrid search as the first retrieval (dense + BM25 + exact part numbers, see [hybrid_search.md](hybrid_search.md)) with an optional metadata filter (`source_filename`, `page_number` range). The filter applies to the lexical hits too. The cutoff is `SEARCH_MIN_SIMILARITY` (default 0.5), the same one the first retrieval uses
 - `read_section`: load the document's chunks and return every chunk whose section is the requested one or below it, in reading order (text, then the section's tables and diagrams), at most `READ_SECTION_MAX_CHUNKS` (25)
   - No match: the reply lists the document's sections (up to `READ_SECTION_LIST_LIMIT`, 60) so the LLM can pick one
   - Several matches (e.g. two `C. Condensation` sections under different parents): the reply lists them and asks for the full path
@@ -443,10 +452,14 @@ class QueryState:
 @dataclass
 class QueryResult:
     content: str                           # Chunk text (includes the "Section:" line)
-    metadata: ChunkMetadata                # section_headings, chunk_type, diagram_*, page, ...
-    similarity_score: float
+    metadata: ChunkMetadata                # section_headings, chunk_type, diagram_*, part_numbers, page, ...
+    similarity_score: float                # Blended hybrid score for search hits
     is_neighbor: bool                      # Neighbor / section or page read, not scored
     from_history: bool                     # Carried over from an earlier turn
+    dense_score: float | None              # Cosine similarity (hybrid hits only)
+    bm25_score: float                      # Raw BM25 score
+    match_type: str                        # "exact_part" | "hybrid" | "dense" | "lexical" ("" if not a search hit)
+    matched_parts: list[str]               # Query part numbers this chunk contains
 
 @dataclass
 class ChatTurn:
@@ -492,7 +505,7 @@ The pipeline accumulates errors without stopping:
 1. **Query Validation Failure** → Stop, return `query_validation_failed`
 2. **Rewrite Failure** → Use the original query (not an error)
 3. **Embedding Failure** → Log error and propagate; no search is possible
-4. **Search Failure** → Log error; the LLM is skipped when there are no documents
+4. **Search Failure** → Log error; the LLM is skipped when there are no documents. A failure of only the lexical part of hybrid search falls back to dense-only results (warning, not an error)
 5. **No Results Found** → Not an error; `no_results_found`, LLM skipped (unless carried-over documents exist)
 6. **Agent Tool Failure** (search / section read / page read) → Reported to the LLM as the tool result; the loop continues
 7. **LLM Tool Call Failure** → Fallback response after `MAX_TOOL_CALL_RETRIES` (2) attempts (a plain-text reply is used as the answer instead, if there is one)
@@ -523,6 +536,11 @@ CHROMA_COLLECTION_NAME=vector_ingestion_collection
 # Similarity cutoff (optional)
 SEARCH_MIN_SIMILARITY=0.5                 # first retrieval AND search_documents (default 0.5)
 
+# Hybrid search (optional, see hybrid_search.md)
+HYBRID_ALPHA=0.6                          # weight of cosine vs saturated BM25
+HYBRID_CANDIDATES=30                      # dense and BM25 hits each considered before blending
+PART_BOOST=0.3                            # boost for chunks containing a specific query part number
+
 # Web UI (optional)
 FLASK_SECRET_KEY=...                      # random per start if unset
 
@@ -533,6 +551,7 @@ DOCUMENT_INPUT_DIR=./documents
 **Tunable Parameters** (in `src/query/nodes.py`):
 - `DEFAULT_K` - First retrieval: number of results (default: 10)
 - `DEFAULT_MIN_SIMILARITY` - Score cutoff for the first retrieval and `search_documents` when `SEARCH_MIN_SIMILARITY` is unset (default: 0.5)
+- `HYBRID_ALPHA`, `HYBRID_CANDIDATES`, `PART_BOOST` - Hybrid search blend weight, candidates per leg, exact part-number boost (default: 0.6, 30, 0.3; env-overridable)
 - `NEIGHBOR_RADIUS`, `NEIGHBOR_TOP_HITS` - Neighbor chunks per hit and how many top hits get them (default: 1, 5)
 - `MAX_SEARCH_ROUNDS`, `AGENT_DEADLINE_SECONDS` - Agent loop limits (default: 3, 300 s)
 - `SEARCH_DEFAULT_K`, `SEARCH_MAX_K` - Results per `search_documents` call (default: 5, 10)
@@ -552,7 +571,8 @@ DOCUMENT_INPUT_DIR=./documents
 ```bash
 python3 query_main.py "How do I clean the air filter?"
 
-# Verbose output (all retrieved documents with chunk type, match type, score and full text)
+# Verbose output (all retrieved documents with chunk type, match type, score,
+# hybrid breakdown "Hybrid: exact_part (cosine=..., bm25=..., parts=...)" and full text)
 python3 query_main.py "How do I clean the air filter?" --verbose
 python3 query_main.py "How do I clean the air filter?" -v
 ```
@@ -591,6 +611,8 @@ The web UI removes the `Diagrams:` block from the answer text and shows those im
 ✅ **Tool Calling Architecture** - The LLM answers only through structured tool calls
 
 ✅ **Agent Loop** - The LLM can search, read sections and read pages (3 rounds / 300 s) before answering
+
+✅ **Hybrid Search** - Dense similarity blended with BM25 and exact part-number matching, so a query naming a model, part or error code retrieves passages containing it (see [hybrid_search.md](hybrid_search.md))
 
 ✅ **Section Awareness** - Passages carry their heading path; neighbors stay in the hit's section; `read_section` fetches whole sections; citations show sections confirmed from retrieved documents
 
@@ -635,7 +657,7 @@ generate_response
 - `user_query` - Immediate (no external calls)
 - `rewrite_query` - 120 seconds (one LLM call, only with chat history)
 - `embed_query` - 30 seconds
-- `vector_store_search` - Chroma query (local)
+- `vector_store_search` - Chroma query + in-memory BM25 (local; the lexical index is built once per process, about 0.2 s)
 - `generate_response` - 120 seconds per LLM call
 - `search_more` - `search_documents`: embedding 30 seconds + Chroma search; `read_section` / `read_page`: Chroma only
 
@@ -651,11 +673,15 @@ generate_response
 |------|---------|
 | `src/query/nodes.py` | Node implementations (user_query, rewrite_query, embed_query, vector_store_search, add_history_documents, generate_response, search_more, process_tool_call), tools and prompts |
 | `src/query/tools.py` | Embedding, Chroma and LLM service integrations (`chat_with_tools`, plain `chat`) |
+| `src/query/lexical.py` | BM25 + exact part-number index for hybrid search |
+| `src/utils/part_numbers.py` | Part-number extraction and normalization (shared with ingestion) |
+| `src/ingestion/tools.py` | `ChromaVectorStore.hybrid_search` (and `query_similarity`, `get_chunks`) |
 | `src/query/graph.py` | LangGraph pipeline definition and `execute_query_pipeline` |
 | `src/data_models.py` | `QueryState`, `QueryResult`, `ChatTurn`, `ChunkMetadata` |
 | `query_main.py` | Command-line entry point (single query / interactive) |
 | `web_main.py`, `web/app.py` | Flask web UI with multi-turn chat and diagram display |
-| `tests/verify_query_loop.py` | Offline checks: agent loop, read_page / read_section, neighbors, history, citations (scripted LLM, fake embeddings) |
+| `tests/verify_query_loop.py` | Offline checks: part-number extraction, hybrid search, agent loop, read_page / read_section, neighbors, history, citations (scripted LLM, fake embeddings) |
+| `requirements/hybrid_search.md` | Hybrid search specification |
 
 ---
 
@@ -679,6 +705,11 @@ generate_response
 
 **No `section` on passages / `read_section` says "no section information"**
 - The documents were ingested before section support. Re-ingest them (`python manage_documents.py --update <path>` then `python ingestion_main.py`, or delete and re-run)
+
+**A query naming a part / model number retrieves the wrong manual, or no `exact_part` hits in verbose mode**
+- The documents were ingested before `part_numbers` metadata existed. Re-ingest them
+- Check the number is extracted: `python -c "from src.utils.part_numbers import extract_part_numbers as e; print(e('your query'))"`
+- Very common numbers (in more than 20 chunks) count as broad and get only a small boost (see [hybrid_search.md](hybrid_search.md))
 
 **Empty or nonsensical answers**
 - Check retrieved documents in verbose mode: `query_main.py "query" -v`

@@ -117,6 +117,9 @@ class ChunkMetadata:
     end_char_index: int = 0
     chunk_type: str = "text"  # text, table, diagram_reference
     section_headings: list[str] = field(default_factory=list)  # Heading path, outermost first
+    # Normalized part / model / fault-code keys (src/utils/part_numbers.part_keys)
+    # from the chunk text plus the manual's filename; used for exact-match search
+    part_numbers: list[str] = field(default_factory=list)
     # Table-specific
     table_rows: int = 0
     table_cols: int = 0
@@ -181,9 +184,14 @@ class QueryResult:
     
     content: str
     metadata: ChunkMetadata
-    similarity_score: float
+    similarity_score: float  # Blended hybrid score for search hits (cosine for dense-only)
     is_neighbor: bool = False  # Fetched as context next to a hit, not matched itself
     from_history: bool = False  # Carried over from an earlier turn of the conversation
+    # Hybrid search breakdown (ChromaVectorStore.hybrid_search); defaults for other sources
+    dense_score: float | None = None  # Cosine similarity
+    bm25_score: float = 0.0  # Raw BM25 score
+    match_type: str = ""  # "exact_part" | "hybrid" | "dense" | "lexical"
+    matched_parts: list[str] = field(default_factory=list)  # Query part numbers in this chunk
 
 
 @dataclass

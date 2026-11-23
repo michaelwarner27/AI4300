@@ -3,6 +3,7 @@ documents/
 Harvey-Manuals-All/
 Harvey-Manuals-originals/
 chroma_db/
+chroma_db.bak-pre-hybrid/
 .venv/
 .pyc
 extracted_diagrams/

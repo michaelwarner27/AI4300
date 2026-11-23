@@ -74,6 +74,10 @@ class FakeStore:
     def query_similarity(self, **kwargs):
         FakeStore.calls.append(kwargs)
         return FakeStore.queue.pop(0) if FakeStore.queue else []
+    def hybrid_search(self, **kwargs):
+        # Same queue and recorded kwargs (query_text included) as query_similarity,
+        # so subclasses overriding query_similarity (e.g. BoomStore) still apply
+        return self.query_similarity(**kwargs)
 
 
 class ScriptedLLM:
@@ -1089,8 +1093,136 @@ def test_prompt_and_tools() -> None:
     check("no menu when there are no diagrams", "Diagrams available" not in ScriptedLLM.seen[0]["messages"][-1]["content"])
 
 
+def test_part_numbers() -> None:
+    section("Part-number extraction (src/utils/part_numbers.py)")
+    from src.utils.part_numbers import (
+        extract_part_numbers, filename_part_keys, join_keys, normalize_part, part_family, part_keys, split_keys,
+    )
+    text = ("Dometic 457915.70X and 640312C85X, Coleman 8330-733 and 3106481.009, MACH-1, R-22, "
+            "CCC2 error E1. Not: 3.5 120 63.0 2-86 561-566 12VDC 115VAC 24V 5/16 6-3/4 9-Pin pk/2 1-pc 7.5-Mfd/370V")
+    found = extract_part_numbers(text)
+    check("codes kept", found == ["457915.70X", "640312C85X", "8330-733", "3106481.009", "MACH-1", "R-22", "CCC2", "E1"],
+          str(found))
+    check("lowercase query codes found", extract_part_numbers("what is e1 on the ccc2?") == ["E1", "CCC2"])
+    check("separator variants normalize alike",
+          normalize_part("457915.70X") == normalize_part("457915-70x") == "45791570X")
+    check("family of a variant", part_family("457915.70X") == "457915" and part_family("457915") == "")
+    check("part_keys adds the family", part_keys("model 457915.70X") == ["45791570X", "457915"])
+    check("filename codes", filename_part_keys("CCC2-Operating-Instructions.pdf") == ["CCC2"]
+          and filename_part_keys("Dometic 457915 Installation & Operating Instructions Manual1.pdf") == ["457915"],
+          str(filename_part_keys("CCC2-Operating-Instructions.pdf")))
+    check("stored string round-trips", split_keys(join_keys(["A1", "457915"])) == ["A1", "457915"]
+          and join_keys([]) == "" and split_keys(None) == [])
+    check("off-topic text has no codes", extract_part_numbers("best sourdough recipe at high altitude") == [])
+
+
+def test_hybrid_search() -> None:
+    section("Hybrid search (real temp database)")
+    import src.query.lexical as lexical
+    from src.utils.part_numbers import part_keys
+    tmp = tempfile.mkdtemp()
+    try:
+        store = ChromaVectorStore(tmp, "hybrid_coll")
+        store.initialize_collection()
+        docs = [
+            # (file, text, embedding): realistic gap like the live 8330-733 query -
+            # the exact-part chunk is below the cutoff (cosine ~0.45), another model scores ~0.8
+            ("a.pdf", "Dometic 457915.70X specifications: running amps 12.5", [0.45, 0.89, 0.0, 0.0]),
+            ("b.pdf", "Dometic 640312.80X specifications: running amps 13.0", [0.8, 0.6, 0.0, 0.0]),
+            ("b.pdf", "Clean the return air filter every two weeks", [0.0, 0.0, 1.0, 0.0]),
+        ]
+        chunks = [
+            TextChunk(content=text, embedding=emb, metadata=ChunkMetadata(
+                source_filename=fname, page_number=1, chunk_sequence=i, file_hash="h", ingested_at="t",
+                total_chunks=len(docs), part_numbers=part_keys(text)))
+            for i, (fname, text, emb) in enumerate(docs)
+        ]
+        store.store_chunks(chunks)
+        query, vec = "running amps for the 457915.70X", [1.0, 0.0, 0.0, 0.0]
+
+        results = store.hybrid_search(query, vec, k=5, min_similarity_score=0.5)
+        top = results[0] if results else {}
+        check("exact part chunk ranked first despite low cosine",
+              top.get("metadata", {}).get("source_filename") == "a.pdf" and top.get("dense_score", 1) < 0.5, str(results))
+        check("exact hit labelled with the query's part number",
+              top.get("match_type") == "exact_part" and top.get("matched_parts") == ["457915.70X"], str(top))
+        check("semantically close other model still returned",
+              any(r["metadata"]["source_filename"] == "b.pdf" and r["dense_score"] > 0.7 for r in results))
+        check("unrelated chunk dropped by the cutoff", not any("air filter" in r["content"] for r in results))
+        check("breakdown fields present", all({"dense_score", "bm25_score", "match_type"} <= r.keys() for r in results))
+
+        check("off-topic query returns nothing",
+              store.hybrid_search("sourdough bread recipe", [0.0, 0.0, 0.0, 1.0], k=5, min_similarity_score=0.5) == [])
+
+        filtered = store.hybrid_search(query, vec, k=5, min_similarity_score=0.5,
+                                       where=nodes._build_where("b.pdf", None, None))
+        check("where filter applies to lexical hits",
+              filtered and all(r["metadata"]["source_filename"] == "b.pdf" for r in filtered), str(filtered))
+
+        broad = store.hybrid_search(query, vec, k=5, min_similarity_score=0.5, specific_part_max=0)
+        check("broad keys give no exact_part bypass", not any(r["match_type"] == "exact_part" for r in broad), str(broad))
+
+        guaranteed = store.hybrid_search(query, vec, k=1, min_similarity_score=0.5, part_boost=0.0)
+        check("specific part always represented beyond k",
+              len(guaranteed) == 2 and guaranteed[0]["metadata"]["source_filename"] == "b.pdf"
+              and guaranteed[1]["matched_parts"] == ["457915.70X"], str(guaranteed))
+
+        real_get = lexical.get_lexical_index
+        lexical.get_lexical_index = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("index broken"))
+        try:
+            fallback = store.hybrid_search(query, vec, k=5, min_similarity_score=0.5)
+        finally:
+            lexical.get_lexical_index = real_get
+        check("falls back to dense only when the lexical index fails",
+              fallback and all(r["match_type"] == "dense" for r in fallback)
+              and not any(r["metadata"]["source_filename"] == "a.pdf" for r in fallback), str(fallback))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_hybrid_wiring() -> None:
+    section("Hybrid search wiring (nodes)")
+    install_fakes(script=[], queue=[[]])
+    nodes.vector_store_search(QueryState(query_embedding=[0.1], config=config(),
+                                         original_query="What does E1 mean?"))
+    kwargs = FakeStore.calls[0]
+    check("first retrieval sends the query text", kwargs.get("query_text") == "What does E1 mean?", str(kwargs))
+    check("default hybrid settings passed",
+          (kwargs.get("alpha"), kwargs.get("candidates"), kwargs.get("part_boost"))
+          == (nodes.HYBRID_ALPHA, nodes.HYBRID_CANDIDATES, nodes.PART_BOOST), str(kwargs))
+
+    install_fakes(script=[], queue=[[]])
+    nodes.vector_store_search(QueryState(query_embedding=[0.1], config=config(), original_query="E1",
+                                         retrieval_query="What does error E1 mean on the CCC2?"))
+    check("rewritten follow-up used as the search text",
+          FakeStore.calls[0]["query_text"] == "What does error E1 mean on the CCC2?")
+
+    os.environ.update(HYBRID_ALPHA="0.8", HYBRID_CANDIDATES="12", PART_BOOST="oops")
+    try:
+        install_fakes(script=[], queue=[[]])
+        nodes.vector_store_search(QueryState(query_embedding=[0.1], config=config(), original_query="q"))
+        kwargs = FakeStore.calls[0]
+        check("env overrides applied (int stays int)", kwargs["alpha"] == 0.8 and kwargs["candidates"] == 12
+              and isinstance(kwargs["candidates"], int), str(kwargs))
+        check("invalid env value falls back", kwargs["part_boost"] == nodes.PART_BOOST)
+    finally:
+        for name in ("HYBRID_ALPHA", "HYBRID_CANDIDATES", "PART_BOOST"):
+            os.environ.pop(name, None)
+
+    exact = nodes._build_query_result({**hit(0), "match_type": "exact_part", "matched_parts": ["457915.70X"],
+                                       "dense_score": 0.4, "bm25_score": 9.0})
+    plain = nodes._build_query_result(hit(1))
+    check("QueryResult keeps the breakdown", exact.match_type == "exact_part" and exact.dense_score == 0.4
+          and plain.match_type == "" and plain.matched_parts == [])
+    check("LLM sees matched_part only on exact hits",
+          nodes._format_result_for_llm(0, exact).get("matched_part") == "457915.70X"
+          and "matched_part" not in nodes._format_result_for_llm(1, plain))
+    check("prompt explains matched_part", '"matched_part"' in nodes.SYSTEM_PROMPT)
+
+
 if __name__ == "__main__":
-    for test in (test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
+    for test in (test_part_numbers, test_hybrid_search, test_hybrid_wiring,
+                 test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
                  test_failure_routes_to_fallback, test_read_page, test_neighbors, test_search_cutoff_env, test_steps_formatting, test_where_builder,
                  test_chroma_where, test_graph_wiring, test_conversation, test_sections, test_cited_documents,
                  test_diagram_priority, test_tool_call_reliability, test_structured_response,

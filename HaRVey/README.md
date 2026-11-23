@@ -1,6 +1,6 @@
 # HaRVey: Vector Ingestion & Semantic Query Pipeline
 
-A complete vector ingestion and semantic search pipeline built with LangGraph for processing PDF documents, generating embeddings, and enabling intelligent querying through a ReAct-style agent. The agent loop is hand-built as LangGraph nodes (`generate_response` ⇄ `search_more`) rather than LangGraph's prebuilt `create_react_agent`: the LLM reasons, calls a search tool, observes the results and repeats until it gives a final answer.
+A complete vector ingestion and hybrid search pipeline (semantic + keyword + exact part-number matching) built with LangGraph for processing PDF documents, generating embeddings, and enabling intelligent querying through a ReAct-style agent. The agent loop is hand-built as LangGraph nodes (`generate_response` ⇄ `search_more`) rather than LangGraph's prebuilt `create_react_agent`: the LLM reasons, calls a search tool, observes the results and repeats until it gives a final answer.
 
 ## Overview
 
@@ -27,9 +27,11 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 │   ├── query/
 │   │   ├── nodes.py                 # Query nodes, system prompt, tool schemas, response builders
 │   │   ├── tools.py                 # LLMService (OpenAI-compatible chat completions)
+│   │   ├── lexical.py               # BM25 + exact part-number index for hybrid search
 │   │   └── graph.py                 # Query pipeline definition
 │   └── utils/
-│       └── logging.py               # Logging configuration
+│       ├── logging.py               # Logging configuration
+│       └── part_numbers.py          # Part / model / fault-code extraction (ingestion + query)
 ├── web/
 │   ├── app.py                       # Flask app (query form, response, diagram images)
 │   └── templates/index.html         # Page template
@@ -43,7 +45,7 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 ├── manage_documents.py              # CLI tool for document management
 ├── requirements.txt                 # Python dependencies
 ├── example.env.example              # Configuration template (copy to .env)
-├── requirments/                     # Design specs (ingestion.md, query.md, start.md)
+├── requirements/                    # Design specs (ingestion.md, query.md, hybrid_search.md, start.md)
 ├── flaws.md, TODO                   # Known issues and ingestion backlog
 ├── HW-Reports/                      # Course reports and the technical audit
 └── README.md                        # This file
@@ -121,7 +123,7 @@ Browser chat UI: ask follow-up questions in a conversation thread. Answers rende
 python tests/test_queries.py          # Execute all required queries
 python tests/verify_ingestion.py      # Self-contained ingestion checks (fixture PDF, temp Chroma, fake embeddings)
 python tests/verify_ingestion.py --live   # ...plus a sanity check of your real Chroma database
-python tests/verify_query_loop.py     # Offline checks of the query agent loop (search_documents, steps)
+python tests/verify_query_loop.py     # Offline checks of the query agent loop and hybrid search (part numbers, BM25 blend)
 ```
 
 ---
@@ -131,7 +133,7 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop (
 1. **load_documents** - Discover all PDFs, calculate hashes, detect changes
 2. **parse_documents** - Extract text (pypdf), tables (pdfplumber) and diagrams
 3. **extract_metadata** - PyMuPDF layout analysis: column-aware reading order, font repair, headings from font styling, text split into sections; heading path and context for each diagram and table
-4. **chunk_text** - Split each section separately into chunks of up to 1000 characters with 100-character overlap (`CHUNK_SIZE`, `CHUNK_OVERLAP`). Every chunk starts with a `Section: A > B` line. If layout analysis finds no sections, each page becomes one section. Tables and diagrams get one chunk each
+4. **chunk_text** - Split each section separately into chunks of up to 1000 characters with 100-character overlap (`CHUNK_SIZE`, `CHUNK_OVERLAP`). Every chunk starts with a `Section: A > B` line. If layout analysis finds no sections, each page becomes one section. Tables and diagrams get one chunk each. Every chunk gets `part_numbers` metadata: model / part / fault codes from its text and its manual's filename
 5. **generate_embeddings** - Generate vectors via embedding service with retry logic
 6. **store_vectors** - Persist to Chroma with metadata indexing
 
@@ -158,7 +160,7 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop (
 1. **user_query** - Validate and prepare user input
 2. **rewrite_query** - With chat history, one LLM call rewrites a follow-up ("what about step 3?") into a standalone search query; skipped for the first question, falls back to the original on failure
 3. **embed_query** - Generate embedding for the (rewritten) query
-4. **vector_store_search** - Retrieve top-K similar documents (K=10) scoring at least `SEARCH_MIN_SIMILARITY` (default 0.5), plus neighbor chunks and the diagrams on the top hits' pages (max 8, same section first) so the agent has figures to show. If nothing passes the cutoff and there are no earlier-turn documents, the run ends without an LLM call (`response` is `None`; the web app shows "No relevant documents found.")
+4. **vector_store_search** - Hybrid search for the top-K documents (K=10): dense similarity blended with BM25, plus a boost and a guaranteed place for chunks containing a specific part number from the query (`457915.70X`, `8330-733`, `E1`); see [requirements/hybrid_search.md](./requirements/hybrid_search.md). A chunk is kept when its cosine or blended score reaches `SEARCH_MIN_SIMILARITY` (default 0.5). Also adds neighbor chunks and the diagrams on the top hits' pages (max 8, same section first) so the agent has figures to show. If nothing passes the cutoff and there are no earlier-turn documents, the run ends without an LLM call (`response` is `None`; the web app shows "No relevant documents found.")
 5. **add_history_documents** - Carry over the documents cited in the last 2 answers (max 30, marked `earlier_turn`). "Cited" means chunks matching a `sources` entry's filename + page, plus diagrams shown via `diagram_refs`; `insufficient_evidence` turns carry none
 6. **generate_response** - One LLM turn with tool calling (temperature 0.7, `max_tokens` 50000 for reasoning models); the last 5 Q&A turns are sent before the current question
 7. **search_more** - Agent loop: runs the LLM's `search_documents`, `read_section` or `read_page` call, adds new chunks and returns to `generate_response`. Searching stops after 3 rounds or 300 s, then the LLM must give a final answer
@@ -167,7 +169,7 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop (
 **Conversation:** `execute_query_pipeline(query, config, graph, chat_history=[...])` accepts earlier turns as `ChatTurn(question, answer, kind, documents)` (see `src/data_models.py`); build each with `chat_turn_from_result(question, result)` from `src/query/graph.py`, which keeps clean answer text (no sources or paths) and the cited documents, and returns `None` for failed or empty turns so they are not remembered. Past answers are replayed to the LLM as tool calls (`respond_to_user` / `insufficient_evidence` / `ask_clarifying_question`) with a tool result, not as plain assistant text. Limits are the `MAX_HISTORY_TURNS`, `HISTORY_DOC_TURNS` and `MAX_HISTORY_DOCS` constants in `src/query/nodes.py`. The CLI (`query_main.py`) still answers each query independently.
 
 **Features:**
-- Semantic similarity search
+- Hybrid search: semantic similarity + BM25 keywords + exact part-number matching (`rank_bm25`), used by the first retrieval and `search_documents`
 - LLM-powered response synthesis
 - Tool calling for structured output
 - Source attribution and evidence-based answers
@@ -212,6 +214,11 @@ SHOW_PROGRESS_BAR=true
 # Similarity cutoff for the first retrieval AND the agent's search_documents tool
 # (optional, default 0.5)
 SEARCH_MIN_SIMILARITY=0.5
+
+# Hybrid search (optional, defaults shown; see requirements/hybrid_search.md)
+HYBRID_ALPHA=0.6        # weight of cosine vs BM25 in the blended score
+HYBRID_CANDIDATES=30    # dense and BM25 hits each considered before blending
+PART_BOOST=0.3          # boost for chunks containing a specific query part number
 
 # LLM Service (required for the query pipeline; ingestion does not use it)
 LLM_BASE_URL=http://golem:4000/v1
@@ -314,7 +321,7 @@ Next steps:
 3. Run `python ingestion_main.py` to re-ingest
 4. Change detection automatically detects the modification
 
-For detailed usage and options, see [Post-Ingestion Document Management](./requirments/ingestion.md#post-ingestion-document-management) in ingestion.md.
+For detailed usage and options, see [Post-Ingestion Document Management](./requirements/ingestion.md#post-ingestion-document-management) in ingestion.md.
 
 ---
 
@@ -326,7 +333,7 @@ For detailed usage and options, see [Post-Ingestion Document Management](./requi
 ```
 PDFs → Load → Parse → Metadata → Chunk → Embed → Store (Chroma)
                                            ↓
-Query (+ chat history) → Rewrite → Embed → Search (Chroma) + earlier docs → LLM (Tool Calling) → Format Response
+Query (+ chat history) → Rewrite → Embed → Hybrid search (Chroma + BM25 + part numbers) + earlier docs → LLM (Tool Calling) → Format Response
 ```
 
 ### State Management

@@ -116,6 +116,10 @@ def print_detailed_query_result(result) -> None:
             else:
                 print(f"    Match: direct hit")
                 print(f"    Similarity Score: {doc.similarity_score:.6f}")
+                if doc.match_type:
+                    dense = f"{doc.dense_score:.4f}" if doc.dense_score is not None else "n/a"
+                    parts = f", parts={', '.join(doc.matched_parts)}" if doc.matched_parts else ""
+                    print(f"    Hybrid: {doc.match_type} (cosine={dense}, bm25={doc.bm25_score:.2f}{parts})")
             print(f"    Char Range: {doc.metadata.start_char_index}-{doc.metadata.end_char_index}")
             print(f"    Content Length: {len(doc.content)} characters")
             print(f"    Content:\n{doc.content}\n")

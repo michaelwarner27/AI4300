@@ -15,6 +15,7 @@ from src.query.tools import (
     EmbeddingService, ChromaVectorStore, LLMService, MalformedToolCallError, NoToolCallError,
 )
 from src.utils.logging import get_logger
+from src.utils.part_numbers import split_keys
 
 logger = get_logger()
 
@@ -52,6 +53,11 @@ SECTION_SEPARATOR = " > "  # joins a heading path (same as ingestion's section_p
 # Similarity cutoff for the first retrieval AND search_documents (SEARCH_MIN_SIMILARITY in .env).
 # Real questions score 0.55+, off-topic ones ~0.4 (see flaws.md).
 DEFAULT_MIN_SIMILARITY = 0.5
+# Hybrid (dense + BM25 + exact part number) search, see ChromaVectorStore.hybrid_search.
+# Each can be overridden in .env with the same name.
+HYBRID_ALPHA = 0.6  # weight of cosine vs saturated BM25 in the blended score
+HYBRID_CANDIDATES = 30  # dense and BM25 hits each considered before blending
+PART_BOOST = 0.3  # added for chunks containing a specific part number from the query
 AGENT_LOOP_TOOLS = {"search_documents", "read_page", "read_section"}  # non-terminal tools handled by search_more
 DIAGRAM_CHUNK_TYPE = "diagram_reference"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -81,6 +87,7 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 - Each retrieved document has a numeric "ref", a filename, a page, a chunk_type and its full text, listed in reading order.
 - "neighbor": true means it was not matched directly but sits next to a match, or is a diagram on the same page as a match.
 - "earlier_turn": true means it was retrieved for an earlier question in this conversation and is still available.
+- "matched_part" means the passage contains that exact model, part or error code from the search. When the question names a specific model or part number, answer from passages for that exact number and do not substitute specifications or parts for a different model.
 - "page" is the PDF page number, which can differ from the page number printed in the document (e.g. PDF page 16 may be printed as page 13). Always use the "page" value for citations and for read_page / search filters.
 - Most documents have a "section": the heading path in the source document where the passage appears, e.g. "MAINTENANCE > A. Air Filter". Passages with the same section belong together, and a section can span several pages. Use the section to tell which procedure, component or model a passage belongs to, and do not mix steps from different sections unless the question needs both.
 
@@ -177,11 +184,11 @@ TOOLS = [
     },
     {
         "name": "search_documents",
-        "description": "Search the document database for additional context (e.g. missing steps, prerequisites, warnings). Returns new matching passages; then continue with another tool call.",
+        "description": "Search the document database for additional context (e.g. missing steps, prerequisites, warnings). Combines meaning-based and exact keyword matching. Returns new matching passages; then continue with another tool call.",
         "parameters": {
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "What to look for, phrased as a short search query"},
+                "query": {"type": "string", "description": "What to look for, phrased as a short search query. Include any exact model, part or error code (e.g. 457915.70X, 8330-733, E1) so passages containing it are found"},
                 "filename": {"type": "string", "description": "Optional: only search within this source filename"},
                 "page_start": {"type": "integer", "description": "Optional: first page to include"},
                 "page_end": {"type": "integer", "description": "Optional: last page to include"},
@@ -550,11 +557,13 @@ def vector_store_search(state: QueryState) -> dict[str, Any]:
         # Initialize the collection (connects to existing database)
         vector_store.initialize_collection()
         
-        # Query the vector store with similarity score filtering
-        raw_results = vector_store.query_similarity(
-            query_embedding=state.query_embedding,
-            k=DEFAULT_K,
-            min_similarity_score=_min_similarity(),
+        # Hybrid search: dense similarity + BM25 + exact part numbers, with the
+        # same text that was embedded (the follow-up rewrite when there is one)
+        raw_results = _hybrid_search(
+            vector_store,
+            state.retrieval_query or state.original_query,
+            state.query_embedding,
+            DEFAULT_K,
         )
         
         # Transform raw results into QueryResult objects
@@ -637,11 +646,17 @@ def _build_query_result(result: dict) -> QueryResult:
         diagram_path=meta.get("diagram_path", ""),
         diagram_kind=meta.get("diagram_kind", ""),
         section_headings=_parse_section(meta.get("section_path", "")),
+        part_numbers=split_keys(meta.get("part_numbers", "")),
     )
     return QueryResult(
         content=result["content"],
         metadata=metadata,
         similarity_score=result["similarity_score"],
+        # Present only on hybrid_search results
+        dense_score=result.get("dense_score"),
+        bm25_score=result.get("bm25_score", 0.0),
+        match_type=result.get("match_type", ""),
+        matched_parts=list(result.get("matched_parts", [])),
     )
 
 
@@ -693,6 +708,9 @@ def _format_result_for_llm(ref: int, result: QueryResult) -> dict:
         part["neighbor"] = True
     if result.from_history:
         part["earlier_turn"] = True
+    if result.matched_parts:
+        # Contains a part / model number named in the search query
+        part["matched_part"] = ", ".join(result.matched_parts)
     if result.metadata.chunk_type == DIAGRAM_CHUNK_TYPE:
         # No diagram_path: the LLM picks diagrams by ref and must not echo file paths
         part["diagram_kind"] = result.metadata.diagram_kind
@@ -900,6 +918,33 @@ def _min_similarity() -> float:
     except ValueError:
         logger.warning(f"Invalid SEARCH_MIN_SIMILARITY={raw!r}; using {DEFAULT_MIN_SIMILARITY}")
         return DEFAULT_MIN_SIMILARITY
+
+
+def _env_number(name: str, default: float) -> float:
+    """A numeric setting from .env, or default when unset or invalid."""
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return type(default)(float(raw))
+    except ValueError:
+        logger.warning(f"Invalid {name}={raw!r}; using {default}")
+        return default
+
+
+def _hybrid_search(vector_store: Any, query_text: str, embedding: list[float], k: int,
+                   where: dict | None = None) -> list[dict]:
+    """hybrid_search with the shared cutoff and the HYBRID_* / PART_BOOST settings."""
+    return vector_store.hybrid_search(
+        query_text=query_text,
+        query_embedding=embedding,
+        k=k,
+        min_similarity_score=_min_similarity(),
+        where=where,
+        alpha=_env_number("HYBRID_ALPHA", HYBRID_ALPHA),
+        candidates=_env_number("HYBRID_CANDIDATES", HYBRID_CANDIDATES),
+        part_boost=_env_number("PART_BOOST", PART_BOOST),
+    )
 
 
 def _resolve_filename(name: Any, existing: list[QueryResult]) -> str | None:
@@ -1118,12 +1163,7 @@ def _run_search(config: Any, params: dict, existing: list[QueryResult]) -> tuple
         collection_name=config.chroma_collection_name,
     )
     vector_store.initialize_collection()
-    raw_results = vector_store.query_similarity(
-        query_embedding=embedding,
-        k=k,
-        min_similarity_score=_min_similarity(),
-        where=where,
-    )
+    raw_results = _hybrid_search(vector_store, query_text.strip(), embedding, k, where)
     
     seen = {_chunk_key(r) for r in existing}
     new_results: list[QueryResult] = []

@@ -162,7 +162,14 @@ PDF Documents
 - Map chunks back to original pages and document sources
 - Store the heading path in `section_headings` (Chroma: `section_path`, joined with ` > `)
 - Label content before the first heading with the document title, built from the filename (e.g. `Dometic 457915 Installation & Operating Instructions Manual1`)
+- Extract part numbers into `part_numbers` on every chunk (see Part numbers below)
 - Skip documents that produce no valid chunks (with logging)
+
+**Part numbers** (`TextChunker.chunk_all`, `src/utils/part_numbers.py`): every chunk, of all three types, gets `ChunkMetadata.part_numbers`, the normalized model / part / fault-code keys used by hybrid search for exact matching (see [hybrid_search.md](hybrid_search.md)):
+- Keys from the chunk text (`part_keys`): each code (`457915.70X`, `8330-733`, `CCC2`, `E1`) normalized to uppercase without `.`/`-` (`45791570X`, `8330733`), plus its model family (`457915`). Decimals, units (`12VDC`), fractions, ranges and words like `9-Pin` are not extracted
+- Plus the keys in the manual's filename (`filename_part_keys`: `CCC2-Operating-Instructions.pdf` → `CCC2`, `Dometic 457915 ... Manual1.pdf` → `457915`), so every chunk of a manual carries its model number
+- Stored in Chroma as one delimited string, `part_numbers="|45791570X|457915|"` (metadata values must be scalars); `""` when there are none
+- On the current corpus, 448 distinct codes; part-number heading candidates are still rejected by `FontHeadingDetector`, the codes only go to metadata
 
 **Configuration**:
 - Chunk size and overlap are tunable via `.env` variables
@@ -174,7 +181,7 @@ PDF Documents
 - `table` - One chunk per meaningful table, never split. Content is `Table from {file}, page N:`, the `Section:` line, then the markdown table. A strict filter drops junk tables (drawn boxes, empty grids, labels): a table needs at least 2 rows, 2 columns, 6 cells with text, and 60% of cells filled
 - `diagram_reference` - One per diagram, captioned or not. Content lists the page, `Section:`, `Label:` (a nearby `FIG. N` line), `Text in figure:` (caption) and `Context:`, skipping empty parts. Metadata holds `diagram_path` and `diagram_kind`
 
-Pages in all chunk metadata are 1-indexed. Each chunk also stores `file_hash`, `ingested_at` and `total_chunks` (used by `store_vectors` as a completeness check).
+Pages in all chunk metadata are 1-indexed. Each chunk also stores `file_hash`, `ingested_at`, `total_chunks` (used by `store_vectors` as a completeness check) and `part_numbers`.
 
 **Example chunks** (Dometic manual, PDF page 16, a two-column page):
 
@@ -205,7 +212,7 @@ Rating
 120 Vac
 60 Hz 1 ph | Compressor ...
 ```
-Metadata: `chunk_type="table"`, `page_number=7`, `section_path="SPECIFICATIONS > A. Table - Unit Data"`
+Metadata: `chunk_type="table"`, `page_number=7`, `section_path="SPECIFICATIONS > A. Table - Unit Data"`, `part_numbers="|45791570X|457915|64031280X|640312|..."`
 
 `diagram_reference` (PDF page 18, wiring diagram whose labels were stored in a shifted font, shortened):
 ```
@@ -268,8 +275,8 @@ Metadata: `chunk_type="diagram_reference"`, `diagram_path=".../..._p17_fig1.png"
 **Responsibilities**:
 - Initialize Chroma collection if it doesn't exist
 - Create unique IDs for each chunk (`{filename}_{page}_{chunk_seq}`)
-- Store vectors with full metadata (source, page, content, `chunk_type`, `section_path`, `diagram_path`, `diagram_kind`)
-- Enable metadata-based filtering (by document, by page)
+- Store vectors with full metadata (source, page, content, `chunk_type`, `section_path`, `diagram_path`, `diagram_kind`, `part_numbers`)
+- Enable metadata-based filtering (by document, by page) and exact part-number lookup (the query side builds its BM25 / part-number index from the stored documents and `part_numbers`)
 - Handle storage errors gracefully (skip and continue)
 
 **Configuration**:
@@ -446,6 +453,8 @@ python ingestion_main.py
 
 ✅ **Section Awareness** - Font-based heading detection, column-aware reading order, and a section path on every chunk
 
+✅ **Part-Number Metadata** - Model, part and fault codes extracted from each chunk and its filename, for exact matching in hybrid search
+
 ✅ **Progress Visibility** - Per-node progress bars show real-time advancement
 
 ---
@@ -489,6 +498,7 @@ def validate_chunks(state: IngestionState) -> dict[str, Any]:
 | `src/ingestion/layout.py` | Layout analysis: TextRepair (shifted fonts), DocumentLayout (reading order), FontHeadingDetector, `analyze_document` (sections, diagram/table section paths) |
 | `src/ingestion/graph.py` | LangGraph pipeline definition with new nodes and edges |
 | `src/utils/logging.py` | Logging configuration |
+| `src/utils/part_numbers.py` | Part-number extraction / normalization for `part_numbers` metadata (shared with the query side) |
 | `ingestion_main.py` | Entry point and pipeline execution |
 | `manage_documents.py` | CLI for listing, deleting and updating ingested documents |
 
