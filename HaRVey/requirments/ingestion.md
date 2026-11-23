@@ -18,17 +18,17 @@ PDF Documents
               ↓
 ┌─────────────────────────┐
 │  parse_documents        │ Extract text, tables, diagrams
-│                         │ (using pdfplumber + pypdf)
+│                         │ (pypdf + pdfplumber + PyMuPDF)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  extract_metadata       │ Attach structure & enriched metadata
-│                         │ (headings, timestamps, hashes)
+│  extract_metadata       │ Layout analysis: headings, reading order,
+│                         │ sections, diagram/table section paths
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  chunk_text             │ Split text + create table & diagram chunks
-│                         │ (with section context)
+│  chunk_text             │ Split each section + create table & diagram
+│                         │ chunks (every chunk has a "Section:" line)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
@@ -85,8 +85,8 @@ PDF Documents
 **Outputs**: ParsedDocument objects with text, tables, and diagram metadata
 
 **Responsibilities**:
-- Extract all text from each PDF page using pypdf
-- Extract structured table data using pdfplumber (if enabled)
+- Extract text from each PDF page using pypdf. This text is a fallback: `extract_metadata` replaces it with layout-ordered text when layout analysis succeeds
+- Extract structured table data and each table's position (bbox) using pdfplumber (if enabled)
 - Extract diagrams as viewable image files into `extracted_diagrams/` (see Diagram Extraction below)
 - Preserve page boundaries and text structure
 - Extract optional metadata (author, creation date) from PDF properties
@@ -97,16 +97,17 @@ PDF Documents
 - `ENABLE_TABLE_EXTRACTION=true` - Extract tables as structured data
 
 **Key Functions**:
-- Uses `pypdf` library for text extraction
+- Uses `pypdf` library for fallback text extraction
 - Uses `pdfplumber` for table detection and extraction
-- Uses `pypdf` + `PyMuPDF` for diagram extraction
+- Uses `PyMuPDF` for diagram extraction (`pypdf` for raster images only if PyMuPDF is missing)
 - Maintains per-page text organization
-- Handles encoding issues and malformed PDFs
+- Handles encoding issues and malformed PDFs. Text stored in fonts whose character codes are shifted by 29 (e.g. `7+(50267$7` for `THERMOSTAT`) is detected per font and page, and decoded (`TextRepair` in `src/ingestion/layout.py`)
 
 **Diagram Extraction**:
-- Embedded raster images are extracted with `pypdf` as `{stem}_p{page}_img{N}.{ext}`; images under 50px on either side are dropped
-- Vector drawings (which pypdf cannot see) are found with PyMuPDF `cluster_drawings()`, then each region is rendered at 150 dpi to `{stem}_p{page}_fig{N}.png`; regions under 40pt are ignored
-- Each `DiagramMetadata` records `page`, `image_path`, `type` (file format), `kind` (`raster` or `vector_figure`) and a `caption` built from the text inside the figure region (e.g. `FIG. 5 Roof Opening Dimensions Are Nominal`)
+- Embedded raster images are extracted with PyMuPDF as `{stem}_p{page}_img{N}.{ext}`, together with their position on the page. Images under 50px on either side are dropped
+- Vector drawings (which pypdf cannot see) are found with PyMuPDF `cluster_drawings()`, then each region is rendered at 150 dpi to `{stem}_p{page}_fig{N}.png`. Regions under 40pt are ignored
+- Each `DiagramMetadata` records `page`, `image_path`, `type` (file format), `kind` (`raster` or `vector_figure`), `bbox`, and a `caption` built from the text inside the figure region (e.g. `FIG. 5 Roof Opening Dimensions Are Nominal`). Shifted-font text is decoded and overprinted (fake bold) text is read once. Captions that are still unreadable are left empty
+- `heading_path`, `label` and `context` are filled in later by `extract_metadata`
 - Figures found close together may merge into one crop
 - Previously extracted files for a document are deleted before re-extracting, so re-ingesting never leaves stale images
 
@@ -122,7 +123,13 @@ PDF Documents
 
 **Responsibilities**:
 - Extract creation date and author from PDF metadata
-- Extract section heading structure from document text
+- Run layout analysis (`analyze_document` in `src/ingestion/layout.py`) to get the section structure:
+  - **Reading order**: text lines with font size, bold and position, ordered column-aware. Blocks are split at the page middle, and large headings and full-width blocks start a new band
+  - **Headings** (`FontHeadingDetector`): lines larger than body text, or bold and heading-shaped (ALL CAPS, `A. ...` labels, short title case). Rejected: running headers/footers (same small text on 30%+ of pages), table-of-contents regions, text inside tables or figures, NOTE/WARNING/CAUTION callouts, bold paragraphs, part numbers. Levels come from ranking font styles by size
+  - **Sections**: the text between one heading and the next, with its heading path (e.g. `MAINTENANCE > A. Air Filter`). A section title repeated at the top of a continuation page keeps the current sub-section
+  - **Diagrams**: each gets its `heading_path`, a nearby `FIG. N` `label`, and `context` (up to 500 characters of text back to the previous heading, keeping the part nearest the figure)
+  - **Tables**: each meaningful table gets the `heading_path` at its position
+- Replace the pypdf text with the layout text (repeated headers/footers removed). pypdf text is kept only if layout analysis finds no text
 - Add processing/extraction timestamp
 - Ensure metadata completeness for downstream filtering
 - Skip documents with missing optional metadata (don't fail the pipeline)
@@ -130,9 +137,10 @@ PDF Documents
 
 **Key Functions**:
 - Extracts PDF properties via pypdf
-- Detects section headings using regex patterns
+- Detects section headings from font styling (PyMuPDF is required). If layout analysis fails, the document gets no headings, an error is recorded, and `chunk_text` chunks it page by page
 - Generates processing timestamps
 - Validates metadata availability
+- `python tests/verify_ingestion.py --headings` prints every heading detected in `documents/` for review
 
 ---
 
@@ -145,24 +153,68 @@ PDF Documents
 **Outputs**: TextChunk objects with chunk-type and source metadata
 
 **Responsibilities**:
-- Split text using LangChain's `RecursiveCharacterTextSplitter`
+- Split each section separately with LangChain's `RecursiveCharacterTextSplitter`, so no chunk mixes two sections
+- Start every chunk with a `Section: A > B` line. It is embedded with the text and seen by the LLM
 - Create separate chunks for table content (preserves structure)
-- Create reference chunks for diagrams (links to extracted images)
-- Apply configured chunk size (default: 512 characters) and overlap (default: 50 characters)
+- Create reference chunks for every diagram (links to extracted images)
+- Apply configured chunk size (default: 1000 characters, including the section line) and overlap (default: 100 characters)
+- Without layout sections (layout analysis failed or found no text), treat each page as one section with no heading path, so chunks keep correct page numbers
 - Map chunks back to original pages and document sources
-- Preserve section heading context in chunk metadata
+- Store the heading path in `section_headings` (Chroma: `section_path`, joined with ` > `)
+- Label content before the first heading with the document title, built from the filename (e.g. `Dometic 457915 Installation & Operating Instructions Manual1`)
 - Skip documents that produce no valid chunks (with logging)
 
 **Configuration**:
 - Chunk size and overlap are tunable via `.env` variables
-- Parameters: `CHUNK_SIZE=512`, `CHUNK_OVERLAP=50`
+- Parameters: `CHUNK_SIZE=1000`, `CHUNK_OVERLAP=100`
+- Changing them requires a re-ingest with `ENABLE_CHANGE_DETECTION=false`, because unchanged PDFs are otherwise skipped
 
 **Chunk Types** (`chunk_sequence` runs continuously across all three, so chunk IDs stay unique):
-- `text` - Regular text chunks
-- `table` - One chunk per meaningful table, never split. Content is `Table from {file}, page N:` followed by the markdown table. A strict filter drops junk tables (drawn boxes, empty grids, labels): a table needs at least 2 rows, 2 columns, 6 cells with text, and 60% of cells filled
-- `diagram_reference` - `Figure on page N of {file}: {caption}`. Metadata holds `diagram_path` and `diagram_kind`. Diagrams with no caption get no chunk (see `flaws.md`)
+- `text` - Section text, split to fit `CHUNK_SIZE`. Content is the `Section:` line followed by the text
+- `table` - One chunk per meaningful table, never split. Content is `Table from {file}, page N:`, the `Section:` line, then the markdown table. A strict filter drops junk tables (drawn boxes, empty grids, labels): a table needs at least 2 rows, 2 columns, 6 cells with text, and 60% of cells filled
+- `diagram_reference` - One per diagram, captioned or not. Content lists the page, `Section:`, `Label:` (a nearby `FIG. N` line), `Text in figure:` (caption) and `Context:`, skipping empty parts. Metadata holds `diagram_path` and `diagram_kind`
 
 Pages in all chunk metadata are 1-indexed. Each chunk also stores `file_hash`, `ingested_at` and `total_chunks` (used by `store_vectors` as a completeness check).
+
+**Example chunks** (Dometic manual, PDF page 16, a two-column page):
+
+`text`:
+```
+Section: MAINTENANCE > A. Air Filter
+A. Air Filter
+1. Periodically (a minimum of every 2 weeks of op-
+eration) remove the return air filter located behind
+the return air grille and wash it with soap and
+warm water, let dry and then reinstall.
+NEVER run unit without return air filter in
+place. This will plug the unit evaporator coil
+with dirt and may substantially degrade the
+performance of the unit over time.
+```
+Metadata: `chunk_type="text"`, `page_number=16`, `section_path="MAINTENANCE > A. Air Filter"`
+
+`table` (PDF page 7, shortened; cells keep their line breaks from the PDF):
+```
+Table from Dometic 457915 Installation & Operating Instructions Manual1.pdf, page 7:
+Section: SPECIFICATIONS > A. Table - Unit Data
+| Model No. | Nominal
+Capacity
+(BTU HR)
+Cooling | Electrical
+Rating
+120 Vac
+60 Hz 1 ph | Compressor ...
+```
+Metadata: `chunk_type="table"`, `page_number=7`, `section_path="SPECIFICATIONS > A. Table - Unit Data"`
+
+`diagram_reference` (PDF page 18, wiring diagram whose labels were stored in a shifted font, shortened):
+```
+Figure on page 18 of Dometic 457915 Installation & Operating Instructions Manual1.pdf
+Section: WIRING DIAGRAMS > B. Air Distribution Box Wiring Diagram
+Text in figure: ELEC HEAT H,6 C,4 L,3 THERMOSTAT 314841.000 WHT BLK ... FACTORY WIRING ...
+Context: 115 VAC FIELD WIRING
+```
+Metadata: `chunk_type="diagram_reference"`, `diagram_path=".../..._p17_fig1.png"`, `diagram_kind="vector_figure"`
 
 **Key Functions**:
 - Creates metadata for each chunk including page, type, and sequence
@@ -216,7 +268,7 @@ Pages in all chunk metadata are 1-indexed. Each chunk also stores `file_hash`, `
 **Responsibilities**:
 - Initialize Chroma collection if it doesn't exist
 - Create unique IDs for each chunk (`{filename}_{page}_{chunk_seq}`)
-- Store vectors with full metadata (source, page, content)
+- Store vectors with full metadata (source, page, content, `chunk_type`, `section_path`, `diagram_path`, `diagram_kind`)
 - Enable metadata-based filtering (by document, by page)
 - Handle storage errors gracefully (skip and continue)
 
@@ -319,8 +371,8 @@ LLM_MODEL=Qwen3.8-Flash-Next
 LLM_API_KEY=your_api_key
 
 # Chunking
-CHUNK_SIZE=512
-CHUNK_OVERLAP=50
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=100
 
 # Vector Storage
 CHROMA_PERSIST_DIRECTORY=./chroma_db
@@ -390,7 +442,9 @@ python ingestion_main.py
 
 ✅ **Table Awareness** - Tables extracted as structured data and embedded separately
 
-✅ **Diagram Support** - Diagram detection and image extraction for future agent access
+✅ **Diagram Support** - Diagram detection and image extraction. Every diagram is searchable by its section path, label, figure text and context
+
+✅ **Section Awareness** - Font-based heading detection, column-aware reading order, and a section path on every chunk
 
 ✅ **Progress Visibility** - Per-node progress bars show real-time advancement
 
@@ -431,7 +485,8 @@ def validate_chunks(state: IngestionState) -> dict[str, Any]:
 | `src/config.py` | Configuration loading from .env (enhanced with retry, table, change-detection options) |
 | `src/data_models.py` | Data structures (Document, TextChunk, IngestionState, TableData, DiagramMetadata) |
 | `src/ingestion/nodes.py` | 9 node function implementations (6 pipeline + 3 document management) |
-| `src/ingestion/tools.py` | Tool classes (DocumentHasher, TableExtractor, DiagramExtractor, HeadingExtractor, EmbeddingService with retry, ChromaVectorStore) |
+| `src/ingestion/tools.py` | Tool classes (PDFLoader, PDFParser, DocumentHasher, TableExtractor, DiagramExtractor, TextChunker, EmbeddingService, ChromaVectorStore) |
+| `src/ingestion/layout.py` | Layout analysis: TextRepair (shifted fonts), DocumentLayout (reading order), FontHeadingDetector, `analyze_document` (sections, diagram/table section paths) |
 | `src/ingestion/graph.py` | LangGraph pipeline definition with new nodes and edges |
 | `src/utils/logging.py` | Logging configuration |
 | `ingestion_main.py` | Entry point and pipeline execution |

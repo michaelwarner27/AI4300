@@ -1,18 +1,25 @@
 # Vector Query Pipeline
 
-This document describes the LangGraph-based query pipeline that retrieves semantically similar documents from the vector database and generates LLM-powered responses with source attribution.
+This document describes the LangGraph-based query pipeline that retrieves semantically similar passages from the vector database and generates LLM-powered answers with source attribution. It supports multi-turn conversations, an agent loop that can search and read more of the documents, section-aware context, and diagram display.
 
 ## Overview
 
-The query pipeline accepts a user question, converts it to an embedding, searches the vector database for similar documents, and uses an LLM to synthesize an answer with proper source citations. It handles cases where insufficient evidence is found in the knowledge base.
+The query pipeline accepts a user question (optionally with earlier turns of the conversation), rewrites follow-ups into standalone search queries, embeds the query, searches the vector database, and lets an LLM answer with tool calls. The LLM can run further searches, read whole sections or pages, and finally answers with cited sources, optional step-by-step instructions and optional diagrams, or reports that the documents do not cover the question.
+
+Every passage carries the **section** it came from (its heading path in the source document, e.g. `MAINTENANCE > A. Air Filter`), set at ingestion. The LLM sees it, can read a whole section with `read_section`, and citations show it.
 
 ### Architecture Diagram
 
 ```
-User Query (Input)
+User Query (+ chat history)
     ↓
 ┌─────────────────────────┐
 │  user_query             │ Validate input
+└─────────────┬───────────┘
+              ↓
+┌─────────────────────────┐
+│  rewrite_query          │ Follow-up → standalone search query
+│                         │ (no-op without chat history)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
@@ -20,32 +27,37 @@ User Query (Input)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
-│  vector_store_search    │ Query Chroma, retrieve top 10
+│  vector_store_search    │ Query Chroma (top 10, score ≥ 0.5)
+│                         │ + same-section neighbor chunks
+└─────────────┬───────────┘
+              ↓
+┌─────────────────────────┐
+│  add_history_documents  │ Carry over documents cited
+│                         │ in recent turns
 └─────────────┬───────────┘
               ↓
         [Results Found?]
         /              \
       YES               NO
       ↓                 ↓
-┌──────────────┐    [Skip to Output]
-│generate_     │◄────────┐   ↓
-│response      │         │  Final Response
-│(LLM + tools) │         │
-└──────┬───────┘   ┌─────┴────────┐
-       │ search_   │ search_more  │ Run search_documents,
-       │ documents │ (max 3 rounds)│ append new chunks
-       ├──────────►└──────────────┘
-       │ final answer
+┌──────────────┐    [End: no_results_found]
+│generate_     │◄──────────┐
+│response      │           │
+│(LLM + tools) │     ┌─────┴────────┐
+└──────┬───────┘     │ search_more  │ search_documents /
+       │ non-final   │ (max 3 rounds│ read_section /
+       ├────────────►│  or 300 s)   │ read_page
+       │ final answer└──────────────┘
        ↓
 ┌──────────────┐
-│process_      │ Handle tool call
-│tool_call     │
+│process_      │ Format answer, citations, diagrams;
+│tool_call     │ record cited documents
 └──────┬───────┘
        ↓
   Final Response (Output)
 ```
 
-`generate_response` is an agent turn. If the LLM calls `search_documents`, `search_more` runs the search, adds the results to the conversation and returns to `generate_response`. Any final answer (`respond_to_user` / `insufficient_evidence`) goes to `process_tool_call`.
+`generate_response` is one agent turn. If the LLM calls `search_documents`, `read_section` or `read_page`, `search_more` runs it, adds the results to the conversation and returns to `generate_response`. A final answer (`respond_to_user` / `insufficient_evidence`) goes to `process_tool_call`.
 
 ---
 
@@ -60,24 +72,42 @@ User Query (Input)
 **Outputs**: Validated query string
 
 **Responsibilities**:
-- Validate query is not empty
-- Ensure query is within reasonable length limits
-- Log validation success or failure
+- Validate the query is a non-empty string (whitespace-only is rejected)
+- Strip surrounding whitespace
 - Set `query_validated` flag in state
 - Handle empty or invalid input gracefully
 
 **Behavior**:
 - Validation failures trigger `query_validation_failed` status
-- Valid queries proceed to embedding generation
-- No preprocessing or modification of query text
+- Valid queries proceed to `rewrite_query`
 
 ---
 
-### 2. embed_query
+### 2. rewrite_query
 
-**Purpose**: Convert the validated query string into a vector embedding.
+**Purpose**: Turn a follow-up question into a standalone search query, so retrieval finds what "it", "that diagram" or "step 3" refers to.
 
-**Inputs**: Validated query string
+**Inputs**: Validated query + `chat_history`
+
+**Outputs**: `retrieval_query`
+
+**Responsibilities**:
+- With no chat history, use the query as-is (no LLM call)
+- Otherwise make one LLM call (`REWRITE_PROMPT`, temperature 0) with the last `MAX_HISTORY_TURNS` (5) turns; earlier answers are truncated to `REWRITE_ANSWER_CHARS` (1500)
+- Clean the reply: remove `<think>` blocks, a `Query:` prefix and surrounding quotes
+- Fall back to the original query on any error, an empty reply, or a reply longer than `REWRITE_MAX_QUERY_CHARS` (500)
+
+**Behavior**:
+- The rewrite only affects retrieval (embedding). The LLM still answers the user's own words
+- Sets status `query_rewritten` when a rewrite is used
+
+---
+
+### 3. embed_query
+
+**Purpose**: Convert the retrieval query into a vector embedding.
+
+**Inputs**: `retrieval_query` (falls back to the validated query)
 
 **Outputs**: Vector embedding (array of floats)
 
@@ -85,7 +115,6 @@ User Query (Input)
 - Call embedding service API with the query text
 - Handle API errors (connection failures, authentication, timeouts)
 - Validate response format and vector dimensions
-- Log successful embedding with vector size
 - Propagate errors to next nodes
 
 **Configuration**:
@@ -95,103 +124,130 @@ User Query (Input)
 - Timeout: 30 seconds
 
 **Key Functions**:
-- Reuses `EmbeddingService` from ingestion pipeline
+- Reuses `EmbeddingService` from the ingestion pipeline
 - Single query embedding (not batched)
 - Errors stored in state for diagnostics
 
 ---
 
-### 3. vector_store_search
+### 4. vector_store_search
 
-**Purpose**: Query the Chroma vector database for semantically similar documents.
+**Purpose**: Query the Chroma vector database for semantically similar passages.
 
 **Inputs**: Query embedding vector
 
-**Outputs**: Top K results with metadata and similarity scores
+**Outputs**: Top K results (plus neighbor chunks) with metadata and similarity scores
 
 **Responsibilities**:
-- Connect to Chroma collection with configured persistence directory
-- Search for K nearest neighbors (default: 10 results)
-- Filter results by minimum similarity score (default: 0.5)
-- Extract and return full metadata for each result (filename, page, chunk content, plus `chunk_type`, `diagram_kind` and `diagram_path` for diagram chunks; these three are read with defaults so older records still load)
-- Handle no-results case gracefully (status: `no_results_found`)
+- Connect to the Chroma collection
+- Search for the K nearest chunks (`DEFAULT_K` = 10)
+- Drop results below `SEARCH_MIN_SIMILARITY` from `.env` (default `DEFAULT_MIN_SIMILARITY` = 0.5; the same cutoff is used by `search_documents`). Relevant chunks score about 0.55 and up, off-topic queries about 0.4 at best
+- Read each result's metadata: filename, page, chunk sequence, character range, and (with defaults, so older records still load) `chunk_type`, `diagram_kind`, `diagram_path` and `section_path`. `section_path` (`"A > B"`) is split back into `ChunkMetadata.section_headings`
+- Add neighbor chunks (see below)
+- Handle the no-results case gracefully (status: `no_results_found`)
 - Handle database connection errors
 
+**Neighbor context**: each of the top 5 text hits (`NEIGHBOR_TOP_HITS`) also brings the chunks immediately before and after it (`chunk_sequence` ±1, `NEIGHBOR_RADIUS`), **only if they are in the same section as the hit**. A heading is often in a different chunk than the text it introduces, so a hit alone can be misleading. Hits from records without a section accept any neighbor. A retrieval returns at most 10 matches + 10 neighbors, in reading order, with neighbors flagged `"neighbor": true`.
+
 **Configuration**:
-- Database: Chroma
 - Persist directory: `CHROMA_PERSIST_DIRECTORY`
 - Collection name: `CHROMA_COLLECTION_NAME`
-- K (number of results): 10
-- Min similarity threshold: 0.5
-
-**Key Functions**:
-- Queries Chroma with vector similarity search
-- Extracts metadata for each result
-- Filters by similarity score threshold
-- Returns conditional status for routing
+- K: 10, min similarity: `SEARCH_MIN_SIMILARITY` (default 0.5)
 
 ---
 
-### 4. generate_response
+### 5. add_history_documents
 
-**Purpose**: Use an LLM with tool calling to synthesize an answer based on retrieved documents.
+**Purpose**: Keep the documents behind recent answers available for follow-up questions.
 
-**Inputs**: Original query + Top K documents with similarity scores
+**Inputs**: `search_results` + `chat_history`
 
-**Outputs**: Tool call invocation (respond_to_user or insufficient_evidence)
+**Outputs**: `search_results` with carried-over documents
 
 **Responsibilities**:
-- Call LLM service with retrieved documents as context
-- Present system prompt that prefers answering over deferring
-- Receive tool call from LLM (structured output)
-- Handle tool call parsing errors with retry logic (up to 3 attempts)
-- Fall back to document display on repeated failures
-- Log response generation success or errors
+- Copy the documents each of the last `HISTORY_DOC_TURNS` (2) turns **cited** (`ChatTurn.documents`, see `process_tool_call`), at most `MAX_HISTORY_DOCS` (30), most recent first
+- Skip chunks this turn already retrieved; flag the rest `from_history` (shown to the LLM as `"earlier_turn": true`)
+- Put the combined list in reading order, so every document has one `ref`
+- If this turn's search found nothing, the carried-over documents alone still allow an answer (status `history_documents_only`)
+
+---
+
+### 6. generate_response
+
+**Purpose**: Run one agent turn: call the LLM with the documents and tools.
+
+**Inputs**: Original query, documents, chat history, agent conversation so far
+
+**Outputs**: One tool call
+
+**Responsibilities**:
+- First turn: build the conversation as system prompt → last 5 earlier turns (user question / assistant answer pairs) → current question with all documents as JSON
+- Later turns: continue from `state.messages`
+- Offer the non-final tools only while searching is allowed (see Limits); otherwise offer only the three final tools and tell the LLM to answer
+- Up to `MAX_TOOL_CALL_RETRIES` (2) attempts per turn: a reply without a tool call, or a tool call the server can't parse, is retried once with a reminder at `RETRY_LLM_TEMPERATURE` (0.9). If both attempts fail, a plain-text reply is used as the answer; otherwise `process_tool_call` returns the fallback response
+
+**What the LLM sees per document**:
+```json
+{
+  "ref": 3,
+  "filename": "Dometic 457915 Installation & Operating Instructions Manual1.pdf",
+  "page": 16,
+  "chunk_type": "text",
+  "section": "MAINTENANCE > A. Air Filter",
+  "text": "A. Air Filter\n1. Periodically (a minimum of every 2 weeks of op-\neration) remove the return air filter ...",
+  "neighbor": true
+}
+```
+- `ref`: stable number used for `diagram_refs`; it never changes during a query
+- `section`: present when the chunk has one. The duplicate `Section: ...` line that ingestion puts in the chunk text is removed from `text`
+- `neighbor`: `true` for neighbor chunks and passages from `read_section` / `read_page`
+- `earlier_turn`: `true` for documents carried over from earlier turns
+- `diagram_kind`, `diagram_path`: only on `diagram_reference` chunks
+
+**System prompt behavior**:
+- Answer only from the documents; prefer `respond_to_user` when they are relevant
+- Use earlier turns to understand follow-ups, but answer from documents, not earlier answers
+- Use `page` (the PDF page, which can differ from the printed page) for citations and filters
+- Use `section` to tell which procedure, component or model a passage belongs to; don't mix steps from different sections unless the question needs both
+- Give procedures as `steps`, one action each, in order, with citations
+- When context is incomplete (missing steps, "see section X", a heading without its content): call `read_section` for a section whose start was found, `read_page` when a document has no section, otherwise `search_documents`; never repeat the same call
+- Select diagrams by `ref` only; never invent refs or file paths
 
 **Configuration**:
 - Service URL: `LLM_BASE_URL`
 - Model: `LLM_MODEL` (e.g., Qwen3.8-Flash-Next)
 - Authentication: API key from `LLM_API_KEY`
-- Max tokens: 2048
-- Temperature: 0.7
-- Timeout: 120 seconds
-
-**System Prompt Behavior**:
-- Instructs LLM to prefer providing answers when documents are relevant
-- Encourages use of `respond_to_user` tool over `insufficient_evidence`
-- Restricts responses to document content (no hallucination)
-- Guides source attribution format
-
-**Neighbor context**: after the vector search, each of the top 5 text hits (`NEIGHBOR_TOP_HITS`) also brings the chunks immediately before and after it (`chunk_sequence` ±1, `NEIGHBOR_RADIUS`), so a retrieval returns at most 10 matches + 10 neighbors. Headings are often split from the text they introduce, and PDF text can be out of reading order. Results are listed in reading order and neighbors are flagged `"neighbor": true`.
-
-**Diagram context**: each retrieved document is sent to the LLM with a numeric `ref`, its `chunk_type`, and, for `diagram_reference` chunks, `diagram_kind` and `diagram_path`. The LLM selects diagrams by `ref` through `diagram_refs`; it never supplies file paths.
+- Reasoning effort: `LLM_REASONING_EFFORT` (default `low`)
+- Max tokens: 50000 (`DEFAULT_MAX_TOKENS`, room for reasoning models)
+- Temperature: 0.7 (`DEFAULT_LLM_TEMPERATURE`); retries 0.9 (`RETRY_LLM_TEMPERATURE`)
+- Timeout: 120 seconds per call
 
 **Tool Calls**:
 
-The LLM makes one tool call per turn. `search_documents` is non-terminal (the loop continues); the other two end the turn:
+The LLM makes one tool call per turn. `search_documents`, `read_section` and `read_page` are non-final (the loop continues); `respond_to_user` and `insufficient_evidence` end the turn.
 
-**Tool 1: respond_to_user**
+**Tool 1: respond_to_user** (final)
 ```json
 {
   "name": "respond_to_user",
   "answer": "Synthesized answer text",
   "sources": [
-    {"filename": "doc.pdf", "page": 5, "snippet": "..."},
-    {"filename": "doc2.pdf", "page": 12, "snippet": "..."}
+    {"filename": "doc.pdf", "page": 16, "section": "MAINTENANCE > A. Air Filter", "snippet": "..."}
   ],
   "include_sources": true,
   "steps": [
-    {"instruction": "Mount the bracket", "source_filename": "doc.pdf", "page": 5}
+    {"instruction": "Remove the return air filter", "source_filename": "doc.pdf", "page": 16,
+     "section": "MAINTENANCE > A. Air Filter"}
   ],
   "diagram_refs": [3, 7]
 }
 ```
+Only `answer` is required.
+- `steps`: ordered instructions for procedural questions, rendered as a numbered `Steps:` list between the answer and the sources
+- `section` (in sources and steps): optional, copied from the document. It is only shown if it matches a retrieved document (see Citations)
+- `diagram_refs`: `ref` values of retrieved `diagram_reference` documents whose images should be shown
 
-`steps` is optional: ordered step-by-step instructions for procedural questions, rendered as a numbered `Steps:` list between the answer and the sources.
-
-`diagram_refs` is optional: `ref` values of retrieved `diagram_reference` documents whose images should be shown.
-
-**Tool 2: search_documents** (non-terminal)
+**Tool 2: search_documents** (non-final)
 ```json
 {
   "name": "search_documents",
@@ -204,7 +260,17 @@ The LLM makes one tool call per turn. `search_documents` is non-terminal (the lo
 ```
 Only `query` is required. `k` defaults to 5 (max 10).
 
-**Tool 3: read_page** (non-terminal)
+**Tool 3: read_section** (non-final)
+```json
+{
+  "name": "read_section",
+  "filename": "doc.pdf",
+  "section": "MAINTENANCE > A. Air Filter"
+}
+```
+Both fields are required. `section` can be a full section path, or just a heading (`"Air Filter"`, `"maintenance"`): case and leading labels like `A.` or `1.` are ignored. A parent section includes its sub-sections.
+
+**Tool 4: read_page** (non-final)
 ```json
 {
   "name": "read_page",
@@ -213,9 +279,9 @@ Only `query` is required. `k` defaults to 5 (max 10).
   "page_end": 17
 }
 ```
-`page_start` and `filename` are required; `page_end` defaults to `page_start` and is clamped to 3 pages. Pages are PDF page numbers (the `page` shown in documents), which can differ from the printed page numbers.
+`page_start` and `filename` are required; `page_end` defaults to `page_start` and is clamped to 3 pages. Pages are PDF page numbers (the `page` shown in documents).
 
-**Tool 4: insufficient_evidence**
+**Tool 5: insufficient_evidence** (final)
 ```json
 {
   "name": "insufficient_evidence",
@@ -226,54 +292,128 @@ Only `query` is required. `k` defaults to 5 (max 10).
 
 ---
 
-### 4b. search_more (agent loop: search_documents / read_page)
+### 6b. search_more (agent loop)
 
-**Purpose**: Execute the LLM's `search_documents` or `read_page` call and feed new context back to the LLM.
+**Purpose**: Execute the LLM's `search_documents`, `read_section` or `read_page` call and feed the new context back.
 
-**Inputs**: `search_documents` (`query`, optional `filename`, `page_start`, `page_end`, `k`) or `read_page` (`filename`, `page_start`, optional `page_end`) tool call
+**Inputs**: The non-final tool call
 
 **Outputs**: Updated `search_results` and `messages`; control returns to `generate_response`
 
 **Responsibilities**:
-- `search_documents`: embed the search text and query Chroma with an optional metadata filter (`source_filename`, `page_number` range). The similarity cutoff is `SEARCH_MIN_SIMILARITY` (default 0.0 = none; `k` limits results), unlike the first retrieval (0.6)
-- `read_page`: fetch every chunk on a page range (max 3 pages per call) by metadata only, in reading order, with no similarity step. Chunks already in context are not repeated; their refs are listed. Use it when a heading was found without the text that belongs to it
+- `search_documents`: embed the search text and query Chroma with an optional metadata filter (`source_filename`, `page_number` range). The similarity cutoff is `SEARCH_MIN_SIMILARITY` (default 0.5), the same one the first retrieval uses
+- `read_section`: load the document's chunks and return every chunk whose section is the requested one or below it, in reading order (text, then the section's tables and diagrams), at most `READ_SECTION_MAX_CHUNKS` (25)
+  - No match: the reply lists the document's sections (up to `READ_SECTION_LIST_LIMIT`, 60) so the LLM can pick one
+  - Several matches (e.g. two `C. Condensation` sections under different parents): the reply lists them and asks for the full path
+  - Longer sections are cut at 25 passages and the reply names the sub-sections not shown
+  - Documents ingested without sections: the reply says to use `read_page`
+- `read_page`: fetch every chunk on a page range (max 3 pages) by metadata only, in reading order
 - Filenames are matched leniently (exact, or a unique substring of a filename in context; omitted when only one document is in context)
-- Skip chunks already retrieved (key: filename + chunk sequence) so each passage is shown once
+- Skip chunks already in context (key: filename + chunk sequence); `read_section` and `read_page` list their refs instead of repeating them
 - Append new chunks to `search_results`; existing `ref` numbers never shift, new chunks continue the numbering (so `diagram_refs` stay valid)
-- Add the result as a `tool` message to the conversation (full chunk text)
-- Report search failures or empty results to the LLM as the tool result instead of aborting
+- Add the result as a `tool` message (full chunk text, in the same JSON format)
+- Report failures, empty results and bad parameters to the LLM as the tool result instead of aborting
 
-**Limits**: at most `MAX_SEARCH_ROUNDS` (3) tool rounds in total (`search_documents` and `read_page` share the budget) and `AGENT_DEADLINE_SECONDS` (300 s) since the first LLM turn. After either limit both tools are no longer offered and the LLM is told to answer.
+**Limits**: at most `MAX_SEARCH_ROUNDS` (3) non-final calls in total (all three tools share the budget) and `AGENT_DEADLINE_SECONDS` (300 s) since the first LLM turn. After either limit the non-final tools are no longer offered and the LLM is told to answer.
 
 ---
 
-### 5. process_tool_call
+### 7. process_tool_call
 
-**Purpose**: Process the LLM's tool call and format the final response.
+**Purpose**: Turn the LLM's final tool call into the response text and record which documents it used.
 
-**Inputs**: Tool call from generate_response node
+**Inputs**: Tool call from `generate_response`
 
-**Outputs**: Final response string formatted for user display
+**Outputs**: `final_response` string and `source_documents`
 
 **Responsibilities**:
-- Parse tool call JSON structure
-- Route to appropriate handler based on tool name
-- Extract parameters from tool call
-- Format response with proper source citations
-- Handle unknown or malformed tool calls
-- Return formatted string ready for display
+- Route to the handler for the tool name; unknown or missing tool calls get the fallback response
+- Format citations with sections (see Citations)
+- Record `source_documents`: the retrieved chunks the answer cited, i.e. every chunk on a cited source's page (matching filename), plus each diagram that is shown. These, not all retrieved chunks, are what a caller stores in `ChatTurn.documents` and what `add_history_documents` carries into later turns
 
 **Handler: respond_to_user**
-- Extract synthesized answer and sources
-- Format as: "Answer\n\n---\n\nSources:\n- filename (page X): snippet"
-- Omit sources if `include_sources=false`
-- If `diagram_refs` is present, append `\nDiagrams:\n- filename (page X, kind): /absolute/path/to/image`. Refs that are out of range, not `diagram_reference` chunks, or whose image file is missing are dropped. Paths are resolved against the project root (falling back to `extracted_diagrams/<filename>`), so they work from any working directory. The block is shown even when `include_sources=false`.
-- Preserve snippet content exactly as provided by LLM
+- Answer text, then `Steps:` (if any), then `---` and `Sources:` (unless `include_sources=false`), then `Diagrams:` (if any)
+- Step: `N. instruction (file, p.N, SECTION)`
+- Source: `- file (page N, SECTION): snippet`
+- Diagram: `- file (page N, kind, SECTION): /absolute/path/to/image`. Refs that are out of range, not `diagram_reference` chunks, or whose image is missing are dropped. Paths are resolved against the project root (falling back to `extracted_diagrams/<filename>`), so they work from any working directory. The block is shown even when `include_sources=false`
+- Snippets are kept exactly as the LLM gave them
+
+**Citations (section)**: the section in a citation always comes from the retrieved documents, never from the LLM alone:
+1. The LLM's `section`, if it matches a retrieved document's section (preferring one on the cited page)
+2. Otherwise the section of the retrieved document on that page whose text contains the snippet
+3. Otherwise the only section among retrieved documents on that page
+
+If none applies (e.g. a page with several sections and no usable snippet), the citation shows filename and page only.
 
 **Handler: insufficient_evidence**
-- Format as: "⚠️ Insufficient Information\n\nExplanation\n\nHowever, here is the most relevant document that was retrieved:\n\n  Source: ...\n  Snippet: ..."
-- Display only the single most relevant retrieved document (highest-scoring direct hit; neighbor chunks excluded) with its source and snippet
-- Reference original query in output
+- Explanation, followed by the single most relevant retrieved document: the highest-scoring direct hit (neighbor and section/page-read chunks excluded), with its section and a 150-character snippet (without the `Section:` line)
+
+---
+
+## Output Examples
+
+### Answer with steps, sources and a diagram (`query_main.py`, illustrative)
+
+The passage text is real ingestion output for Dometic page 16; the LLM's wording is illustrative.
+
+```
+================================================================================
+QUERY PIPELINE RESULT
+================================================================================
+
+Status: response_generated
+Original Query: How do I clean the air filter on the Dometic unit?
+Query Validated: True
+Query Embedding: Generated (4096 dimensions)
+
+================================================================================
+LLM RESPONSE
+================================================================================
+Clean the return air filter at least every 2 weeks of operation. Never run the unit without the filter in place: dirt will plug the evaporator coil and reduce performance.
+
+Steps:
+1. Remove the return air filter located behind the return air grille (Dometic 457915 Installation & Operating Instructions Manual1.pdf, p.16, MAINTENANCE > A. Air Filter)
+2. Wash it with soap and warm water (Dometic 457915 Installation & Operating Instructions Manual1.pdf, p.16, MAINTENANCE > A. Air Filter)
+3. Let it dry, then reinstall it (Dometic 457915 Installation & Operating Instructions Manual1.pdf, p.16, MAINTENANCE > A. Air Filter)
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 16, MAINTENANCE > A. Air Filter): Periodically (a minimum of every 2 weeks of operation) remove the return air filter...
+
+Diagrams:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 14, vector_figure, INSTALLATION INSTRUCTIONS > G. Installing Air Distribution Box): /home/.../extracted_diagrams/Dometic 457915 Installation & Operating Instructions Manual1_p13_fig3.png
+
+================================================================================
+NO ERRORS ENCOUNTERED
+================================================================================
+```
+
+### Insufficient evidence (illustrative)
+
+```
+⚠️  Insufficient Information
+
+The documents do not describe how to recharge the refrigerant.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 7, SPECIFICATIONS > A. Table - Unit Data)
+  Snippet: A. Table - Unit Data ...
+```
+
+### No results
+
+`status` is `no_results_found` and there is no `final_response`. `query_main.py` prints the status without an LLM response; the web UI shows "No relevant documents found."
+
+### Fallback (LLM tool call failed)
+
+```
+⚠️  Tool call generation failed
+
+Errors encountered:
+  - LLM tool calling failed after 1 attempts: <error>
+```
 
 ---
 
@@ -284,30 +424,64 @@ The pipeline uses a central `QueryState` object that flows through all nodes:
 ```python
 @dataclass
 class QueryState:
-    original_query: str                    # User's question
+    original_query: str | None             # User's question
     query_validated: bool                  # Validation flag
-    query_embedding: list[float]           # Query vector
-    search_results: list[QueryResult]      # Retrieved documents
+    query_embedding: list[float] | None    # Query vector
+    search_results: list[QueryResult]      # Retrieved documents (refs = list positions)
     tool_call: ToolCall | None             # Latest LLM tool call
-    messages: list[dict]                   # LLM conversation (agent loop)
-    search_round: int                      # search_documents calls executed
-    started_at: float | None               # Start time of the agent loop
-    final_response: str                    # Formatted response
+    final_response: str | None             # Formatted response
     errors: list[str]                      # Error log
+    config: IngestionConfig | None         # Configuration reference
     status: str                            # Pipeline status
-    config: IngestionConfig                # Configuration reference
+    messages: list[dict]                   # LLM conversation (agent loop)
+    search_round: int                      # Non-final tool calls executed
+    started_at: float | None               # Start time of the agent loop
+    chat_history: list[ChatTurn]           # Earlier turns, oldest first
+    retrieval_query: str | None            # Standalone query used for embedding
+    source_documents: list[QueryResult]    # Chunks the final answer cited
+
+@dataclass
+class QueryResult:
+    content: str                           # Chunk text (includes the "Section:" line)
+    metadata: ChunkMetadata                # section_headings, chunk_type, diagram_*, page, ...
+    similarity_score: float
+    is_neighbor: bool                      # Neighbor / section or page read, not scored
+    from_history: bool                     # Carried over from an earlier turn
+
+@dataclass
+class ChatTurn:
+    question: str                          # The user's message as typed
+    answer: str                            # The final formatted response
+    documents: list[QueryResult]           # source_documents of that turn
 ```
 
 **Status Values**:
 - `query_validated` - Query passed validation
+- `query_rewritten` - A follow-up was rewritten for retrieval
 - `query_embedded` - Embedding generated
 - `search_completed` - Vector search completed
+- `history_documents_only` - This turn found nothing, but carried-over documents exist
 - `tool_call_received` - LLM returned a tool call
-- `search_more_completed` - A `search_documents` round finished
-- `response_generated` - LLM response generated
-- `response_generated_with_errors` - Response generated but with errors
-- `no_results_found` - No documents matched query
-- `*_failed` - Error occurred at specific stage
+- `search_more_completed` - A search / section read / page read round finished
+- `response_generated` - Answer formatted
+- `insufficient_evidence_returned` - LLM reported insufficient evidence
+- `response_generated_with_errors` - Fallback response after an error
+- `no_results_found` - No documents matched the query (LLM skipped)
+- `*_failed` - Error occurred at a specific stage
+
+---
+
+## Conversation History
+
+`execute_query_pipeline(query, config, graph, chat_history=...)` takes earlier turns, oldest first. After each answered turn the caller appends:
+
+```python
+ChatTurn(question=user_message, answer=result.final_response, documents=list(result.source_documents))
+```
+
+- The last `MAX_HISTORY_TURNS` (5) turns are sent to the LLM as user/assistant messages and used by `rewrite_query`
+- Documents cited in the last `HISTORY_DOC_TURNS` (2) turns are carried into the next turn's context
+- The web UI keeps history per browser session (in server memory, lost on restart). `query_main.py` treats each query separately
 
 ---
 
@@ -315,26 +489,14 @@ class QueryState:
 
 The pipeline accumulates errors without stopping:
 
-1. **Query Validation Failure** → Stop immediately, return error status
-2. **Embedding Failure** → Log error, propagate to next nodes, attempt response with fallback
-3. **Search Failure** → Log error, skip to response generation with error context
-4. **No Results Found** → Not an error; return status `no_results_found` and skip LLM
-5. **LLM Tool Call Failure** → Retry up to 3 times, then return fallback response
-6. **Unknown Tool Call** → Return fallback with error message
-
-**Fallback Response Format**:
-```
-⚠️ Unable to generate LLM response due to the following errors:
-  - [Error 1]
-  - [Error 2]
-
-However, here are the documents retrieved from the database that may be relevant:
-
-Document 1:
-  Source: filename.pdf (Page 5)
-  Similarity Score: 0.8234
-  Content: [first 500 characters]
-```
+1. **Query Validation Failure** → Stop, return `query_validation_failed`
+2. **Rewrite Failure** → Use the original query (not an error)
+3. **Embedding Failure** → Log error and propagate; no search is possible
+4. **Search Failure** → Log error; the LLM is skipped when there are no documents
+5. **No Results Found** → Not an error; `no_results_found`, LLM skipped (unless carried-over documents exist)
+6. **Agent Tool Failure** (search / section read / page read) → Reported to the LLM as the tool result; the loop continues
+7. **LLM Tool Call Failure** → Fallback response after `MAX_TOOL_CALL_RETRIES` (2) attempts (a plain-text reply is used as the answer instead, if there is one)
+8. **Unknown Tool Call** → Fallback response with the error
 
 ---
 
@@ -352,28 +514,34 @@ EMBEDDING_API_KEY=your_api_key
 LLM_BASE_URL=http://golem:4000/v1
 LLM_MODEL=Qwen3.8-Flash-Next
 LLM_API_KEY=your_api_key
+LLM_REASONING_EFFORT=low                  # optional (default: low)
 
 # Vector Database
 CHROMA_PERSIST_DIRECTORY=./chroma_db
 CHROMA_COLLECTION_NAME=vector_ingestion_collection
 
-# Agent search (optional)
-SEARCH_MIN_SIMILARITY=0.0
-LLM_REASONING_EFFORT=medium
+# Similarity cutoff (optional)
+SEARCH_MIN_SIMILARITY=0.5                 # first retrieval AND search_documents (default 0.5)
+
+# Web UI (optional)
+FLASK_SECRET_KEY=...                      # random per start if unset
 
 # Document Input (for ingestion pipeline)
 DOCUMENT_INPUT_DIR=./documents
 ```
 
 **Tunable Parameters** (in `src/query/nodes.py`):
+- `DEFAULT_K` - First retrieval: number of results (default: 10)
+- `DEFAULT_MIN_SIMILARITY` - Score cutoff for the first retrieval and `search_documents` when `SEARCH_MIN_SIMILARITY` is unset (default: 0.5)
+- `NEIGHBOR_RADIUS`, `NEIGHBOR_TOP_HITS` - Neighbor chunks per hit and how many top hits get them (default: 1, 5)
 - `MAX_SEARCH_ROUNDS`, `AGENT_DEADLINE_SECONDS` - Agent loop limits (default: 3, 300 s)
 - `SEARCH_DEFAULT_K`, `SEARCH_MAX_K` - Results per `search_documents` call (default: 5, 10)
-- `NEIGHBOR_RADIUS`, `NEIGHBOR_TOP_HITS`, `READ_PAGE_MAX_PAGES` - Neighbor chunks per hit, how many top hits get neighbors, pages per `read_page` (default: 1, 5, 3)
-- `DEFAULT_K` - Number of results to retrieve (default: 10)
-- `DEFAULT_MIN_SIMILARITY_SCORE` - Similarity threshold (default: 0.5)
-- `DEFAULT_MAX_TOKENS` - Max LLM response length (default: 2048)
-- `DEFAULT_LLM_TEMPERATURE` - LLM creativity (default: 0.7)
-- `SYSTEM_PROMPT` - LLM behavior instructions
+- `READ_PAGE_MAX_PAGES` - Pages per `read_page` call (default: 3)
+- `READ_SECTION_MAX_CHUNKS`, `READ_SECTION_LIST_LIMIT` - Passages per `read_section` call, sections listed on no match (default: 25, 60)
+- `MAX_HISTORY_TURNS`, `HISTORY_DOC_TURNS`, `MAX_HISTORY_DOCS` - Conversation history (default: 5, 2, 30)
+- `REWRITE_MAX_TOKENS`, `REWRITE_ANSWER_CHARS`, `REWRITE_MAX_QUERY_CHARS` - Follow-up rewriting (default: 4096, 1500, 500)
+- `DEFAULT_MAX_TOKENS`, `DEFAULT_LLM_TEMPERATURE`, `RETRY_LLM_TEMPERATURE`, `MAX_TOOL_CALL_RETRIES` - LLM call (default: 50000, 0.7, 0.9, 2)
+- `SYSTEM_PROMPT`, `REWRITE_PROMPT` - LLM instructions
 
 ---
 
@@ -382,130 +550,81 @@ DOCUMENT_INPUT_DIR=./documents
 ### Single Query
 
 ```bash
-# Standard output
-python3 query_main.py "What is in the documents?"
+python3 query_main.py "How do I clean the air filter?"
 
-# Verbose output (shows all retrieved documents)
-python3 query_main.py "What is in the documents?" --verbose
-python3 query_main.py "What is in the documents?" -v
+# Verbose output (all retrieved documents with chunk type, match type, score and full text)
+python3 query_main.py "How do I clean the air filter?" --verbose
+python3 query_main.py "How do I clean the air filter?" -v
 ```
 
 ### Interactive Mode
 
 ```bash
-# Start interactive REPL
 python3 query_main.py --interactive
 python3 query_main.py -i
 
 # Inside interactive mode:
-#   - Type your query and press Enter
+#   - Type your query and press Enter (each query is answered separately, no history)
 #   - Type 'verbose' to toggle detailed output
 #   - Type 'clear' to clear the screen
 #   - Type 'quit' to exit
 ```
 
-### Batch Testing
+### Web UI (multi-turn chat)
 
 ```bash
-# Check available models
-python3 check_models.py
-
-# Update LLM model
-python3 update_model.py
+python3 web_main.py                         # http://127.0.0.1:5000
+python3 web_main.py --host 0.0.0.0 --port 8000
 ```
 
----
+- `GET /` - chat page (re-renders this session's conversation)
+- `POST /api/chat` - `{"message": "..."}` → answer, diagram image URLs, errors, and the rewritten query if one was used
+- `POST /api/reset` - start a new conversation
+- `GET /diagrams/<filename>` - serve an image from `extracted_diagrams/`
 
-## Output Formats
-
-### Standard Output
-
-```
-Status: response_generated
-Query: "What food safety topics are covered?"
-
-Retrieved Documents:
-  - food_safety.pdf (page 5): Similarity 0.87
-  - guidelines.pdf (page 12): Similarity 0.82
-
-Answer:
-The documents cover several key food safety topics including proper storage
-temperatures, cross-contamination prevention, and employee hygiene requirements.
-
-Sources:
-- food_safety.pdf (page 5): "Proper storage prevents bacterial growth..."
-- guidelines.pdf (page 12): "Employees must wash hands regularly..."
-```
-
-### Verbose Output
-
-Shows full retrieved documents with longer content snippets.
-
-### No Results Found
-
-```
-Status: no_results_found
-Query: "What is in the documents?"
-
-No documents found matching your query.
-Try rephrasing your question or using different keywords.
-```
-
-### Error Response
-
-```
-Status: response_generated_with_errors
-Query: "Your question"
-
-⚠️ Unable to generate LLM response due to the following errors:
-  - LLM service timeout after 120 seconds
-
-However, here are the documents retrieved from the database that may be relevant:
-[Retrieved documents listed...]
-```
+The web UI removes the `Diagrams:` block from the answer text and shows those images instead. It reads the image path as everything after the last `": "` on each diagram line.
 
 ---
 
 ## Key Design Decisions
 
-✅ **Tool Calling Architecture** - LLM uses structured tool calls for reliability
+✅ **Tool Calling Architecture** - The LLM answers only through structured tool calls
 
-✅ **Prefer Answering** - System prompt biases LLM toward providing answers
+✅ **Agent Loop** - The LLM can search, read sections and read pages (3 rounds / 300 s) before answering
 
-✅ **Retry Logic** - Up to 3 retries on LLM tool call failures before fallback
+✅ **Section Awareness** - Passages carry their heading path; neighbors stay in the hit's section; `read_section` fetches whole sections; citations show sections confirmed from retrieved documents
 
-✅ **Source Attribution** - All answers include filename, page, and content snippet
+✅ **Conversation Memory** - Follow-ups are rewritten for retrieval, and documents cited in recent turns stay available
 
-✅ **Fallback Documents** - Insufficient evidence responses show retrieved documents anyway
+✅ **Stable Refs** - Documents are numbered once per query; diagrams are chosen by ref, never by file path
 
-✅ **Single User System** - No per-user isolation; error handling is simplified
+✅ **Prefer Answering** - The system prompt asks for more context before giving up
 
-✅ **High-Level Logging** - Only logs node entry/exit and significant events
+✅ **Source Attribution** - Answers cite filename, page, section and snippet; procedures cite each step
+
+✅ **Fallback Documents** - Insufficient-evidence responses still show the most relevant retrieved document
+
+✅ **High-Level Logging** - Only node entry/exit and significant events are logged
 
 ---
 
 ## Conditional Routing
 
-The pipeline uses conditional edges for smart routing:
-
 ```python
-vector_store_search
+add_history_documents
     ↓
-[Results Found?]
+[Any documents?]
     /        \
   YES         NO
    ↓           ↓
-generate_    output
+generate_    END (no_results_found)
 response
 
 generate_response
     ↓
-[Tool Call Valid?]
-    /         \
-  YES          NO
-   ↓            ↓
-process_     fallback
-tool_call    response
+[Tool call?]
+    ├─ search_documents / read_section / read_page → search_more → generate_response
+    └─ respond_to_user / insufficient_evidence / none → process_tool_call → END
 ```
 
 ---
@@ -514,16 +633,15 @@ tool_call    response
 
 **Per-Node Timeouts**:
 - `user_query` - Immediate (no external calls)
+- `rewrite_query` - 120 seconds (one LLM call, only with chat history)
 - `embed_query` - 30 seconds
-- `vector_store_search` - 30 seconds
+- `vector_store_search` - Chroma query (local)
 - `generate_response` - 120 seconds per LLM call
-- `search_more` - embedding 30 seconds + Chroma search
+- `search_more` - `search_documents`: embedding 30 seconds + Chroma search; `read_section` / `read_page`: Chroma only
 
-**Agent loop**: each LLM call has the 120 s timeout; searching stops after 3 rounds or 300 s, then the LLM must give a final answer. Worst case is several LLM calls.
+**Agent loop**: searching stops after 3 rounds or 300 s, then the LLM must give a final answer. Worst case is 9 LLM calls: the rewrite plus 4 agent turns of up to 2 attempts each. The deadline is checked only before each agent turn, so one run can take roughly 11 minutes in the worst case.
 
-**Pipeline Total Timeout**: none enforced across the whole run
-
-**Timeout Handling**: Errors logged and propagated to next nodes
+**Pipeline Total Timeout**: none enforced across the whole run (LangGraph recursion limit: 40 steps)
 
 ---
 
@@ -531,45 +649,38 @@ tool_call    response
 
 | File | Purpose |
 |------|---------|
-| `src/query/nodes.py` | 6 node implementations (incl. `search_more`) |
-| `src/query/tools.py` | Embedding and LLM service integrations |
-| `src/query/graph.py` | LangGraph pipeline definition |
-| `query_main.py` | Entry point and query execution |
-| `tests/verify_query_loop.py` | Offline checks of the agent loop (scripted LLM, fake embeddings) |
-| `check_models.py` | Display available models |
-| `update_model.py` | Interactive model selection |
+| `src/query/nodes.py` | Node implementations (user_query, rewrite_query, embed_query, vector_store_search, add_history_documents, generate_response, search_more, process_tool_call), tools and prompts |
+| `src/query/tools.py` | Embedding, Chroma and LLM service integrations (`chat_with_tools`, plain `chat`) |
+| `src/query/graph.py` | LangGraph pipeline definition and `execute_query_pipeline` |
+| `src/data_models.py` | `QueryState`, `QueryResult`, `ChatTurn`, `ChunkMetadata` |
+| `query_main.py` | Command-line entry point (single query / interactive) |
+| `web_main.py`, `web/app.py` | Flask web UI with multi-turn chat and diagram display |
+| `tests/verify_query_loop.py` | Offline checks: agent loop, read_page / read_section, neighbors, history, citations (scripted LLM, fake embeddings) |
 
 ---
 
 ## Troubleshooting
 
-**Error: "Model not available"**
-```bash
-python3 check_models.py           # See available models
-python3 update_model.py           # Change the model
-```
-
 **Error: "Connection timeout"**
 - Verify embedding/LLM services are running
 - Check `EMBEDDING_BASE_URL` and `LLM_BASE_URL` are accessible
-- Increase timeout values if services are slow
 
 **Error: "No documents found"**
-- Run ingestion pipeline first: `python ingestion_main.py`
-- Verify documents are in `./documents/` directory
-- Check Chroma database exists at `CHROMA_PERSIST_DIRECTORY`
+- Run the ingestion pipeline first: `python ingestion_main.py`
+- Verify documents are in `./documents/`
+- Check the Chroma database exists at `CHROMA_PERSIST_DIRECTORY`
 
 **Error: "API key rejected"**
 - Verify API keys in `.env` are valid
-- Check they match the service requirements
-- Try `update_model.py` to verify connection
 
 **Error: "Chroma connection failed"**
-- Verify `CHROMA_PERSIST_DIRECTORY` exists
-- Check disk space available
-- Ensure no permission issues with database directory
+- Verify `CHROMA_PERSIST_DIRECTORY` exists and is writable
+- Check disk space
+
+**No `section` on passages / `read_section` says "no section information"**
+- The documents were ingested before section support. Re-ingest them (`python manage_documents.py --update <path>` then `python ingestion_main.py`, or delete and re-run)
 
 **Empty or nonsensical answers**
-- Try rephrasing your query
 - Check retrieved documents in verbose mode: `query_main.py "query" -v`
-- Consider adjusting `DEFAULT_MIN_SIMILARITY_SCORE` if threshold is too low
+- Try rephrasing the query
+- Consider adjusting `SEARCH_MIN_SIMILARITY` in `.env`

@@ -1,10 +1,12 @@
 .env
 documents/
-agents.md
+Harvey-Manuals-All/
+Harvey-Manuals-originals/
 chroma_db/
 .venv/
 .pyc
 extracted_diagrams/
+logs/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -14,3 +16,4 @@ __pycache__/
 build/
 dist/
 *.egg
+.claude

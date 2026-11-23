@@ -4,13 +4,17 @@ Test suite for querying the agent with all required queries.
 This script:
 1. Parses queries from tests/test-queries.md
 2. Executes each query through the HaRVey query pipeline
-3. Captures results to tests/results/query_results.txt
+3. Captures results to a new numbered file each run:
+   tests/results/query_results_001.txt, _002.txt, ... (earlier runs are kept)
 """
-
-import re
 from pathlib import Path
 from datetime import datetime
+import sys
 
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+import re
 from src.config import load_config
 from src.query.graph import create_query_graph, execute_query_pipeline
 from src.utils.logging import setup_logging
@@ -170,6 +174,25 @@ def format_results_to_file(results: dict, output_file: str) -> None:
         f.write("=" * 80 + "\n")
 
 
+RESULTS_FILE_PATTERN = re.compile(r"^query_results_(\d+)\.txt$")
+
+
+def next_results_file(results_dir: Path) -> Path:
+    """
+    Path for this run's results: query_results_NNN.txt, one higher than the
+    highest existing run number (001 for the first run).
+
+    Only files named exactly query_results_<number>.txt count, so other files
+    in the folder (e.g. query_results_HW11.txt) are ignored and never overwritten.
+    """
+    numbers = [
+        int(match.group(1))
+        for path in results_dir.glob("query_results_*.txt")
+        if (match := RESULTS_FILE_PATTERN.match(path.name))
+    ]
+    return results_dir / f"query_results_{max(numbers, default=0) + 1:03d}.txt"
+
+
 def main() -> None:
     """
     Main entry point for the test suite.
@@ -177,7 +200,9 @@ def main() -> None:
     # Get paths
     script_dir = Path(__file__).parent
     queries_file = script_dir / "test-queries.md"
-    output_file = script_dir / "results" / "query_results.txt"
+    results_dir = script_dir / "results"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    output_file = next_results_file(results_dir)
     
     print("\n" + "=" * 80)
     print("HARVEY QUERY TEST SUITE")

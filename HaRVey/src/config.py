@@ -1,6 +1,10 @@
 """
-Configuration loader for the vector ingestion pipeline.
+Configuration loader for the ingestion and query pipelines.
 Reads environment variables from .env file and provides type-safe access.
+
+Query-only settings that are read directly from the environment (not stored
+here): LLM_REASONING_EFFORT (src/query/tools.py) and SEARCH_MIN_SIMILARITY
+(src/query/nodes.py).
 """
 
 from dataclasses import dataclass
@@ -22,14 +26,14 @@ class IngestionConfig:
     embedding_max_retries: int = 3
     embedding_retry_backoff_base: float = 2.0
     
-    # LLM service configuration (for future use)
+    # LLM service configuration (required by the query pipeline, unused by ingestion)
     llm_base_url: str = ""
     llm_model: str = ""
     llm_api_key: str = ""
-    
-    # Chunking configuration
-    chunk_size: int = 512
-    chunk_overlap: int = 50
+
+    # Chunking configuration (characters, including the "Section: ..." line)
+    chunk_size: int = 1000
+    chunk_overlap: int = 100
     
     # Table extraction configuration
     enable_table_extraction: bool = True
@@ -87,8 +91,8 @@ def load_config(env_file: str | None = None) -> IngestionConfig:
         "LLM_BASE_URL": ("LLM_BASE_URL", ""),
         "LLM_MODEL": ("LLM_MODEL", ""),
         "LLM_API_KEY": ("LLM_API_KEY", ""),
-        "CHUNK_SIZE": ("CHUNK_SIZE", "512"),
-        "CHUNK_OVERLAP": ("CHUNK_OVERLAP", "50"),
+        "CHUNK_SIZE": ("CHUNK_SIZE", "1000"),
+        "CHUNK_OVERLAP": ("CHUNK_OVERLAP", "100"),
         "EMBEDDING_MAX_RETRIES": ("EMBEDDING_MAX_RETRIES", "3"),
         "EMBEDDING_RETRY_BACKOFF_BASE": ("EMBEDDING_RETRY_BACKOFF_BASE", "2.0"),
         "ENABLE_TABLE_EXTRACTION": ("ENABLE_TABLE_EXTRACTION", "true"),

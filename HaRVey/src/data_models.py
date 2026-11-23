@@ -1,11 +1,10 @@
 """
-Data models for the vector ingestion pipeline.
-Defines all dataclasses and state structures used throughout the pipeline.
+Data models for the ingestion and query pipelines.
+Defines all dataclasses and state structures used by both graphs.
 """
 
 from dataclasses import dataclass, field
 from typing import Any
-from datetime import datetime
 from src.config import IngestionConfig
 
 
@@ -19,18 +18,57 @@ class TableData:
     row_count: int
     col_count: int
     raw_data: list[list[str]]  # For future structured access
+    bbox: tuple[float, float, float, float] | None = None  # (x0, top, x1, bottom) in PDF points
+    heading_path: list[str] = field(default_factory=list)  # Filled in by layout analysis
+
+
+@dataclass
+class SectionHeading:
+    """A section heading found by layout analysis."""
+
+    text: str
+    level: int  # 1 = top-level section, 2 = sub-section, ...
+    page: int  # 0-indexed
+    bbox: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
+
+
+@dataclass
+class DocumentSection:
+    """
+    Text between one heading and the next, in reading order.
+
+    The first section of a document (text before any heading) has an empty path.
+    """
+
+    path: list[str]  # Heading path, outermost first
+    text: str  # Section text, starting with its own heading line
+    page_offsets: list[tuple[int, int]] = field(default_factory=list)  # (char offset, 0-indexed page)
+
+    def page_at(self, offset: int) -> int:
+        """0-indexed page of the character at offset within this section's text."""
+        page = self.page_offsets[0][1] if self.page_offsets else 0
+        for start, p in self.page_offsets:
+            if start > offset:
+                break
+            page = p
+        return page
 
 
 @dataclass
 class DiagramMetadata:
     """Metadata about a diagram/image extracted from PDF."""
-    
+
     page: int
     position_index: int  # Order on page
     image_path: str  # Path to extracted image
-    caption: str = ""  # Adjacent text
+    caption: str = ""  # Text inside the figure region
     type: str = "unknown"  # Image file format: png, jpg, ...
     kind: str = "raster"  # "raster" (embedded image) or "vector_figure" (rendered drawing)
+    bbox: tuple[float, float, float, float] | None = None  # Position on the page (PDF points)
+    # Filled in by layout analysis (extract_metadata)
+    heading_path: list[str] = field(default_factory=list)  # e.g. ["MAINTENANCE", "A. Air Filter"]
+    label: str = ""  # Figure label next to the figure, e.g. "FIG. 12 Thermostat Wiring"
+    context: str = ""  # Text between the previous heading and the figure (capped)
 
 
 @dataclass
@@ -64,6 +102,8 @@ class ParsedDocument:
     page_contents: dict[int, str] = field(default_factory=dict)  # Page number -> text
     tables: list[TableData] = field(default_factory=list)
     diagrams: list[DiagramMetadata] = field(default_factory=list)
+    headings: list[SectionHeading] = field(default_factory=list)  # Positioned headings, reading order
+    sections: list[DocumentSection] = field(default_factory=list)  # Text split at headings (layout analysis)
 
 
 @dataclass
@@ -76,9 +116,7 @@ class ChunkMetadata:
     start_char_index: int = 0
     end_char_index: int = 0
     chunk_type: str = "text"  # text, table, diagram_reference
-    document: str = ""
-    source: str = ""
-    section_headings: list[str] = field(default_factory=list)
+    section_headings: list[str] = field(default_factory=list)  # Heading path, outermost first
     # Table-specific
     table_rows: int = 0
     table_cols: int = 0
@@ -98,12 +136,6 @@ class TextChunk:
     content: str
     metadata: ChunkMetadata | dict[str, Any]  # Support both dataclass and dict
     embedding: list[float] | None = None
-    
-    def __post_init__(self):
-        """Convert dict metadata to ChunkMetadata if needed."""
-        if isinstance(self.metadata, dict):
-            # Keep as dict for flexibility during pipeline
-            pass
 
 
 @dataclass
@@ -151,6 +183,17 @@ class QueryResult:
     metadata: ChunkMetadata
     similarity_score: float
     is_neighbor: bool = False  # Fetched as context next to a hit, not matched itself
+    from_history: bool = False  # Carried over from an earlier turn of the conversation
+
+
+@dataclass
+class ChatTurn:
+    """One completed question/answer exchange, kept as conversation history."""
+
+    question: str  # The user's message as typed
+    answer: str  # Clean answer text (answer + steps; no sources or file paths)
+    kind: str = "answer"  # "answer" | "insufficient" | "clarify" (QueryState.response["kind"])
+    documents: list[QueryResult] = field(default_factory=list)  # Chunks the answer cited (QueryState.source_documents)
 
 
 @dataclass
@@ -169,10 +212,13 @@ class QueryState:
     
     Accumulates results as user queries flow through the pipeline:
     - user_query: receives and validates user query input
-    - embed_query: creates vector embedding from query
-    - vector_store_search: retrieves similar documents from Chroma
-    - generate_response: uses LLM to synthesize response from query + results
-    - process_tool_call: processes tool call and formats final response
+    - rewrite_query: turns a follow-up into a standalone retrieval_query (needs chat history)
+    - embed_query: creates vector embedding from the (rewritten) query
+    - vector_store_search: retrieves similar documents from Chroma, plus neighbors and page diagrams
+    - add_history_documents: carries documents cited in recent turns into search_results
+    - generate_response: one LLM turn with tools (messages, search_round, started_at)
+    - search_more: runs search_documents / read_section / read_page and loops back
+    - process_tool_call: turns the final tool call into response / final_response
     """
     
     original_query: str | None = None  # User's original question
@@ -187,3 +233,9 @@ class QueryState:
     messages: list[dict] = field(default_factory=list)  # LLM conversation (agent loop)
     search_round: int = 0  # Number of search_documents calls executed
     started_at: float | None = None  # Wall-clock start of the agent loop (time.time())
+    chat_history: list[ChatTurn] = field(default_factory=list)  # Earlier turns, oldest first
+    retrieval_query: str | None = None  # Standalone query used for embedding (rewritten follow-up)
+    source_documents: list[QueryResult] = field(default_factory=list)  # Chunks the final answer cited
+    # Structured final answer: {"kind", "answer", "steps", "sources", "diagrams", "options"}
+    # (see process_tool_call); final_response is its text rendering
+    response: dict | None = None

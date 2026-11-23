@@ -12,6 +12,18 @@ from src.utils.logging import get_logger
 logger = get_logger()
 
 
+class NoToolCallError(ValueError):
+    """The LLM replied without a tool call; .content holds the text it wrote instead."""
+
+    def __init__(self, message: str, content: str = "") -> None:
+        super().__init__(message)
+        self.content = content
+
+
+class MalformedToolCallError(ValueError):
+    """The server could not parse the tool call the model wrote (HTTP 5xx mentioning a tool call)."""
+
+
 class LLMService:
     """
     Interface to LLM service (local or remote).
@@ -43,42 +55,6 @@ class LLMService:
         # Set LLM_REASONING_EFFORT in .env (e.g. low / medium / high); .env is loaded by load_config()
         self.reasoning = os.getenv("LLM_REASONING_EFFORT", "").strip().lower() or "low"
         logger.debug(f"LLMService initialized: {base_url}, model={model}, max_tokens={max_tokens}")
-    
-
-    def generate_with_tools(
-        self,
-        system_prompt: str,
-        user_message: str,
-        tools: list[dict],
-        temperature: float = 0.7,
-    ) -> dict:
-        """
-        Generate response with tool calling.
-        
-        Args:
-            system_prompt: System prompt for LLM behavior
-            user_message: User message
-            tools: List of tool definitions
-            temperature: LLM temperature
-        
-        Returns:
-            Dict with tool_name and parameters
-            Format: {"tool_name": "...", "parameters": {...}}
-        
-        Raises:
-            ConnectionError: Connection failed
-            ValueError: Invalid response
-        """
-        logger.debug(f"LLMService.generate_with_tools() called")
-        result = self.chat_with_tools(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            tools=tools,
-            temperature=temperature,
-        )
-        return {"tool_name": result["tool_name"], "parameters": result["parameters"]}
 
     def chat_with_tools(
         self,
@@ -111,7 +87,7 @@ class LLMService:
         if "tool_calls" not in message or not message["tool_calls"]:
             # Log the full message content when tool calls are missing
             logger.warning(f"No tool calls in LLM response. Message content: {json.dumps(message, indent=2)}")
-            raise ValueError("No tool calls in LLM response")
+            raise NoToolCallError("No tool calls in LLM response", content=message.get("content") or "")
 
         tool_call = message["tool_calls"][0]
         try:
@@ -143,17 +119,34 @@ class LLMService:
             "assistant_message": assistant_message,
         }
 
+    def chat(self, messages: list[dict], temperature: float = 0.0) -> str:
+        """
+        Plain chat completion without tools.
+
+        Returns:
+            The assistant message text ("" if the model returned no content)
+
+        Raises:
+            ConnectionError: Connection failed
+            ValueError: Invalid response
+        """
+        response_data = self._call_llm_api(temperature=temperature, messages=messages)
+        return response_data["choices"][0]["message"].get("content") or ""
+
     def _call_llm_api(
         self,
-        system_prompt: str | None = None,
-        user_message: str | None = None,
+        messages: list[dict],
         temperature: float = 0.7,
         tools: list[dict] | None = None,
-        messages: list[dict] | None = None,
     ) -> dict:
         """
         Internal method to call LLM API with optional tools.
-        
+
+        Args:
+            messages: Full conversation (system/user/assistant/tool messages)
+            temperature: LLM temperature
+            tools: Optional tool definitions
+
         Returns:
             Raw response dict
         
@@ -166,11 +159,6 @@ class LLMService:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        if messages is None:
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
-            ]
         payload = {
             "model": self.model,
             "messages": messages,
@@ -209,6 +197,10 @@ class LLMService:
         except requests.exceptions.HTTPError as e:
             error_msg = f"LLM service returned HTTP {response.status_code}: {response.text}"
             logger.error(error_msg)
+            if response.status_code >= 500 and "tool call" in response.text.lower():
+                # e.g. LiteLLM "Model output contains an unrecoverable tool call": the model
+                # wrote a tool call the server could not parse
+                raise MalformedToolCallError(error_msg) from e
             raise ValueError(error_msg) from e
         except ValueError as e:
             # Re-raise ValueError for invalid response format
@@ -222,4 +214,4 @@ class LLMService:
 
 # Re-export tools from ingestion pipeline
 # Query pipeline reuses these services
-__all__ = ["EmbeddingService", "ChromaVectorStore", "LLMService"]
+__all__ = ["EmbeddingService", "ChromaVectorStore", "LLMService", "NoToolCallError", "MalformedToolCallError"]

@@ -1,0 +1,278 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-23 11:59:47
+================================================================================
+
+Summary: 12/12 queries executed successfully
+Failed: 0
+================================================================================
+
+
+================================================================================
+Q01: Basic - CCC2 diagnostic mode entry
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+How do I enter diagnostic mode on the CCC2 thermostat?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+To enter diagnostic mode on the CCC2 thermostat, follow these steps:
+
+1. Ensure the thermostat is turned "OFF" (the display should be blank or only show the clock).
+2. Simultaneously press the "Program", "Fan", and "F/C" buttons.
+
+Once in diagnostic mode, the display backlight will remain on continuously, and the LCD will show "IGN", the zone, and a two-digit number for the diagnostic command.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): The Diagnostic mode shall be initiated with the thermostat turned “OFF” (Either a blank display or clock only showing). To enter the diagnostic mode, simultaneously press the “Program”, “Fan” & “F/C” buttons. When the system is in the diagnostic mode, the display backlight shall be on continuously. The LCD will show “IGN”, the zone and the two digit number for diagnostic command.
+
+
+================================================================================
+Q02: Basic - CCC2 error code E1
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+What does error code E1 mean on the CCC2 thermostat, and what are its likely causes?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+On the CCC2 thermostat, error code E1 indicates a loss of communication. There are two specific scenarios described:
+
+*   **Loss of communication between the CCC 2 thermostat and all system power module boards:** In this case, the system will shut down.
+*   **Loss of communication between the CCC 2 thermostat and an individual system power module board:** The LED will display error code E1 and the zone number that lost communication. Any additional zones that lose communication will blink in addition to the current zone.
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 10, LCD Error Code): Error Code:\nE1 Loss of communication between the CCC 2 thermostat and all system power\nmodule boards. System will shut down.\nE1 Loss of communication between the CCC 2 thermostat and an individual system\npower module board. The LED will display error code EI and the zone num-\nber that lost communication. Any additional zones that loose communication will\nblink in addition to the current zone.
+
+
+================================================================================
+Q03: Table - CCC2 diagnostic command 10
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+In CCC2 diagnostic mode, which command shows the outdoor temperature, and what does the display show if the outdoor sensor is missing?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+In CCC2 diagnostic mode, command 10 shows the outdoor temperature. If the outdoor sensor is missing, the LCD will display "E4".
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): | 10 | LCD shows Outdoor Temperature | E4 if missing |
+
+
+================================================================================
+Q04: Table - Dometic 457915.70X electrical specs
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+What are the rated cooling capacity (BTU/hr), running amps, and recommended circuit breaker size for the Dometic 457915.70X unit?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+For the Dometic 457915.70X unit, the specifications are as follows:
+
+*   **Rated Cooling Capacity:** 13,500 BTU/hr
+*   **Running Amps (Compressor Rated Load Amps):** 12.4 Amps
+*   **Recommended Circuit Breaker Size (AC Circuit Protection):** 20 Amp
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf, page 7, section SPECIFICATIONS > A. Table - Unit Data
+
+---
+
+Sources:
+
+
+================================================================================
+Q05: Table - Coleman wall thermostat Cool mode wiring
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+Which thermostat wires are connected to each other when Cool mode is selected on Low Fan on the Coleman wall thermostat?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+When Cool mode is selected on Low Fan on the Coleman wall thermostat, the Red "R" wire is connected to the Yellow "Y" wire and the Gray "GL" wire.
+
+---
+
+Sources:
+- Coleman-Wall-Thermostat.pdf (page 4, I. INTRODUCTION TO WALL THERMOSTATS): Cool Mode Selected On Low Fan Red “R” to Yellow “Y” and Gray “GL”
+
+
+================================================================================
+Q06: Diagram - Coleman refrigeration system diagram
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+According to the refrigeration system diagram in the Coleman mechanical controls service manual, what are the two dividing points between the high side and the low side of the system?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+According to the Coleman mechanical controls service manual, the two dividing points between the high side and the low side of the refrigeration system are the cap tube and the compressor cylinders.
+
+---
+
+Sources:
+- Coleman-Mechanical-controls-1.pdf (page 5, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > THEIR FUNCTIONS I. REFRIGERANT CIRCUIT > 2. High and Low Sides): The high side of these systems exists from the discharge port of the compressor to the cap tube. The low side is from the cap tube to the compressor cylinders. The dividing points then are the cap tube and compressor cylinders.
+
+
+================================================================================
+Q07: Diagram - Dometic wiring diagram location
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+On which printed page numbers of the Dometic 457915 manual are the Unit Wiring Diagram and the Air Distribution Box Wiring Diagram?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+Based on the Dometic 457915 manual, the printed page numbers for the requested diagrams are:
+
+* **Unit Wiring Diagram:** Page 14
+* **Air Distribution Box Wiring Diagram:** Page 15
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 5, INTRODUCTION): A. Unit Wiring Diagram.................................................................................................................................................14
+B. Air Distribution Box Wiring Diagram.........................................................................................................................15
+
+
+================================================================================
+Q08: Multi-document - filter maintenance
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+How often should the return air filter be cleaned on the Dometic 457915 unit, and how does the CCC2 thermostat remind the user about filter maintenance?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+For the Dometic 457915 unit, the return air filter should be cleaned periodically, at a minimum of every 2 weeks of operation.
+
+The CCC2 thermostat reminds the user about filter maintenance by displaying a filter icon in the LCD when the system fan run time exceeds 1000 hours.
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 16, MAINTENANCE > A. Air Filter): 1. Periodically (a minimum of every 2 weeks of operation) remove the return air filter located behind the return air grille and wash it with soap and warm water, let dry and then reinstall.
+- CCC2-Operating-Instructions.pdf (page 12, Maintenance): When a system fan run time exceeds 1000 hours the filter icon is displayed in the LCD.
+
+
+================================================================================
+Q09: Multi-document - fan control
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+Which fan speed options does the CCC2 thermostat offer, and which thermostat terminals are energized for High Fan in Cool mode on the Coleman wall thermostat?
+
+Status: response_generated
+
+Response:
+--------------------------------------------------------------------------------
+The CCC2 thermostat offers four fan speed options: Auto, LOW, MED, and HIGH. 
+
+For the Coleman wall thermostat, when Cool Mode is selected on High Fan, the internal 12VDC(+) connections are made from Red "R" to Yellow "Y" and Green "GH".
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 5, Fan Speed): Your selections will be Auto, LOW, MED, and HIGH.
+- Coleman-Wall-Thermostat.pdf (page 4, I. INTRODUCTION TO WALL THERMOSTATS): Cool Mode Selected On High Fan Red “R” to Yellow “Y” and Green “GH”
+
+
+================================================================================
+Q10: RV AC not covered - CCC2 smartphone control
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+Does the CCC2 thermostat support smartphone app control over Wi-Fi?
+
+Status: insufficient_evidence_returned
+
+Response:
+--------------------------------------------------------------------------------
+⚠️  Insufficient Information
+
+The provided documents describe the features of the CCC 2 thermostat (such as Liquid Crystal Display, 2 operation programs, outdoor temperature sensing, remote sensor, and up to 4 independent zones), but they do not mention smartphone app control or Wi-Fi connectivity.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: CCC2-Operating-Instructions.pdf (page 1, CCC2 Operating Instructions)
+  Snippet: Comfort Control Center 2 Thermostat Operating Instructions
+Operating Instructions
+
+
+
+================================================================================
+Q11: RV AC not covered - replacement part price
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+What is the current retail price of a replacement start capacitor for the Coleman Mach air conditioner?
+
+Status: insufficient_evidence_returned
+
+Response:
+--------------------------------------------------------------------------------
+⚠️  Insufficient Information
+
+The provided documents list various part numbers and specifications for different types of start capacitors (e.g., 21-25-Mfd/165V, 47-56-Mfd/330V, 88-108-Mfd/250V, etc.), but they do not contain any information regarding the current retail price of these parts.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: COLEMAN-MACH-AIR-CONDITIONER-PARTS.pdf (page 1, COLEMAN-MACH AIR CONDITIONER PARTS)
+  Snippet: Figure on page 1 of COLEMAN-MACH-AIR-CONDITIONER-PARTS.pdf
+Context: Q Compressor Start Relay Capacitors
+
+
+
+================================================================================
+Q12: Irrelevant - off-topic
+================================================================================
+
+Query Text:
+--------------------------------------------------------------------------------
+What is the best recipe for sourdough bread at high altitude?
+
+Status: no_results_found
+
+Response: (empty)
+
+================================================================================
+END OF RESULTS
+================================================================================

@@ -18,7 +18,10 @@ try:
     import pdfplumber
 except ImportError:
     pdfplumber = None
-from src.data_models import TextChunk, ChunkMetadata, ParsedDocument, DocumentMetadata, TableData, DiagramMetadata
+from src.data_models import (
+    TextChunk, ChunkMetadata, ParsedDocument, DocumentMetadata, DocumentSection, TableData, DiagramMetadata,
+)
+from src.ingestion.layout import TextRepair, looks_garbled
 from src.utils.logging import get_logger
 
 logger = get_logger()
@@ -26,78 +29,22 @@ logger = get_logger()
 
 class PDFLoader:
     """
-    Discovers and loads PDF documents from a directory.
-    
-    Handles file discovery, metadata extraction, and error handling.
+    Loads metadata for PDF documents.
+
+    File discovery and change detection happen in the load_documents node.
     """
-    
-    def load_documents(self, directory: str) -> list[ParsedDocument]:
-        """
-        Load all PDF documents from a directory.
-        
-        Args:
-            directory: Path to directory containing PDF files
-        
-        Returns:
-            List of ParsedDocument objects with metadata loaded
-        
-        Raises:
-            FileNotFoundError: If directory doesn't exist
-            ValueError: If directory is empty (no PDFs found)
-        """
-        dir_path = Path(directory)
-        
-        # Check if directory exists
-        if not dir_path.exists():
-            raise FileNotFoundError(f"Document directory not found: {dir_path.absolute()}")
-        
-        if not dir_path.is_dir():
-            raise ValueError(f"Path is not a directory: {dir_path.absolute()}")
-        
-        # Find all PDF files (case-insensitive)
-        pdf_files = list(dir_path.glob("*.pdf")) + list(dir_path.glob("*.PDF"))
-        
-        # Raise error if no PDFs found
-        if not pdf_files:
-            raise ValueError(
-                f"No PDF files found in {dir_path.absolute()}. "
-                f"Directory is empty or contains no .pdf files."
-            )
-        
-        # Load documents
-        documents: list[ParsedDocument] = []
-        for pdf_path in pdf_files:
-            try:
-                doc = self._load_single_document(pdf_path)
-                documents.append(doc)
-            except Exception as e:
-                logger.warning(f"Failed to load metadata from {pdf_path.name}: {str(e)}")
-                # Still create document with basic metadata
-                doc = ParsedDocument(
-                    content="",
-                    metadata=DocumentMetadata(
-                        filename=pdf_path.name,
-                        total_pages=0,  # Will be determined during parsing
-                        processing_timestamp="",
-                    ),
-                    pages=[],
-                )
-                documents.append(doc)
-        
-        logger.info(f"Loaded {len(documents)} PDF documents from {dir_path}")
-        return documents
-    
+
     def _load_single_document(self, pdf_path: Path) -> ParsedDocument:
         """
         Load metadata for a single PDF document.
-        
+
         Args:
             pdf_path: Path to PDF file
-        
+
         Returns:
             ParsedDocument with metadata populated
         """
-        # Get basic file info
+        # Get relative path from document directory (preserves folder structure)
         filename = pdf_path.name
         
         # Open PDF and extract metadata
@@ -179,12 +126,15 @@ class PDFParser:
             # Extract text from each page
             per_page_texts: list[str] = []
             full_text_parts: list[str] = []
-            
+            repair = self._text_repair(pdf_path)
+
             for page_num, page in enumerate(reader.pages, 1):
                 try:
                     # Extract text from page
                     page_text = page.extract_text()
-                    
+                    if page_text and repair is not None:
+                        page_text = repair.fix_plain_text(page_num - 1, page_text)
+
                     if not page_text or not page_text.strip():
                         # Handle image-only or empty pages
                         logger.warning(
@@ -221,6 +171,18 @@ class PDFParser:
         except Exception as e:
             raise ValueError(f"Error parsing PDF {pdf_path.name}: {str(e)}")
 
+    @staticmethod
+    def _text_repair(pdf_path: Path) -> TextRepair | None:
+        """Detect shifted-font text with PyMuPDF; None if unavailable or not needed."""
+        try:
+            import pymupdf
+            with pymupdf.open(pdf_path) as mu_doc:
+                repair = TextRepair(mu_doc)
+            return repair if repair.active else None
+        except Exception as e:
+            logger.debug(f"Text repair skipped for {pdf_path.name}: {e}")
+            return None
+
 
 class TextChunker:
     """
@@ -240,21 +202,7 @@ class TextChunker:
         """
         self.chunk_size = chunk_size
         self.overlap = overlap
-        
-        # Initialize LangChain's RecursiveCharacterTextSplitter
-        # Splits recursively on: "\n\n", "\n", " ", ""
-        # This respects document structure better than simple character splitting
-        self.splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=overlap,
-            length_function=len,
-            separators=["\n\n", "\n", " ", ""],
-        )
-        
-        logger.debug(
-            f"TextChunker initialized with LangChain RecursiveCharacterTextSplitter: "
-            f"chunk_size={chunk_size}, overlap={overlap}"
-        )
+        logger.debug(f"TextChunker initialized: chunk_size={chunk_size}, overlap={overlap}")
     
     def chunk_document(
         self, 
@@ -266,66 +214,102 @@ class TextChunker:
         Args:
             document: ParsedDocument object with content and metadata
         
+        Uses the sections from layout analysis. When there are none (layout
+        analysis failed or found no text), each page becomes one section with
+        no heading path, so chunks still get correct page numbers and a
+        "Section: <document title>" line.
+
         Returns:
             List of TextChunk objects with chunk-level metadata
         """
         filename = document.metadata.filename
         logger.debug(f"TextChunker.chunk_document() called for {filename}")
-        
-        if not document.content or not document.content.strip():
+
+        if document.sections:
+            return self._chunk_sections(document, document.sections)
+
+        if not any(page.strip() for page in document.pages):
             logger.warning(f"Document {filename} has no content to chunk")
             return []
-        
+
+        logger.debug(f"No layout sections for {filename}; chunking page by page")
+        page_sections = [
+            DocumentSection(path=[], text=page, page_offsets=[(0, index)])
+            for index, page in enumerate(document.pages)
+        ]
+        return self._chunk_sections(document, page_sections)
+    
+    @staticmethod
+    def document_title(filename: str) -> str:
+        """
+        Title used as the section path for content before the first heading.
+
+        Built from the filename: embedded PDF titles are usually junk (URLs,
+        file paths, dates).
+        """
+        stem = Path(filename).stem
+        return " ".join(re.sub(r"[_\-]+", " ", stem).split()) or filename
+
+    @classmethod
+    def section_path(cls, path: list[str], filename: str) -> list[str]:
+        """The heading path, or [document title] when there is no heading yet."""
+        return list(path) if path else [cls.document_title(filename)]
+
+    @staticmethod
+    def section_line(path: list[str]) -> str:
+        return "Section: " + " > ".join(path)
+
+    MIN_SECTION_CHUNK = 200  # never shrink the split size below this for long prefixes
+
+    def _chunk_sections(self, document: ParsedDocument, sections: list[DocumentSection]) -> list[TextChunk]:
+        """
+        Chunk each section separately, so no chunk mixes two sections.
+
+        Every chunk starts with a "Section: A > B" line (embedded with the text
+        and seen by the LLM). The split size is reduced by that line's length
+        so the whole chunk still fits in chunk_size.
+        """
+        filename = document.metadata.filename
         chunks: list[TextChunk] = []
-        
-        try:
-            # Split text using LangChain splitter
-            split_texts = self.splitter.split_text(document.content)
-            
-            if not split_texts:
-                logger.warning(f"No chunks created from {filename}")
-                return []
-            
-            # Create TextChunk objects with metadata
-            for chunk_idx, chunk_text in enumerate(split_texts):
-                # Determine which page(s) this chunk came from
-                # by finding its position in the original text
-                char_index = document.content.find(chunk_text)
-                
-                # Determine page number based on position in per-page texts
-                page_number = self._find_page_number(
-                    document.pages, 
-                    char_index
-                )
-                
-                chunk = TextChunk(
-                    content=chunk_text,
+        section_start = 0  # offset of the section in document.content ("\n\n"-joined)
+
+        for section in sections:
+            path = self.section_path(section.path, filename)
+            prefix = self.section_line(path)
+            size = max(self.chunk_size - len(prefix) - 1, self.MIN_SECTION_CHUNK)
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=size,
+                chunk_overlap=min(self.overlap, size // 4),
+                length_function=len,
+                separators=["\n\n", "\n", " ", ""],
+            )
+            cursor = 0
+            for piece in splitter.split_text(section.text):
+                local = section.text.find(piece, cursor)
+                if local < 0:
+                    local = cursor
+                cursor = local + 1
+                start = section_start + local
+                chunks.append(TextChunk(
+                    content=f"{prefix}\n{piece}",
                     metadata=ChunkMetadata(
                         source_filename=filename,
-                        page_number=page_number,
-                        chunk_sequence=chunk_idx,
-                        start_char_index=char_index,
-                        end_char_index=char_index + len(chunk_text),
+                        page_number=section.page_at(local) + 1,
+                        chunk_sequence=len(chunks),
+                        start_char_index=start,
+                        end_char_index=start + len(piece),
+                        section_headings=path,
                         file_hash=document.metadata.file_hash,
                         ingested_at=document.metadata.processing_timestamp,
                     ),
-                )
-                chunks.append(chunk)
-            
-            for chunk in chunks:
-                chunk.metadata.total_chunks = len(chunks)
-            
-            logger.debug(
-                f"Created {len(chunks)} chunks from {filename} "
-                f"({len(document.content)} characters)"
-            )
-            
-        except Exception as e:
-            logger.error(f"Error chunking {filename}: {str(e)}")
-            raise
-        
+                ))
+            section_start += len(section.text) + 2
+
+        for chunk in chunks:
+            chunk.metadata.total_chunks = len(chunks)
+        logger.debug(f"Created {len(chunks)} chunks from {len(sections)} sections of {filename}")
         return chunks
-    
+
     # --- Strict junk-table filter -------------------------------------------
     MIN_TABLE_ROWS = 2
     MIN_TABLE_COLS = 2
@@ -372,13 +356,18 @@ class TextChunker:
                 continue
             
             page_number = table.page + 1  # TableData.page is 0-indexed
+            path = self.section_path(table.heading_path, filename)
             chunks.append(TextChunk(
-                content=f"Table from {filename}, page {page_number}:\n{table.content}",
+                content=(
+                    f"Table from {filename}, page {page_number}:\n"
+                    f"{self.section_line(path)}\n{table.content}"
+                ),
                 metadata=ChunkMetadata(
                     source_filename=filename,
                     page_number=page_number,
                     chunk_sequence=start_sequence + len(chunks),
                     chunk_type="table",
+                    section_headings=path,
                     table_rows=table.row_count,
                     table_cols=table.col_count,
                     file_hash=document.metadata.file_hash,
@@ -390,43 +379,57 @@ class TextChunker:
             logger.debug(f"Skipped {skipped} junk tables in {filename}")
         return chunks
     
+    @staticmethod
+    def diagram_chunk_text(diagram: DiagramMetadata, filename: str) -> str:
+        """
+        Searchable text for a diagram: where it is, the section it belongs to,
+        its figure label, the text inside it and the text leading up to it.
+        """
+        lines = [f"Figure on page {diagram.page + 1} of {filename}"]
+        lines.append(TextChunker.section_line(TextChunker.section_path(diagram.heading_path, filename)))
+        if diagram.label.strip():
+            lines.append("Label: " + diagram.label.strip())
+        if diagram.caption.strip():
+            lines.append("Text in figure: " + diagram.caption.strip())
+        if diagram.context.strip():
+            lines.append("Context: " + diagram.context.strip())
+        return "\n".join(lines)
+
     def chunk_diagrams(self, document: ParsedDocument, start_sequence: int) -> list[TextChunk]:
         """
-        Create one reference chunk per diagram that has a caption.
-        
-        Diagrams without a caption have nothing to search on, so they get no
-        chunk (their image files and parsed metadata are kept).
-        
+        Create one reference chunk per diagram.
+
+        Every diagram gets a chunk, even without a caption: the section heading
+        path and surrounding context (filled in by layout analysis) are usually
+        enough to find it, and ranking decides whether it is relevant.
+
         Args:
             document: Parsed document with extracted diagrams
             start_sequence: chunk_sequence number for the first diagram chunk
-        
+
         Returns:
             List of diagram_reference TextChunks (pages are 1-indexed)
         """
         filename = document.metadata.filename
         chunks: list[TextChunk] = []
-        
+
         for diagram in document.diagrams:
-            caption = diagram.caption.strip()
-            if not caption:
-                continue
-            
             page_number = diagram.page + 1  # DiagramMetadata.page is 0-indexed
             chunks.append(TextChunk(
-                content=f"Figure on page {page_number} of {filename}: {caption}",
+                content=self.diagram_chunk_text(diagram, filename),
                 metadata=ChunkMetadata(
                     source_filename=filename,
                     page_number=page_number,
                     chunk_sequence=start_sequence + len(chunks),
                     chunk_type="diagram_reference",
+                    section_headings=self.section_path(diagram.heading_path, filename),
                     diagram_path=diagram.image_path,
                     diagram_kind=diagram.kind,
                     file_hash=document.metadata.file_hash,
                     ingested_at=document.metadata.processing_timestamp,
                 ),
             ))
-        
+
         return chunks
     
     def chunk_all(self, document: ParsedDocument) -> list[TextChunk]:
@@ -444,33 +447,6 @@ class TextChunker:
         for chunk in chunks:
             chunk.metadata.total_chunks = len(chunks)
         return chunks
-    
-    def _find_page_number(
-        self, 
-        per_page_texts: list[str], 
-        char_index: int
-    ) -> int:
-        """
-        Determine which page a character position belongs to.
-        
-        Args:
-            per_page_texts: List of per-page text strings
-            char_index: Character index in concatenated text
-        
-        Returns:
-            Page number (1-indexed)
-        """
-        if not per_page_texts:
-            return 1
-        
-        cumulative_chars = 0
-        for page_num, page_text in enumerate(per_page_texts, 1):
-            cumulative_chars += len(page_text) + 2  # +2 for "\n\n" separator
-            if char_index < cumulative_chars:
-                return page_num
-        
-        # Default to last page if not found
-        return len(per_page_texts)
 
 
 class EmbeddingService:
@@ -788,6 +764,8 @@ class ChromaVectorStore:
                             "chunk_type": chunk.metadata.chunk_type,
                             "diagram_path": chunk.metadata.diagram_path,
                             "diagram_kind": chunk.metadata.diagram_kind,
+                            # Chroma metadata values must be scalars, so the path is joined
+                            "section_path": " > ".join(chunk.metadata.section_headings or []),
                         }
                         
                         ids.append(chunk_id)
@@ -1059,66 +1037,6 @@ class DocumentHasher:
         return sha256_hash.hexdigest()
 
 
-class HeadingExtractor:
-    """Extract document structure (section headings)."""
-    
-    @staticmethod
-    def extract_headings(text: str) -> list[str]:
-        """
-        Detect common heading patterns in extracted text.
-        
-        Args:
-            text: Full document text
-        
-        Returns:
-            List of detected headings in order
-        """
-        import re
-        
-        headings = []
-        lines = text.split('\n')
-        
-        for i, line in enumerate(lines):
-            line_stripped = line.strip()
-            
-            # Skip empty lines
-            if not line_stripped:
-                continue
-            
-            # Markdown headings (#, ##, ###, etc.)
-            if line_stripped.startswith('#'):
-                heading = line_stripped.lstrip('#').strip()
-                if heading:
-                    headings.append(heading)
-            
-            # Underlined headings (=== or ---)
-            elif i + 1 < len(lines) and re.match(r'^[=\-]{3,}$', lines[i + 1].strip()):
-                headings.append(line_stripped)
-            
-            # Numbered sections (1. Introduction, 1.1 Overview, etc.)
-            elif re.match(r'^\d+(\.\d+)*\s+[A-Z]', line_stripped):
-                headings.append(line_stripped)
-            
-            # ALL CAPS headings (but not too long, limit to 80 chars)
-            elif (line_stripped.isupper() and 
-                  len(line_stripped) < 80 and 
-                  len(line_stripped) > 2):
-                # Avoid matching pure punctuation or common sentences
-                non_alpha_count = sum(1 for c in line_stripped if not c.isalpha() and c != ' ')
-                if non_alpha_count < len(line_stripped) * 0.3:  # Less than 30% non-alpha
-                    headings.append(line_stripped)
-        
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_headings = []
-        for heading in headings:
-            if heading not in seen:
-                seen.add(heading)
-                unique_headings.append(heading)
-        
-        return unique_headings
-
-
 class TableExtractor:
     """Extract tables from PDFs using pdfplumber."""
     
@@ -1142,25 +1060,24 @@ class TableExtractor:
         try:
             with pdfplumber.open(file_path) as pdf:
                 for page_num, page in enumerate(pdf.pages):
-                    page_tables = page.extract_tables()
-                    
-                    if page_tables:
-                        for table_idx, table_data in enumerate(page_tables):
-                            # Skip empty tables
-                            if not table_data or len(table_data) == 0:
-                                continue
-                            
-                            # Convert to markdown format
-                            markdown_table = self._convert_to_markdown(table_data)
-                            
-                            tables.append(TableData(
-                                content=markdown_table,
-                                page=page_num,
-                                page_position=table_idx,
-                                row_count=len(table_data),
-                                col_count=len(table_data[0]) if table_data else 0,
-                                raw_data=table_data
-                            ))
+                    for table_idx, table in enumerate(page.find_tables()):
+                        table_data = table.extract()
+                        # Skip empty tables
+                        if not table_data:
+                            continue
+
+                        # Convert to markdown format
+                        markdown_table = self._convert_to_markdown(table_data)
+
+                        tables.append(TableData(
+                            content=markdown_table,
+                            page=page_num,
+                            page_position=table_idx,
+                            row_count=len(table_data),
+                            col_count=len(table_data[0]) if table_data else 0,
+                            raw_data=table_data,
+                            bbox=tuple(float(v) for v in table.bbox),
+                        ))
         
         except Exception as e:
             logger.error(f"Error extracting tables from {file_path.name}: {e}")
@@ -1276,14 +1193,23 @@ class DiagramExtractor:
         except Exception as e:
             logger.error(f"Error opening {file_path.name} for diagram extraction: {e}")
             return diagrams
-        
+
+        repair = None
+        if mu_doc is not None:
+            try:
+                repair = TextRepair(mu_doc)
+            except Exception as e:
+                logger.debug(f"Text repair unavailable for {file_path.name}: {e}")
+
         try:
             for page_num in range(len(reader.pages)):
-                page_diagrams = self._extract_raster(reader, file_path, page_num)
                 if mu_doc is not None:
+                    page_diagrams = self._extract_raster_positioned(mu_doc, file_path, page_num)
                     page_diagrams.extend(
-                        self._extract_vector_figures(mu_doc, file_path, page_num)
+                        self._extract_vector_figures(mu_doc, file_path, page_num, repair)
                     )
+                else:
+                    page_diagrams = self._extract_raster(reader, file_path, page_num)
                 for position, diagram in enumerate(page_diagrams):
                     diagram.position_index = position
                 diagrams.extend(page_diagrams)
@@ -1334,8 +1260,63 @@ class DiagramExtractor:
         
         return diagrams
     
-    def _extract_vector_figures(
+    def _extract_raster_positioned(
         self, mu_doc: Any, file_path: Path, page_number: int
+    ) -> list[DiagramMetadata]:
+        """
+        Extract embedded raster images from one page using PyMuPDF.
+
+        Unlike the pypdf path this also records where each image sits on the
+        page, which layout analysis needs to find the heading above it.
+        """
+        diagrams: list[DiagramMetadata] = []
+        page = mu_doc[page_number]
+
+        try:
+            images = page.get_images(full=True)
+        except Exception as e:
+            logger.debug(f"Could not list images on page {page_number} of {file_path.name}: {e}")
+            return diagrams
+
+        seen_xrefs: set[int] = set()
+        for image in images:
+            xref = image[0]
+            if xref in seen_xrefs:
+                continue
+            seen_xrefs.add(xref)
+            try:
+                info = mu_doc.extract_image(xref)
+                width, height = info.get("width", 0), info.get("height", 0)
+                if min(width, height) < self.MIN_RASTER_PIXELS:
+                    logger.debug(
+                        f"Skipping {width}x{height} image on page {page_number} of {file_path.name}"
+                    )
+                    continue
+
+                rects = page.get_image_rects(xref)
+                bbox = tuple(float(v) for v in rects[0]) if rects else None
+
+                ext = "." + {"jpeg": "jpg"}.get(info["ext"], info["ext"])
+                name = f"{file_path.stem}_p{page_number}_img{len(diagrams)}{ext}"
+                image_path = self.output_dir / name
+                image_path.write_bytes(info["image"])
+
+                diagrams.append(DiagramMetadata(
+                    page=page_number,
+                    position_index=len(diagrams),
+                    image_path=str(image_path),
+                    caption="",
+                    type=ext.lstrip("."),
+                    kind="raster",
+                    bbox=bbox,
+                ))
+            except Exception as e:
+                logger.debug(f"Skipping image on page {page_number} of {file_path.name}: {e}")
+
+        return diagrams
+
+    def _extract_vector_figures(
+        self, mu_doc: Any, file_path: Path, page_number: int, repair: "TextRepair | None" = None
     ) -> list[DiagramMetadata]:
         """Render each vector-drawing region on one page to a cropped PNG."""
         import pymupdf
@@ -1367,9 +1348,13 @@ class DiagramExtractor:
                 image_path = self.output_dir / name
                 pixmap.save(str(image_path))
                 
-                words = page.get_text(clip=clip).split()
-                caption = " ".join(words)[: self.MAX_CAPTION_CHARS]
-                
+                if repair is not None:
+                    text = repair.clip_text(page, page_number, clip)
+                else:
+                    text = " ".join(page.get_text(clip=clip).split())
+                # Text that is still unreadable (e.g. unknown font encoding) is left out
+                caption = "" if looks_garbled(text) else text[: self.MAX_CAPTION_CHARS]
+
                 diagrams.append(DiagramMetadata(
                     page=page_number,
                     position_index=len(diagrams),
@@ -1377,6 +1362,7 @@ class DiagramExtractor:
                     caption=caption,
                     type="png",
                     kind="vector_figure",
+                    bbox=(float(clip.x0), float(clip.y0), float(clip.x1), float(clip.y1)),
                 ))
             except Exception as e:
                 logger.debug(f"Skipping vector figure on page {page_number} of {file_path.name}: {e}")

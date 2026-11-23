@@ -16,11 +16,14 @@ from src.data_models import (
 )
 from src.ingestion.tools import (
     PDFLoader, PDFParser, TextChunker, EmbeddingService, ChromaVectorStore,
-    DocumentHasher, DiagramExtractor, TableExtractor, HeadingExtractor
+    DocumentHasher, DiagramExtractor, TableExtractor,
 )
 from src.utils.logging import get_logger
 
 logger = get_logger()
+
+# Text kept between a diagram and the heading before it (the part nearest the figure)
+MAX_DIAGRAM_CONTEXT_CHARS = 500
 
 
 def load_documents(state: IngestionState) -> dict[str, Any]:
@@ -63,8 +66,10 @@ def load_documents(state: IngestionState) -> dict[str, Any]:
     try:
         # Use PDFLoader to discover and load documents
         loader = PDFLoader()
-        pdf_files = list(Path(state.config.document_input_dir).glob("*.pdf"))
-        pdf_files += list(Path(state.config.document_input_dir).glob("*.PDF"))
+        # Recursively search all subdirectories for PDFs
+        base_path = Path(state.config.document_input_dir)
+        pdf_files = list(base_path.glob("**/*.pdf"))
+        pdf_files += list(base_path.glob("**/*.PDF"))
         
         if not pdf_files:
             raise ValueError(f"No PDF files found in {state.config.document_input_dir}")
@@ -95,33 +100,37 @@ def load_documents(state: IngestionState) -> dict[str, Any]:
             try:
                 # Calculate file hash
                 file_hash = hasher.calculate_file_hash(pdf_path)
-                
+
+                # Store relative path from document_input_dir
+                relative_path = str(pdf_path.relative_to(base_path))
+
                 # Check for changes if enabled
                 if hash_lookup is not None:
-                    if hash_lookup.get_stored_hash(pdf_path.name) == file_hash:
+                    if hash_lookup.get_stored_hash(relative_path) == file_hash:
                         # Same hash already stored in Chroma, skip it
-                        log_msg = f"Skipping unchanged document: {pdf_path.name}"
+                        log_msg = f"Skipping unchanged document: {relative_path}"
                         if state.config.change_detection_log_level == "critical":
                             logger.warning(log_msg)
                         skipped_duplicates += 1
                         continue
-                
+
                 # Load document using PDFLoader
                 doc = loader._load_single_document(pdf_path)
-                
-                # Add new metadata fields
-                doc.filename = pdf_path.name
+
+                # Add new metadata fields - use full relative path
+                doc.filename = relative_path
                 doc.metadata.file_hash = file_hash
                 doc.metadata.file_size_bytes = pdf_path.stat().st_size
                 doc.metadata.loaded_at = now
                 doc.metadata.processing_timestamp = now
-                
+
                 documents.append(doc)
-            
+
             except Exception as e:
-                error_msg = f"Error loading {pdf_path.name}: {str(e)}"
+                relative_path = str(pdf_path.relative_to(base_path)) if 'relative_path' in locals() else pdf_path.name
+                error_msg = f"Error loading {relative_path}: {str(e)}"
                 logger.error(error_msg)
-                errors.append({"stage": "load", "file": pdf_path.name, "error": str(e)})
+                errors.append({"stage": "load", "file": relative_path, "error": str(e)})
         
         logger.info(
             f"load_documents: Successfully loaded {len(documents)} documents"
@@ -303,7 +312,6 @@ def extract_metadata(state: IngestionState) -> dict[str, Any]:
     
     documents: list[ParsedDocument] = state.documents
     errors: list[dict] = list(state.errors)
-    heading_extractor = HeadingExtractor()
     now = datetime.now().isoformat()
     
     # Show progress bar if enabled
@@ -318,10 +326,17 @@ def extract_metadata(state: IngestionState) -> dict[str, Any]:
     
     for doc in doc_iter:
         try:
-            # Extract section headings from full text
-            full_text = doc.content if doc.content else "\n".join(doc.page_contents.values())
-            section_headings = heading_extractor.extract_headings(full_text)
-            
+            # Layout analysis: positioned headings + heading path/context for each diagram.
+            # If it fails, the document has no headings and is chunked page by page.
+            section_headings = _analyze_layout(doc, state)
+            if section_headings is None:
+                section_headings = []
+                errors.append({
+                    "stage": "extract_metadata",
+                    "file": doc.metadata.filename,
+                    "error": "Layout analysis failed; no section headings (chunked page by page)",
+                })
+
             # Try to extract PDF metadata
             try:
                 from pypdf import PdfReader
@@ -359,6 +374,54 @@ def extract_metadata(state: IngestionState) -> dict[str, Any]:
         "errors": errors,
         "status": "metadata_extracted",
     }
+
+
+def _analyze_layout(doc: ParsedDocument, state: IngestionState) -> list[str] | None:
+    """
+    Run layout analysis on one document.
+
+    Sets doc.headings and doc.sections, replaces doc.content / doc.pages with
+    the layout text, and annotates doc.diagrams (heading_path, label, context)
+    and the meaningful doc.tables (heading_path) in place. Returns the heading
+    texts (deduplicated, in order), or None if the analysis could not run.
+    """
+    try:
+        import pymupdf
+        from src.ingestion.layout import analyze_document
+    except ImportError as e:
+        logger.debug(f"Layout analysis unavailable: {e}")
+        return None
+
+    doc_path = Path(state.config.document_input_dir) / doc.metadata.filename
+    meaningful_tables = [t for t in doc.tables if TextChunker.is_meaningful_table(t)]
+    try:
+        with pymupdf.open(doc_path) as mu_doc:
+            analysis = analyze_document(
+                mu_doc,
+                diagrams=doc.diagrams,
+                tables=meaningful_tables,
+                max_context_chars=MAX_DIAGRAM_CONTEXT_CHARS,
+            )
+    except Exception as e:
+        logger.warning(f"Layout analysis failed for {doc.metadata.filename}: {e}")
+        return None
+
+    doc.headings = analysis.headings
+    if any(section.text.strip() for section in analysis.sections):
+        # Layout text replaces pypdf's: column-aware reading order, decoded fonts,
+        # no overprint copies or running headers/footers. pypdf text stays only
+        # when layout analysis finds no text at all.
+        doc.sections = analysis.sections
+        doc.content = "\n\n".join(section.text for section in analysis.sections)
+        doc.pages = analysis.page_texts
+        doc.page_contents = {i: text for i, text in enumerate(analysis.page_texts)}
+    seen: set[str] = set()
+    texts: list[str] = []
+    for heading in analysis.headings:
+        if heading.text not in seen:
+            seen.add(heading.text)
+            texts.append(heading.text)
+    return texts
 
 
 def chunk_text(state: IngestionState) -> dict[str, Any]:

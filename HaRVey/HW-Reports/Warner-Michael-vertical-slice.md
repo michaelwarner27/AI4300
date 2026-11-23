@@ -3,8 +3,8 @@
 ## 1. Submission Details
 
 - **Name:** Michael Warner
-- **Repository URL:** <!-- TODO -->
-- **Submitted commit:** <!-- TODO: full hash. Note: query_main.py, src/query/*, tests/* currently have uncommitted changes; commit before recording the hash -->
+- **Repository URL:** `https://github.com/michaelwarner27/AI4300/tree/main/HaRVey`
+- **Submitted commit:** `https://github.com/michaelwarner27/AI4300/commit/8c5486a15398d79cd3b8001e593b18539d6839fa`
 
 ## 2. Commands
 

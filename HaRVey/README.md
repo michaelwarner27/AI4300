@@ -1,6 +1,6 @@
 # HaRVey: Vector Ingestion & Semantic Query Pipeline
 
-A complete vector ingestion and semantic search pipeline built with LangGraph for processing PDF documents, generating embeddings, and enabling intelligent querying through a ReAct agent.
+A complete vector ingestion and semantic search pipeline built with LangGraph for processing PDF documents, generating embeddings, and enabling intelligent querying through a ReAct-style agent. The agent loop is hand-built as LangGraph nodes (`generate_response` ⇄ `search_more`) rather than LangGraph's prebuilt `create_react_agent`: the LLM reasons, calls a search tool, observes the results and repeats until it gives a final answer.
 
 ## Overview
 
@@ -17,28 +17,35 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 ├── chroma_db/                       # Vector database storage
 ├── extracted_diagrams/              # Extracted images from PDFs
 ├── src/
-│   ├── requirements.txt             # Python dependencies
-│   ├── config.py                    # Configuration loader (.env)
-│   ├── data_models.py               # Type-safe dataclasses
+│   ├── config.py                    # Configuration loader (.env), used by both pipelines
+│   ├── data_models.py               # Type-safe dataclasses (ingestion records, QueryState, ChatTurn)
 │   ├── ingestion/
 │   │   ├── nodes.py                 # Ingestion node implementations (6 pipeline + 3 management)
-│   │   ├── tools.py                 # Tool classes (DocumentHasher, TableExtractor, etc.)
+│   │   ├── tools.py                 # Tool classes (PDF parsing, TextChunker, EmbeddingService, ChromaVectorStore, extractors)
+│   │   ├── layout.py                # PyMuPDF layout analysis: reading order, headings, sections
 │   │   └── graph.py                 # LangGraph pipeline definition
 │   ├── query/
-│   │   ├── nodes.py                 # Query node implementations
-│   │   ├── tools.py                 # Query-specific tools
+│   │   ├── nodes.py                 # Query nodes, system prompt, tool schemas, response builders
+│   │   ├── tools.py                 # LLMService (OpenAI-compatible chat completions)
 │   │   └── graph.py                 # Query pipeline definition
 │   └── utils/
 │       └── logging.py               # Logging configuration
+├── web/
+│   ├── app.py                       # Flask app (query form, response, diagram images)
+│   └── templates/index.html         # Page template
 ├── tests/
 │   ├── test_queries.py              # Query pipeline test suite
 │   ├── verify_query_loop.py         # Query agent-loop verification (no servers needed)
 │   └── verify_ingestion.py          # Ingestion pipeline verification (no embedding server needed)
 ├── ingestion_main.py                # Ingestion pipeline entry point
 ├── query_main.py                    # Query pipeline entry point
+├── web_main.py                      # Web app entry point
 ├── manage_documents.py              # CLI tool for document management
+├── requirements.txt                 # Python dependencies
 ├── example.env.example              # Configuration template (copy to .env)
-├── setup.py                         # Package install (harvey-ingest, harvey-query entry points)
+├── requirments/                     # Design specs (ingestion.md, query.md, start.md)
+├── flaws.md, TODO                   # Known issues and ingestion backlog
+├── HW-Reports/                      # Course reports and the technical audit
 └── README.md                        # This file
 ```
 
@@ -48,13 +55,18 @@ A complete vector ingestion and semantic search pipeline built with LangGraph fo
 
 ### Setup
 
+Requires Python 3.10 or newer.
+
 ```bash
-cd /home/michael24/4300-CS/HaRVey
+cd HaRVey
+python -m venv .venv            # first time only
 source .venv/bin/activate
-pip install -r src/requirements.txt
+pip install -r requirements.txt
 cp example.env.example .env
-# Edit .env with your API keys and endpoints
+# Edit .env with your API keys and endpoints (LLM_* settings are required for querying)
 ```
+
+Run every command from the project root; the scripts import the `src` package from the current directory.
 
 ### Run Ingestion
 
@@ -95,6 +107,14 @@ python query_main.py
 
 Interactive query interface using the ingested vector database.
 
+### Run Web App
+
+```bash
+python web_main.py            # then open http://127.0.0.1:5000
+```
+
+Browser chat UI: ask follow-up questions in a conversation thread. Answers render as markdown (marked + DOMPurify from cdnjs; plain text if they can't load), steps are grouped by stage, diagrams show as captioned images, sources sit in a collapsible list, clarifying questions offer clickable options, and error details are collapsed. Each browser session has its own conversation (kept in server memory, cleared on restart or with **New chat**). Optionally set `FLASK_SECRET_KEY` in `.env` to keep session cookies valid across restarts.
+
 ### Run Tests
 
 ```bash
@@ -109,15 +129,15 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop (
 ## Ingestion Pipeline (6 Nodes)
 
 1. **load_documents** - Discover all PDFs, calculate hashes, detect changes
-2. **parse_documents** - Extract text, tables, and diagrams
-3. **extract_metadata** - Extract headings, timestamps, PDF metadata
-4. **chunk_text** - Split into 512-char chunks with 50-char overlap
+2. **parse_documents** - Extract text (pypdf), tables (pdfplumber) and diagrams
+3. **extract_metadata** - PyMuPDF layout analysis: column-aware reading order, font repair, headings from font styling, text split into sections; heading path and context for each diagram and table
+4. **chunk_text** - Split each section separately into chunks of up to 1000 characters with 100-character overlap (`CHUNK_SIZE`, `CHUNK_OVERLAP`). Every chunk starts with a `Section: A > B` line. If layout analysis finds no sections, each page becomes one section. Tables and diagrams get one chunk each
 5. **generate_embeddings** - Generate vectors via embedding service with retry logic
 6. **store_vectors** - Persist to Chroma with metadata indexing
 
 **Features:**
-- Real PDF parsing with pypdf + pdfplumber
-- Table extraction (pdfplumber) and diagram extraction (embedded images via pypdf, vector figures rendered via PyMuPDF with text captions)
+- PDF parsing with PyMuPDF layout text (pypdf text is used only when layout analysis finds no text); PyMuPDF is required
+- Table extraction (pdfplumber) and diagram extraction (embedded images and vector figures rendered via PyMuPDF, with text captions)
 - File hash-based change detection (skips unchanged documents)
 - Automatic retry with exponential backoff (3 attempts)
 - Batch embedding API calls (32 chunks per request)
@@ -133,14 +153,18 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop (
 
 ---
 
-## Query Pipeline (6 Nodes)
+## Query Pipeline (8 Nodes)
 
 1. **user_query** - Validate and prepare user input
-2. **embed_query** - Generate embedding for query
-3. **vector_store_search** - Retrieve top-K similar documents (K=10)
-4. **generate_response** - LLM with tool calling to synthesize answer
-5. **search_more** - Agent loop: runs the LLM's `search_documents` calls (optional filename/page filters, max 3 rounds), adds new chunks and returns to `generate_response`
-6. **process_tool_call** - Format and return response with sources
+2. **rewrite_query** - With chat history, one LLM call rewrites a follow-up ("what about step 3?") into a standalone search query; skipped for the first question, falls back to the original on failure
+3. **embed_query** - Generate embedding for the (rewritten) query
+4. **vector_store_search** - Retrieve top-K similar documents (K=10) scoring at least `SEARCH_MIN_SIMILARITY` (default 0.5), plus neighbor chunks and the diagrams on the top hits' pages (max 8, same section first) so the agent has figures to show. If nothing passes the cutoff and there are no earlier-turn documents, the run ends without an LLM call (`response` is `None`; the web app shows "No relevant documents found.")
+5. **add_history_documents** - Carry over the documents cited in the last 2 answers (max 30, marked `earlier_turn`). "Cited" means chunks matching a `sources` entry's filename + page, plus diagrams shown via `diagram_refs`; `insufficient_evidence` turns carry none
+6. **generate_response** - One LLM turn with tool calling (temperature 0.7, `max_tokens` 50000 for reasoning models); the last 5 Q&A turns are sent before the current question
+7. **search_more** - Agent loop: runs the LLM's `search_documents`, `read_section` or `read_page` call, adds new chunks and returns to `generate_response`. Searching stops after 3 rounds or 300 s, then the LLM must give a final answer
+8. **process_tool_call** - Format and return response with sources
+
+**Conversation:** `execute_query_pipeline(query, config, graph, chat_history=[...])` accepts earlier turns as `ChatTurn(question, answer, kind, documents)` (see `src/data_models.py`); build each with `chat_turn_from_result(question, result)` from `src/query/graph.py`, which keeps clean answer text (no sources or paths) and the cited documents, and returns `None` for failed or empty turns so they are not remembered. Past answers are replayed to the LLM as tool calls (`respond_to_user` / `insufficient_evidence` / `ask_clarifying_question`) with a tool result, not as plain assistant text. Limits are the `MAX_HISTORY_TURNS`, `HISTORY_DOC_TURNS` and `MAX_HISTORY_DOCS` constants in `src/query/nodes.py`. The CLI (`query_main.py`) still answers each query independently.
 
 **Features:**
 - Semantic similarity search
@@ -151,9 +175,13 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop (
 
 **Available Tools:**
 - `search_documents` - Fetch more context from the vector store (non-terminal; the agent continues afterwards)
+- `read_section` - Read every passage of a document section (and its sub-sections) in reading order (non-terminal; shares the 3-round budget)
 - `read_page` - Read every passage on a page range in reading order (non-terminal; shares the 3-round budget with `search_documents`)
-- `respond_to_user` - Return answer with sources and optional numbered `steps`; optional `diagram_refs` adds a `Diagrams:` block with absolute paths to matching extracted diagram images
-- `insufficient_evidence` - Indicate lack of supporting evidence
+- `respond_to_user` - Final answer: `answer` (markdown allowed), `sources` (always shown; snippets cut to 200 chars, duplicates dropped), optional `steps` (each may carry a `stage`, grouped in the output) and required `diagram_refs` (may be empty). The agent is told to include relevant diagrams with every answer (max 4, `MAX_DIAGRAMS_PER_ANSWER`); if it picks none, diagrams on the cited pages are attached automatically, same section first
+- `insufficient_evidence` - Final reply when the documents don't cover the question (after searching)
+- `ask_clarifying_question` - Final reply asking which model/series/document is meant, with up to 4 `options`, when the documents give materially different answers
+
+**Response:** `process_tool_call` stores a structured `QueryState.response` (`kind`, `answer`, `steps`, `sources`, `diagrams`, `options`); `final_response` is its text rendering. Replies without a tool call, and tool calls the server can't parse (e.g. LiteLLM HTTP 500 "unrecoverable tool call"), are retried once with a matching reminder at a higher temperature (0.9 vs 0.7); plain text is used as the answer if a plain-text retry also fails. The web app logs agent details to `logs/harvey.log`.
 
 ---
 
@@ -181,18 +209,19 @@ CHANGE_DETECTION_LOG_LEVEL=critical
 # Progress Tracking (optional, defaults shown)
 SHOW_PROGRESS_BAR=true
 
-# Agent search cutoff for search_documents (optional; 0.0 = none)
-SEARCH_MIN_SIMILARITY=0.0
+# Similarity cutoff for the first retrieval AND the agent's search_documents tool
+# (optional, default 0.5)
+SEARCH_MIN_SIMILARITY=0.5
 
-# LLM Service (optional, for query pipeline)
+# LLM Service (required for the query pipeline; ingestion does not use it)
 LLM_BASE_URL=http://golem:4000/v1
-LLM_MODEL=Qwen3.8-27B
+LLM_MODEL=Gemma-4-26B-A4B
 LLM_API_KEY=your_api_key
 LLM_REASONING_EFFORT=low   # low (default), medium or high
 
-# Chunking (optional, defaults shown)
-CHUNK_SIZE=512
-CHUNK_OVERLAP=50
+# Chunking in characters, including the "Section:" line (optional, defaults shown)
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=100
 
 # Vector Database (optional, defaults shown)
 CHROMA_PERSIST_DIRECTORY=./chroma_db
@@ -203,6 +232,8 @@ DOCUMENT_INPUT_DIR=./documents
 ```
 
 **Security:** Never commit `.env` or API keys. Use only on institutional network with HTTP endpoints.
+
+**Changing chunk settings:** `.env` values override the defaults, and change detection skips PDFs whose file hash is unchanged. After changing `CHUNK_SIZE` or `CHUNK_OVERLAP`, re-ingest with `ENABLE_CHANGE_DETECTION=false` (or delete each document with `manage_documents.py --delete` first) so every document is re-chunked.
 
 **Change Detection Details:**
 - First run: Processes all PDFs; the SHA256 hash is stored on each chunk in Chroma (no separate hash file)
@@ -295,7 +326,7 @@ For detailed usage and options, see [Post-Ingestion Document Management](./requi
 ```
 PDFs → Load → Parse → Metadata → Chunk → Embed → Store (Chroma)
                                            ↓
-Query → Embed → Search (Chroma) → LLM (Tool Calling) → Format Response
+Query (+ chat history) → Rewrite → Embed → Search (Chroma) + earlier docs → LLM (Tool Calling) → Format Response
 ```
 
 ### State Management
@@ -311,16 +342,18 @@ Both pipelines use LangGraph's state management to flow data through nodes with 
 
 ## Dependencies
 
-- `pypdf` - PDF text extraction and embedded image extraction
+- `pypdf` - PDF metadata and fallback text extraction
 - `pdfplumber` - Table extraction
-- `pymupdf` - Vector figure detection and rendering (AGPL-3.0 licensed)
-- `langchain` - Text splitting and embeddings
+- `pymupdf` - Layout analysis, embedded images and vector figure rendering (required; AGPL-3.0 licensed)
+- `langchain`, `langchain_text_splitters` - Text splitting (embeddings and LLM calls are plain HTTP via `requests`)
 - `langgraph` - Agent workflow orchestration
 - `chromadb` - Vector database
-- `requests` - HTTP API calls
+- `requests` - HTTP calls to the embedding and LLM services
 - `python-dotenv` - Environment configuration
+- `tqdm` - Ingestion progress bars
+- `flask` - Web app
 
-Install with: `pip install -r src/requirements.txt`
+Install with: `pip install -r requirements.txt`. There is no `setup.py`; run the scripts from the project root.
 
 ---
 

@@ -51,8 +51,11 @@ LLM_MODEL=Qwen3.8-Flash-Next
 LLM_API_KEY=your_api_key
 
 # Chunking Configuration
-CHUNK_SIZE=512
-CHUNK_OVERLAP=50
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=100
+
+# Similarity cutoff for the first retrieval and search_documents
+SEARCH_MIN_SIMILARITY=0.5
 
 # Vector Database
 CHROMA_PERSIST_DIRECTORY=./chroma_db
@@ -131,9 +134,9 @@ python3 query_main.py -i
 
 **Steps**:
 1. **Load Documents** - Discover PDFs in `./documents/` directory
-2. **Parse Documents** - Extract text from PDFs using pypdf
-3. **Extract Metadata** - Attach source information (filename, creation date, author)
-4. **Chunk Text** - Split text into 512-character overlapping chunks
+2. **Parse Documents** - Extract text (pypdf), tables (pdfplumber) and diagrams (PyMuPDF)
+3. **Extract Metadata** - PyMuPDF layout analysis finds headings and sections; attaches source information (filename, creation date, author)
+4. **Chunk Text** - Split each section into overlapping chunks of up to 1000 characters, each starting with a `Section:` line
 5. **Generate Embeddings** - Call embedding service API to create vectors
 6. **Store Vectors** - Persist embeddings to Chroma database
 
@@ -340,8 +343,9 @@ python ingestion_main.py  # Recreate database
 | `EMBEDDING_BASE_URL` | Embedding service endpoint | `http://golem:4000/v1` |
 | `EMBEDDING_MODEL` | Embedding model to use | `Qwen3-Embedding-8B` |
 | `EMBEDDING_API_KEY` | API key for embedding service | `your_key_here` |
-| `CHUNK_SIZE` | Characters per chunk | `512` |
-| `CHUNK_OVERLAP` | Character overlap between chunks | `50` |
+| `CHUNK_SIZE` | Characters per chunk, including the `Section:` line | `1000` |
+| `CHUNK_OVERLAP` | Character overlap between chunks | `100` |
+| `SEARCH_MIN_SIMILARITY` | Similarity cutoff for the first retrieval and `search_documents` | `0.5` |
 | `CHROMA_PERSIST_DIRECTORY` | Where to store vectors | `./chroma_db` |
 | `CHROMA_COLLECTION_NAME` | Vector collection name | `vector_ingestion_collection` |
 | `DOCUMENT_INPUT_DIR` | Where to find PDFs | `./documents` |
@@ -367,7 +371,7 @@ python ingestion_main.py  # Recreate database
 ### Query Pipeline
 
 - **Top-K Results**: Default is 10; increase for broader context, decrease for precision
-- **Similarity Threshold**: Default 0.5; increase to 0.7+ for higher quality matches
+- **Similarity Threshold**: `SEARCH_MIN_SIMILARITY` in `.env`, default 0.5, used by both the first retrieval and `search_documents`. Relevant chunks score about 0.55-0.8, so values much above 0.6 drop real answers
 - **LLM Temperature**: Default 0.7; increase for more creative answers, decrease for consistency
 
 See configuration in `src/query/nodes.py` for tunable parameters.
