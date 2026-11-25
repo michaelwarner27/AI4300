@@ -56,6 +56,9 @@ class LexicalIndex:
         self._pos = {chunk_id: i for i, chunk_id in enumerate(ids)}
         self.bm25 = BM25Okapi([tokenize(doc) for doc in documents]) if ids else None
 
+        # Every stored manual, for matching model names in a question to filenames
+        self.filenames = sorted({(meta or {}).get("source_filename", "") for meta in metadatas} - {""})
+
         self.parts: dict[str, set[str]] = {}
         for chunk_id, meta in zip(ids, metadatas):
             for key in split_keys((meta or {}).get("part_numbers")):

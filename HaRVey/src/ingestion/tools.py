@@ -1118,6 +1118,13 @@ class ChromaVectorStore:
         ))
         return items
 
+    def source_filenames(self) -> list[str]:
+        """Every stored document's source_filename (from the cached lexical index)."""
+        if not self.collection:
+            raise RuntimeError("Collection not initialized. Call initialize_collection() first.")
+        from src.query.lexical import get_lexical_index
+        return list(get_lexical_index(self.collection, (self.persist_directory, self.collection_name)).filenames)
+
     def get_chunks_containing(
         self, text: str, where: dict[str, Any], query_embedding: list[float] | None = None
     ) -> list[dict[str, Any]]:

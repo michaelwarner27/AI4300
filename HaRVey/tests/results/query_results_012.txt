@@ -1,0 +1,1399 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-25 14:23:40
+Model: Gemma-4-26B-A4B   Embeddings: Qwen3-Embedding-8B   Repeat: 1
+================================================================================
+
+PASS  Q01    1/1  Basic - CCC2 diagnostic mode entry
+PASS  Q02    1/1  Basic - CCC2 error code E1
+PASS  Q03    1/1  Table - CCC2 diagnostic command 10
+PASS  Q04    1/1  Table - Dometic 457915.70X electrical specs
+PASS  Q05    1/1  Table - Coleman wall thermostat Cool mode wiring
+PASS  Q06    1/1  Diagram - Coleman refrigeration system diagram
+PASS  Q07    1/1  Diagram - Dometic wiring diagram location
+PASS  Q08    1/1  Multi-document - filter maintenance
+PASS  Q09    1/1  Multi-document - fan control
+FAIL  Q10    0/1  RV AC not covered - CCC2 smartphone control
+             x1 kind is insufficient
+PASS  Q11    1/1  RV AC not covered - replacement part price
+PASS  Q12    1/1  Irrelevant - off-topic
+PASS  C01    1/1  Clarify - which thermostat to reset, answered by name
+PASS  C02    1/1  Clarify - which thermostat for diagnostic mode
+FAIL  C03    0/1  Clarify - ducted or non-ducted
+             x1 kind is clarify
+             x1 offers 'non[\\s-]*ducted'
+             x1 rewrite has 'roof'
+             x1 cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+             x1 says '1[\\s-]*(3/4|¾)|1\\.75'
+             x1 says '3[\\s-]*(3/4|¾)|3\\.75'
+FAIL  C04    0/1  Clarify - which water heater to winterize
+             x1 kind is clarify
+             x1 says 'antifreeze'
+PASS  C05    1/1  Clarify - not needed when the model is named
+PASS  C06    1/1  Clarify - not needed when every furnace says the same
+PASS  C07    1/1  Clarify - not needed when the variants agree
+FAIL  C08    0/1  Clarify - not needed when the model is already established
+             x1 says 'power.{0,30}down|blank'
+FAIL  C09    0/1  Clarify - answered by position
+             x1 cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+FAIL  C10    0/1  Clarify - user doesn't know, so never ask twice
+             x1 says '\\b5\\b'
+             x1 says '1[\\s-]*(3/4|¾)|1\\.75'
+PASS  C11    1/1  Clarify - water heater temperature differs by model
+PASS  C12    1/1  Clarify - model named without a code
+FAIL  C13    0/1  Clarify - generic question offers several families
+             x1 offers at least 3 options
+PASS  C14    1/1  Clarify - never asked twice, even when the reply settles nothing
+PASS  M01    1/1  Memory - follow-up answered from the previous documents
+PASS  M02    1/1  Memory - return to a topic after a switch
+PASS  M03    1/1  Memory - reference beyond the carried documents
+PASS  M04    1/1  Memory - reference older than the history window
+PASS  M05    1/1  Memory - compare two models discussed earlier
+PASS  M06    1/1  Memory - follow-up after an insufficient reply
+PASS  R01    1/1  Retrieval - part number from a description
+PASS  R02    1/1  Retrieval - description from a part number
+PASS  R03    1/1  Retrieval - fault code on one furnace series
+PASS  R04    1/1  Retrieval - second fault chart in the same manual
+PASS  R05    1/1  Retrieval - same table, different model
+PASS  R06    1/1  Retrieval - variant table value, non-ducted
+PASS  R07    1/1  Retrieval - variant table value, ducted
+PASS  R08    1/1  Retrieval - torque on the right variant
+PASS  R09    1/1  Retrieval - near-identical leveling system symptoms
+FAIL  R10    0/1  Retrieval - two revisions disagree
+             x1 cites one of ['205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf']
+             x1 says 'pin\\s*#?\\s*2\\b|#2\\b'
+PASS  R11    1/1  Retrieval - short error code shared by many manuals
+
+Runs passed: 35/43
+Failed checks by stage: rewrite 1, decision 3, answer 12
+
+
+================================================================================
+Q01: Basic - CCC2 diagnostic mode entry
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I enter diagnostic mode on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CCC2-Diagnostic-Mode-With-Reset.pdf', 'CCC II Reset & Diag.pdf']
+  [PASS] (answer) says 'program'
+  [PASS] (answer) says '\\bfan\\b'
+  [PASS] (answer) says 'F\\s*/\\s*C'
+
+To enter diagnostic mode on the CCC2 thermostat, ensure the thermostat is turned "OFF" (the display should be blank or only show the clock). Simultaneously press and hold the **Program**, **Fan**, and **F/C** buttons.
+
+When in diagnostic mode, the display backlight will remain on continuously, and the LCD will show "dIGN", the zone, and a two-digit diagnostic command number.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, System Configuration): To enter the diagnostic mode, simultaneously press the “Program”, “Fan” & “F/C” buttons.
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+================================================================================
+Q02: Basic - CCC2 error code E1
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What does error code E1 mean on the CCC2 thermostat, and what are its likely causes?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CCC2-Diagnostic-Mode-With-Reset.pdf', 'CCC2-Operating-Instructions.pdf', 'CCC II Operating Instructions.pdf']
+  [PASS] (answer) says 'communication'
+  [PASS] (answer) says 'dip switch'
+  [PASS] (answer) says 'cable'
+  [PASS] (answer) says '12\\s*V|direct DC|battery'
+
+On the CCC2 thermostat, error code E1 indicates a **loss of communication** between the thermostat and the system power module boards. Depending on the specific configuration, this can mean a loss of communication with all system power module boards (causing the system to shut down) or with an individual system power module board.
+
+**Likely causes include:**
+*   Two power module DIP switches are set to the same zone.
+*   Issues with the communication cable.
+*   The 12 Volt DC power is not clean (it is suggested to try direct DC from a battery).
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, Error Codes): E1 – Loss of communications
+- CCC2-Operating-Instructions.pdf (page 10, LCD Error Code): E1 Loss of communication between the CCC 2 thermostat and all system power module boards. System will shut down.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E1 Loss of communications “Causes Relay Control Module to shut down” Two power module DIP switches set as same zone. Communication cable. Try direct DC from battery.
+
+================================================================================
+Q03: Table - CCC2 diagnostic command 10
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: In CCC2 diagnostic mode, which command shows the outdoor temperature, and what does the display show if the outdoor sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of [{'file': 'CCC2-Diagnostic-Mode-With-Reset.pdf', 'pages': [2]}, {'file': 'CCC II Reset & Diag.pdf', 'pages': [6]}]
+  [PASS] (answer) says '\\b10\\b'
+  [PASS] (answer) says '\\bE4\\b'
+
+In CCC2 diagnostic mode, command **10** shows the outdoor temperature. If the outdoor sensor is missing, the display shows **E4**.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 10 LCD shows Outdoor Temperature E4 if missing
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, Error Codes): E4 – Outdoor Ambient Sensor is Open or Out of Range
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf (page 6, Diagnostic Mode): 10 | LCD shows Outdoor Temperature | E4 if missing |
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf (page 6, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC II Reset & Diag-b46134c7_p5_fig0.png
+
+================================================================================
+Q04: Table - Dometic 457915.70X electrical specs
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What are the rated cooling capacity (BTU/hr), running amps, and recommended circuit breaker size for the Dometic 457915.70X unit?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dometic 457915 Installation & Operating Instructions Manual1.pdf', 'pages': [7]}
+  [PASS] (answer) says '13,?500'
+  [PASS] (answer) says '12\\.4'
+  [PASS] (answer) says '\\b20[\\s-]*A'
+
+For the Dometic 457915.70X unit, the specifications are as follows:
+* **Rated Cooling Capacity:** 13,500 BTU/hr
+* **Running Amps (Compressor Rated Load):** 12.4 Amps
+* **Recommended Circuit Breaker Size:** 20 Amp
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 7, SPECIFICATIONS > A. Table - Unit Data): 457915.70X 13,500 12.4 63.0 2.5 5.8 18.0 20 Amp 3.5 kW / 5.0 kW
+
+Diagrams:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 7, vector_figure, SPECIFICATIONS > A. Table - Unit Data): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dometic 457915 Installation & Operating Instructions Manual1_p6_fig0.png
+
+================================================================================
+Q05: Table - Coleman wall thermostat Cool mode wiring
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Which thermostat wires are connected to each other when Cool mode is selected on Low Fan on the Coleman wall thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Coleman-Wall-Thermostat.pdf', 'pages': [3, 4]}
+  [PASS] (answer) says '\\bred\\b'
+  [PASS] (answer) says '\\byellow\\b'
+  [PASS] (answer) says '\\bgr[ae]y\\b'
+  [PASS] (answer) does not say '\\bgreen\\b'
+
+When Cool mode is selected on Low Fan on the Coleman wall thermostat, the Red “R” wire connects to both the Yellow “Y” and Gray “GL” wires.
+
+---
+
+Sources:
+- Coleman-Wall-Thermostat.pdf (page 3, I. INTRODUCTION TO WALL THERMOSTATS): Cool Mode Selected On Low Fan Red “R” to Yellow “Y” and Gray “GL”
+
+Diagrams:
+- Coleman-Wall-Thermostat.pdf (page 4, vector_figure, I. INTRODUCTION TO WALL THERMOSTATS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Coleman-Wall-Thermostat_p3_fig0.png
+
+================================================================================
+Q06: Diagram - Coleman refrigeration system diagram
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: According to the refrigeration system diagram in the Coleman mechanical controls service manual, what are the two dividing points between the high side and the low side of the system?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Coleman-Mechanical-controls-1.pdf', 'pages': [5]}
+  [PASS] (answer) says 'cap(illary)?\\s*tube'
+  [PASS] (answer) says 'compressor'
+  [PASS] (answer) shows a diagram
+
+The two dividing points between the high side and the low side of the refrigeration system are the cap tube and the compressor cylinders.
+
+---
+
+Sources:
+- Coleman-Mechanical-controls-1.pdf (page 5, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > THEIR FUNCTIONS I. REFRIGERANT CIRCUIT > 2. High and Low Sides): The dividing points then are the cap tube and compressor cylinders.
+
+Diagrams:
+- Coleman-Mechanical-controls-1.pdf (page 4, raster, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > REFRIGERATION SYSTEM DIAGRAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Coleman-Mechanical-controls-1_p3_img0.jpg
+
+================================================================================
+Q07: Diagram - Dometic wiring diagram location
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: On which printed page numbers of the Dometic 457915 manual are the Unit Wiring Diagram and the Air Distribution Box Wiring Diagram?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites Dometic 457915 Installation & Operating Instructions Manual1.pdf
+  [PASS] (answer) says '\\b14\\b'
+  [PASS] (answer) says '\\b15\\b'
+
+In the Dometic 457915 manual, the Unit Wiring Diagram is on printed page 14 and the Air Distribution Box Wiring Diagram is on printed page 15.
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 5, INTRODUCTION): A. Unit Wiring Diagram.................................................................................................................................................14
+
+================================================================================
+Q08: Multi-document - filter maintenance
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How often should the return air filter be cleaned on the Dometic 457915 unit, and how does the CCC2 thermostat remind the user about filter maintenance?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dometic 457915 Installation & Operating Instructions Manual1.pdf', 'pages': [16]}
+  [PASS] (answer) cites one of ['CCC2-Operating-Instructions.pdf', 'CCC II Operating Instructions.pdf']
+  [PASS] (answer) says '(two|2)\\s*weeks'
+  [PASS] (answer) says '1,?000\\s*hours'
+
+For the Dometic 457915 unit, the return air filter should be cleaned periodically, at a minimum of every 2 weeks of operation.
+
+The CCC2 thermostat reminds the user about filter maintenance by displaying a filter icon in the LCD when the system fan run time exceeds 1000 hours.
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 16, MAINTENANCE > A. Air Filter): Periodically (a minimum of every 2 weeks of operation) remove the return air filter located behind the return air grille and wash it with soap and warm water, let dry and then reinstall.
+- CCC2-Operating-Instructions.pdf (page 12, Maintenance): When a system fan run time exceeds 1000 hours the filter icon is displayed in the LCD.
+
+================================================================================
+Q09: Multi-document - fan control
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Which fan speed options does the CCC2 thermostat offer, and which thermostat terminals are energized for High Fan in Cool mode on the Coleman wall thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites Coleman-Wall-Thermostat.pdf
+  [PASS] (answer) cites one of ['CCC2-Operating-Instructions.pdf', 'CCC II Operating Instructions.pdf']
+  [PASS] (answer) says 'auto'
+  [PASS] (answer) says '\\bhigh\\b'
+  [PASS] (answer) says '\\byellow\\b'
+  [PASS] (answer) says '\\bgreen\\b'
+
+The CCC2 thermostat offers four fan speed options: **Auto**, **LOW**, **MED**, and **HIGH**. For the Coleman wall thermostat, when Cool Mode is selected on High Fan, the energized terminals are **Red "R" to Yellow "Y" and Green "GH"**.
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 5, Fan Speed): Your selections will be Auto, LOW, MED, and HIGH.
+- Coleman-Wall-Thermostat.pdf (page 3, I. INTRODUCTION TO WALL THERMOSTATS): Cool Mode Selected On High Fan Red “R” to Yellow “Y” and Green “GH”
+
+Diagrams:
+- CCC2-Operating-Instructions.pdf (page 5, vector_figure, Fan Speed): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Operating-Instructions_p4_fig2.png
+- Coleman-Wall-Thermostat.pdf (page 4, vector_figure, I. INTRODUCTION TO WALL THERMOSTATS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Coleman-Wall-Thermostat_p3_fig0.png
+
+================================================================================
+Q10: RV AC not covered - CCC2 smartphone control
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: Does the CCC2 thermostat support smartphone app control over Wi-Fi?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [FAIL] (decision) kind is insufficient -- got answer
+
+Based on the provided documents, there is no mention of the CCC2 thermostat supporting smartphone app control or Wi-Fi connectivity. The documents describe features such as a Liquid Crystal Display, two operation programs, outdoor temperature sensing, and up to 4 independent zones.
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 2, Programmable Thermostat): Your Dometic Comfort Control Center 2 thermostat (hereinafter referred to as the CCC 2 thermostat) has been designed for ease of operation and for many years of reliable service.
+
+================================================================================
+Q11: RV AC not covered - replacement part price
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the current retail price of a replacement start capacitor for the Coleman Mach air conditioner?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (decision) kind is insufficient
+  [PASS] (answer) does not say '\\$\\s?\\d'
+
+⚠️  Insufficient Information
+
+The provided documents list various part numbers and specifications for replacement start capacitors for different Coleman Mach air conditioner series (such as Mini-Mach, Mach-1, and Mach-3), but they do not contain any information regarding the current retail price of these parts.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: COLEMAN-MACH-AIR-CONDITIONER-PARTS.pdf (page 1, COLEMAN-MACH AIR CONDITIONER PARTS)
+  Snippet: Figure on page 1 of COLEMAN-MACH-AIR-CONDITIONER-PARTS.pdf Context: Q Compressor Start Relay Capacitors
+
+
+================================================================================
+Q12: Irrelevant - off-topic
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the best recipe for sourdough bread at high altitude?
+Kind: empty   Status: no_results_found   Extra searches: 0
+  [PASS] (decision) kind is empty or insufficient
+
+================================================================================
+C01: Clarify - which thermostat to reset, answered by name
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I reset my thermostat?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+  [PASS] (answer) offers 'CCC|comfort control|\\bCT\\b|LCD|button|analog|coleman'
+
+Which thermostat model are you using? The reset procedure differs between models.
+- CCC 2 thermostat (Comfort Control Center 2)
+- CT thermostat (Bluetooth equipped)
+
+Turn 2: The 5 button Comfort Control Center.
+Rewrite: How to reset the 5 button Comfort Control Center 2 thermostat
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'reset'
+  [PASS] (rewrite) rewrite has '(5|five)[\\s-]*button'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}]
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says 'zone'
+
+To perform a system reset on the 5-button Comfort Control Center (CCC), follow these steps:
+
+**System Reset Procedure**
+1. Turn the ON/OFF switch to the "OFF" position.
+2. Simultaneously depress and hold the **MODE** and **ZONE** push-buttons while turning the ON/OFF switch to the "ON" position.
+3. Continue holding the buttons until "FF" appears in the LCD display, then release them.
+
+**Note:** If "EE" appears on the display when the buttons are released, repeat the reset. If "EE" persists, there may be a communication problem with the cable.
+
+Steps:
+System Reset:
+1. Turn the ON/OFF switch to the “OFF” position. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+2. Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+3. Release the MODE and ZONE push-buttons once "FF" appears in the LCD display. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf (page 8, 16. SYSTEM RESET): Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 31, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.5 COMFORT CONTROL CENTER T-STAT): Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”.
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 31, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.5 COMFORT CONTROL CENTER T-STAT): Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”.
+
+================================================================================
+C02: Clarify - which thermostat for diagnostic mode
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I get my thermostat into diagnostic mode?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+
+Which thermostat model are you using? The steps to enter diagnostic mode vary depending on the model.
+- Comfort Control Center II (CCC II 10 Button)
+- CT Thermostat
+- Mechanical Penguin Heat Pump (AC-HP Diag)
+
+Turn 2: It's the CT touch thermostat.
+Rewrite: CT touch thermostat diagnostic mode
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites CT Reset & Diag.pdf
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+  [PASS] (answer) does not say 'F\\s*/\\s*C'
+
+To enter Diagnostic Mode on the CT thermostat, follow these steps:
+
+1. Power the system completely down.
+2. Press the **MODE** button on the left side of the thermostat several times until the screen is blank.
+3. Press the **MODE**, **UP**, and **DOWN** buttons simultaneously (press and release all three at the same time).
+
+The display should show "00", indicating you are in Diagnostic Mode. You can then use the **UP** and **DOWN** arrows to cycle through commands.
+
+Steps:
+Preparation:
+1. Power the system completely down. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+2. Press the MODE Button located on the left hand side of the thermostat a few times until you are left with a blank screen. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+
+Entering Diagnostic Mode:
+1. Press the MODE, UP, and DOWN buttons at the same time (press and release all three buttons at the same time). (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, Diagnostic Mode): To prepare the thermostat for the system Diagnostic Mode; first power the system completely down (just like in preparation for a system initialization).
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig2.png
+
+================================================================================
+C03: Clarify - ducted or non-ducted
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How thick can my roof be for a Blizzard air conditioner install?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [FAIL] (decision) kind is clarify -- got answer
+  [FAIL] (answer) offers 'non[\\s-]*ducted' -- options: []
+
+For the Blizzard Non-Ducted model, if the ceiling thickness is greater than 6.25″, the installation will require a Duct Divider Kit (3315575.000) and a Bolt Kit (3100895.014).
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p9_fig0.png
+
+Turn 2: Non-ducted.
+Rewrite: Blizzard Non-Ducted model ceiling thickness requirements
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'non[\\s-]*ducted'
+  [FAIL] (rewrite) rewrite has 'roof' -- Blizzard Non-Ducted model ceiling thickness requirements
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]} -- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf p9
+  [FAIL] (answer) says '1[\\s-]*(3/4|¾)|1\\.75' -- not in the reply
+  [FAIL] (answer) says '3[\\s-]*(3/4|¾)|3\\.75' -- not in the reply
+
+For the Blizzard non-ducted installation, if the ceiling thickness is greater than 6.25″, you will need to purchase a Duct Divider Kit (3315575.000) and a Bolt Kit (3100895.014).
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig1.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig3.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p9_fig0.png
+
+================================================================================
+C04: Clarify - which water heater to winterize
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How do I winterize my water heater?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [FAIL] (decision) kind is clarify -- got answer
+
+Because the manuals provided cover different types of water heaters, the specific winterization steps depend on your model. 
+
+For **Suburban water heaters** (Airxcel/Suburban Mfg), you can winterize by draining the unit or using a bypass kit. If you use a bypass kit, close off the water heater and drain it completely. If you do not have a bypass kit and intend to use antifreeze, you must remove the anode rod and replace it with a 3/4" drain plug to prevent corrosion.
+
+For **Dometic water heaters**, winterization is defined as the process of preparing the heater for cold winter storage.
+
+Please let me know if you are using a Suburban or Dometic model, or if you would like the full step-by-step draining instructions for the Suburban model.
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205621_WATER HEATER STM, RC, 07-18-2019.pdf (page 23, OF OPERATION & TROUBLESHOOTING CHART > GENERAL WATER HEATER INFORMATION > WINTERIZING): If your water heater plumbing system is equipped with a bypass kit, use it to close off the water heater, drain the water heater completely and leave the water heater closed off (out of the system)…
+- Dometic/Guides/Water Heaters/Service Manual 2020.pdf (page 9, IThe images used in this document are for reference > 4.2 Terminology): The process of preparing a Water Heater Winterization for cold winter storage.
+
+Turn 2: The Suburban Nautilus on-demand one.
+Rewrite: winterizing Suburban Nautilus on-demand water heater
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'winteri[sz]'
+  [PASS] (rewrite) rewrite has 'nautilus|on[\\s-]*demand'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf', '205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf']
+  [PASS] (answer) says 'drain'
+  [FAIL] (answer) says 'antifreeze' -- not in the reply
+
+The provided manual for the Suburban NAUTILUS (IW60) On Demand Water Heater does not contain specific winterization or draining instructions. 
+
+However, the manual does note that the unit has built-in **FREEZE PROTECTION**, which intermittently cycles the burner if the water temperature falls below 40°F (4.4°C) to prevent damage. For this to function, both gas and electrical must be turned on.
+
+Additionally, it is recommended to drain the system and flush the heat exchanger annually using Suburban's authorized decalcification kit (Kit Number 521163).
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 7, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > FREEZE PROTECTION): The NAUTILUS (IW60) On Demand water heater has built-in FREEZE PROTECTION and will intermittently cycle the burner when the water temperature has fallen below 40°F(4.4°C).
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 7, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > DESCALING INFORMATION): Each year, drain the water from the system and flush the heat exchanger using Suburban’s authorized decalcification kit.
+
+Diagrams:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 7, vector_figure, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > PRESSURE RELIEF VALVE): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019-f12bd300_p6_fig0.png
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 7, vector_figure, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > PRESSURE RELIEF VALVE): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019-f12bd300_p6_fig1.png
+
+================================================================================
+C05: Clarify - not needed when the model is named
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I reset the CT thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CT Reset & Diag.pdf', 'CT Operating Instructions.pdf']
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says '\\bup\\b'
+
+To reset the CT thermostat (referred to as "System Initialization"), follow these steps:
+
+1. Ensure the CT thermostat is **Off**.
+2. Press and simultaneously hold the **MODE** and **UP** buttons.
+3. Once the display shows two dashes ("- -"), release both buttons.
+4. Turn the thermostat off and then back on using the **MODE** button to complete the initialization.
+
+**Note:** For thermostats equipped with Bluetooth, this system initialization also resets the Bluetooth system and removes all known mobile device pairs.
+
+**Tip:** If you have difficulty pressing both buttons at the same time, you can remove the faceplate and touch the spades on the PCB directly.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, System Initialization (System Reset)): Once you see the two dashes appear on the display you can now release the MODE and UP Buttons.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT-Bluetooth.pdf (page 21, BLUETOOTH® PROGRAMMING AND OPERATION > G. A Note On CT Thermostat Factory Reset And Lost Pairs): On CT thermostats equipped with Bluetooth® control the system initialization feature also resets the Bluetooth® system and removes all known mobile device pairs from the CT thermostat.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, raster, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig2.png
+
+================================================================================
+C06: Clarify - not needed when every furnace says the same
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What should I do if I smell propane gas around my furnace?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'evacuate'
+  [PASS] (answer) says 'gas supply|shut off'
+  [PASS] (answer) says 'phone|switch|flame'
+
+If you smell gas around your furnace, you should treat the situation as life-threatening and take the following actions:
+
+*   **Never operate the furnace** if you smell gas.
+*   **Extinguish all open flames**, including cigarettes.
+*   **Evacuate all persons** from the vehicle.
+*   **Shut off the gas supply** at the LP gas bottle.
+*   **Do not** try to light any appliance, touch any electric switch, or use any phone in your building.
+*   **Call your gas supplier** from a neighbor's phone and follow their instructions. If you cannot reach them, **call the fire department**.
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205621_WATER HEATER STM, RC, 07-18-2019.pdf (page 12, INSTALLATION INSTRUCTIONS > LIGHTING INSTRUCTIONS FOR PILOT MODELS): Do not try to light any appliance. Do not touch any electric switch. Do not use any phone in your building.
+- Airxcel/Airxcel Suburban Mfg/205621_WATER HEATER STM, RC, 07-18-2019.pdf (page 14, INSTALLATION INSTRUCTIONS > OPERATING INSTRUCTIONS FOR DSI MODELS > WHAT TO DO IF YOU SMELL GAS): Immediately call your gas supplier from a neighbor’s phone. Follow the gas supplier’s instructions. If you cannot reach your gas supplier, call the fire department.
+- Airxcel/Airxcel Suburban Mfg/205621_WATER HEATER STM, RC, 07-18-2019.pdf (page 15, INSTALLATION INSTRUCTIONS > OPERATING INSTRUCTIONS FOR 120 Volt DSI MODELS > FOR YOUR SAFETY READ BEFORE LIGHTING > WHAT TO DO IF YOU SMELL GAS): Immediately call your gas supplier from a neighbor’s phone. Follow the gas supplier’s instructions.
+- Dometic/Guides/Furnaces/79/79 Series User's Manual.pdf (page 3, OPERATING INSTRUCTIONS > MAINTENANCE AND CLEANING): Never operate the furnace if you smell gas. Do not assume that the smell of gas in your RV is normal.
+
+Diagrams:
+- Airxcel/Airxcel Suburban Mfg/205621_WATER HEATER STM, RC, 07-18-2019.pdf (page 14, vector_figure, INSTALLATION INSTRUCTIONS > OPERATING INSTRUCTIONS FOR DSI MODELS > WHAT TO DO IF YOU SMELL GAS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205621_WATER HEATER STM, RC, 07-18-2019-bdfaf135_p13_fig0.png
+- Airxcel/Airxcel Suburban Mfg/205621_WATER HEATER STM, RC, 07-18-2019.pdf (page 15, vector_figure, INSTALLATION INSTRUCTIONS > OPERATING INSTRUCTIONS FOR 120 Volt DSI MODELS > FOR YOUR SAFETY READ BEFORE LIGHTING > WHAT TO DO IF YOU SMELL GAS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205621_WATER HEATER STM, RC, 07-18-2019-bdfaf135_p14_fig1.png
+
+================================================================================
+C07: Clarify - not needed when the variants agree
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What size roof opening does a Blizzard air conditioner need?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '14[\\s-]*(1/4|¼)|14\\.25'
+
+The required roof opening size for a Blizzard air conditioner depends on whether you are installing the Ducted or Non-Ducted model:
+
+* **Blizzard Ducted Model:** Requires a **14-1/4″ x 14-1/4″ (±1/8″) square opening**.
+* **Blizzard Non-Ducted Model:** Also requires a **14-1/4″ x 14-1/4″ (±1/8″) square opening**.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf (page 4, SPECIFICATIONS > B. Roof Requirements): A 14-1/4″ x 14-1/4″ (±1/8″) square opening (hereinafter referred to as “roof opening”) is required for installing this unit.
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, SPECIFICATIONS > B. Roof Requirements): A 14-1/4″ x 14-1/4″ (±1/8″) square opening (hereinafter referred to as “roof opening”) is required for installing this unit.
+
+================================================================================
+C08: Clarify - not needed when the model is already established
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How do I reset the thermostat?
+Rewrite: How do I reset the CT thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'reset|initiali[sz]'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says '\\bup\\b'
+  [FAIL] (answer) says 'power.{0,30}down|blank' -- not in the reply
+
+To reset the CT thermostat (System Initialization), follow these steps:
+
+1. Ensure the CT thermostat is Off.
+2. Simultaneously press and hold the MODE and UP buttons.
+3. Once two dashes ("- -") appear on the display, release the MODE and UP buttons.
+4. Turn the thermostat off and back on using the MODE button to complete the initialization.
+
+**Note:** For CT thermostats equipped with Bluetooth, this system initialization also resets the Bluetooth system and removes all known mobile device pairs.
+
+Steps:
+System Initialization (System Reset):
+1. Make sure the CT thermostat is Off. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+2. Press and hold the MODE and UP buttons at the same time. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+3. Release the MODE and UP buttons once the two dashes appear on the display. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+4. Turn the thermostat off and back on using the MODE button to complete the initialization. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, System Initialization (System Reset)): Once you see the two dashes appear on the display you can now release the MODE and UP Buttons.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT-Bluetooth.pdf (page 21, BLUETOOTH® PROGRAMMING AND OPERATION > G. A Note On CT Thermostat Factory Reset And Lost Pairs): On CT thermostats equipped with Bluetooth® control the system initialization feature also resets the Bluetooth® system and removes all known mobile device pairs from the CT thermostat.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, raster, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig2.png
+
+================================================================================
+C09: Clarify - answered by position
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: The second one.
+Rewrite: Blizzard H5403XX non-ducted roof thickness for installation
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'non[\\s-]*ducted'
+  [PASS] (rewrite) rewrite has 'roof'
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]} -- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf p9
+  [PASS] (answer) says '3[\\s-]*(3/4|¾)|3\\.75'
+
+For the Blizzard non-ducted model, the ceiling thickness requirements for the duct divider installation are as follows:
+* **1.25" to 1.75"**: Cut 9 rows
+* **1.75" to 2.25"**: Cut 8 rows
+* **2.25" to 2.75"**: Cut 7 rows
+* **2.75" to 3.25"**: Cut 6 rows
+* **3.25" to 3.75"**: Cut 5 rows
+* **3.75" to 4.25"**: Cut 4 rows
+* **4.25" to 4.75"**: Cut 3 rows
+* **4.75" to 5.25"**: Cut 2 rows
+* **5.25" to 5.75"**: Cut 1 row
+* **5.75" to 6.25"**: Cut 0 rows
+
+**Note:** If the ceiling thickness is greater than 6.25", you will require the Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig1.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig3.png
+
+================================================================================
+C10: Clarify - user doesn't know, so never ask twice
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: I'm not sure which one I have.
+Rewrite: maximum roof thickness for Blizzard air conditioner installation
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'blizzard'
+  [PASS] (rewrite) rewrite has 'roof|ducted'
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) says '\\b5\\b' -- not in the reply
+  [FAIL] (answer) says '1[\\s-]*(3/4|¾)|1\\.75' -- not in the reply
+
+Since you are unsure of your model, here are the roof thickness requirements for the Blizzard models described in the manuals:
+
+**Blizzard H5403XX Non-Ducted**
+* If the ceiling thickness is greater than **6.25"**, you will require a Duct Divider Kit (3315575.000) and a Bolt Kit (3100895.014).
+
+**Blizzard H5403XX Ducted**
+* The provided documents for the ducted model do not specify a maximum roof thickness, though they note that the roof must be designed to support 130 pounds when the RV is in motion.
+
+You can distinguish between the two models by checking if your unit is used with an **Air Distribution Box** (Non-Ducted) or a **Return Air Grille** (Ducted).
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p9_fig0.png
+
+================================================================================
+C11: Clarify - water heater temperature differs by model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I change the water temperature on my water heater?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+
+To provide the correct instructions, could you please specify which model or control type you have? 
+
+Options include:
+- Nautilus (IW60) with a Switch and Light Assembly (requires adjusting dip switches)
+- Nautilus (IW60) with an On Demand Control Center (uses UP/DOWN arrows)
+- A Reignitor Model (uses a temperature dial)
+- Nautilus (IW60) On Demand Water Heater (with Switch and Light Assembly)
+- Nautilus (IW60) On Demand Water Heater (with Optional On Demand Control Center)
+- Reignitor Model (using a temperature dial)
+
+Turn 2: It's a Suburban Nautilus with the control center.
+Rewrite: Suburban Nautilus (IW60) On Demand Water Heater with On Demand Control Center water temperature adjustment instructions
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'temperature'
+  [PASS] (rewrite) rewrite has 'nautilus'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+
+To adjust the outlet water temperature on your Suburban Nautilus (IW60) with the optional On Demand Control Center, use the UP or DOWN arrows on the control center to increase or decrease the SET water temperature in single degree increments. The setting range is 35°C/95°F to 55°C/130°F.
+
+Steps:
+1. Press the UP or DOWN arrows on the On Demand Control Center to increase or decrease the SET water temperature in single increments. (Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf, p.6, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > OPERATIONAL TROUBLESHOOTING > WATER TEMPERATURE IS TOO HIGH OR NO TEMPERATURE CONTROL:)
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 6, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > OPERATIONAL TROUBLESHOOTING > WATER TEMPERATURE IS TOO HIGH OR NO TEMPERATURE CONTROL:): For units using the optional On Demand Control Center, press the UP or DOWN arrows on the On Demand Control Center to increase the SET water temperature in single increments.
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 13, INTRODUCTION > STANDARD SWITCH AND LIGHT ASSEMBLY > OPTIONAL ON DEMAND CONTROL CENTER (PN: 161291 OR 161292)): UP: INCREASE SET Temperature by 1 degree increments. Setting range is 35°C/95°F to 55°C/130°F*.
+
+Diagrams:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 4, vector_figure, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > INSTALLATION OF OPTIONAL ON DEMAND CONTROL CENTER (SEE FIGURE 13)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019-f12bd300_p3_fig2.png
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf (page 4, vector_figure, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > INSTALLATION OF OPTIONAL ON DEMAND CONTROL CENTER (SEE FIGURE 13)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019-ca2c1999_p3_fig2.png
+
+================================================================================
+C12: Clarify - model named without a code
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I reset the 5 button Comfort Control Center?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}]
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says 'zone'
+  [PASS] (answer) does not say '\\bup\\b.{0,20}\\bdown\\b'
+  [PASS] (answer) does not say 'IniT'
+
+To reset the 5 button Comfort Control Center (CCC), follow these steps:
+
+1. Turn the ON/OFF switch to the **OFF** position.
+2. Simultaneously depress and hold the **MODE** and **ZONE** push-buttons while turning the ON/OFF switch to the **ON** position.
+3. Keep the **MODE** and **ZONE** buttons held until **FF** appears in the LCD display.
+4. Release the **MODE** and **ZONE** push-buttons.
+
+**Note:** If **EE** appears when the buttons are released, perform the reset again. If **EE** persists, there may be a communication problem with the cable.
+
+Steps:
+System Reset:
+1. Turn the ON/OFF switch to “OFF” position. (Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf, p.8)
+2. Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”. (Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf, p.8)
+3. Hold the MODE and ZONE push-buttons until FF appears in the LCD display. (Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf, p.8)
+4. Release the MODE and ZONE push-buttons. (Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf, p.8)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Operation Manual_3108664.040.pdf (page 2, REVISION:): Turn the ON/OFF switch to “OFF” position.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 31, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.5 COMFORT CONTROL CENTER T-STAT): Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”.
+
+================================================================================
+C13: Clarify - generic question offers several families
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How do I reset my thermostat?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+  [PASS] (answer) offers '\\bCT\\b'
+  [PASS] (answer) offers 'CCC|comfort control'
+  [FAIL] (answer) offers at least 3 options -- options: ['CCC 2 thermostat (Comfort Control Center 2)', 'CT thermostat (Bluetooth enabled)']
+
+Which thermostat model are you using? The reset procedure differs between the CCC 2 and CT models.
+- CCC 2 thermostat (Comfort Control Center 2)
+- CT thermostat (Bluetooth enabled)
+
+================================================================================
+C14: Clarify - never asked twice, even when the reply settles nothing
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Either one, I just want the general idea.
+Rewrite: general idea for winterizing Suburban tank water heater or Suburban Nautilus on-demand water heater or Dometic LP water heater
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'drain'
+
+For the Suburban NAUTILUS (IW60) On Demand Water Heater, winterizing involves the following steps:
+
+1. Follow your RV manufacturer's instructions to drain the entire water system.
+2. Once drained, you may add RV non-toxic antifreeze if recommended by your coach manufacturer.
+
+The provided documents do not contain specific winterization instructions for the other Suburban or Dometic models mentioned.
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 7, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > WINTERIZING): Follow RV manufacturer's instructions for draining entire water system.
+
+================================================================================
+M01: Memory - follow-up answered from the previous documents
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What are the diagnostic mode commands on the CT thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'CT Reset & Diag.pdf', 'pages': [5]}
+
+The diagnostic mode commands for the CT thermostat are:
+
+* **00**: All outputs OFF
+* **01**: Low Speed Fan ON
+* **02**: High Speed Fan ON
+* **03**: Compressor ON
+* **04**: Furnace Output ON
+* **05**: Reversing Valve ON (Heat Pump unit only)
+* **06**: Heat Strip ON (Heat Strip unit only)
+* **07**: LCD shows Room Temperature (or E2 / E3)
+* **08**: LCD shows Evaporator Coil Temperature (or E5 if missing)
+* **09**: LCD shows Outdoor Temperature (HP only, or E4 if missing)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, Diagnostic Mode): Command Description Comment 00 All outputs OFF 01 Low Speed Fan ON 02 High Speed Fan ON 03 Compressor ON 04 Furnace Output ON 05 Reversing Valve ON Heat Pump unit Only 06 Heat Strip ON Heat Strip…
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig1.png
+
+Turn 2: Which of those shows the outdoor temperature, and what if the sensor is missing?
+Rewrite: Which CT thermostat diagnostic mode command shows the outdoor temperature and what is the error code if the sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'outdoor'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\b0?9\\b'
+  [PASS] (answer) says '\\bE4\\b'
+  [PASS] (answer) does not say 'command\\s*10\\b'
+
+On the CT thermostat, command **09** shows the outdoor temperature (for Heat Pump units only). If the sensor is missing, the LCD will display error code **E4**.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, Diagnostic Mode): 09 LCD shows Outdoor Temperature (HP only) Or E4 if missing
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig2.png
+
+================================================================================
+M02: Memory - return to a topic after a switch
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: In CCC2 diagnostic mode, which command shows the outdoor temperature?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\b10\\b'
+
+In CCC2 diagnostic mode, command **10** shows the outdoor temperature on the LCD (with error code E4 if the sensor is missing).
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 10 LCD shows Outdoor Temperature E4 if missing
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+Turn 2: How does the MaxxFan rain sensor work?
+Rewrite: How does the MaxxFan rain sensor work?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites MaxxFan Operation.pdf
+
+When the MaxxFan rain sensor detects rain, it automatically turns the fan off and closes the lid. A blinking Red LED indicates that the fan has been shut down by the sensor. To reset the sensor and turn off the blinking LED, press the Rain Sensor key once the fan has dried.
+
+---
+
+Sources:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): When the Rain Sensor detects rain it will turn the fan Off and Close the lid.
+
+Diagrams:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img0.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img1.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img2.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img3.jpg
+
+Turn 3: Going back to the thermostat, what does that command show if the sensor is missing?
+Rewrite: In CCC2 diagnostic mode, what does command 10 show if the outdoor temperature sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)|thermostat'
+  [PASS] (rewrite) rewrite has 'outdoor|\\b10\\b'
+  [PASS] (rewrite) rewrite lacks 'maxx'
+  [PASS] (rewrite) rewrite lacks 'rain'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bE4\\b'
+
+Depending on which sensor is missing, the command will show the following:
+* **Command 09** (Indoor Temperature): Shows **E2** if the Remote Sensor is missing.
+* **Command 10** (Outdoor Temperature): Shows **E4** if the sensor is missing.
+* **Command 11** (Evaporator Coil Temperature): Shows **E5** if the sensor is missing.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 09 LCD shows Indoor Temperature for the Remote Sensor E2 if missing, E3 if shorted
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+================================================================================
+M03: Memory - reference beyond the carried documents
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Back to the evaporator coil command I asked about first, what is displayed if that sensor is missing?
+Rewrite: What is displayed in CCC2 diagnostic mode if the evaporator coil temperature sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite has 'evaporator|coil|\\b11\\b'
+  [PASS] (retrieval) retrieved CCC2-Diagnostic-Mode-With-Reset.pdf
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bE5\\b'
+
+If the evaporator coil sensor is missing, the LCD will display **E5**.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 11 LCD shows Evaporator Coil Temperature | E5 if missing |
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, Error Codes): E5 – Freeze Sensor is Open or Out of Range
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+================================================================================
+M04: Memory - reference older than the history window
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What was the answer to the very first thing I asked you?
+Rewrite: How does the MaxxFan rain sensor work?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (decision) kind is clarify or insufficient
+  [PASS] (answer) does not say 'water column'
+
+⚠️  Insufficient Information
+
+The earlier turns of this conversation are no longer visible, so I cannot provide the answer to the very first thing you asked.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only))
+  Snippet: - RAIN SENSOR – (Electric Lift Standard Models only) Press this key to turn the Rain Sensor OFF. This will deactivate the Rain Sensor. The Red LED…
+
+
+================================================================================
+M05: Memory - compare two models discussed earlier
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I enter diagnostic mode on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+
+To enter diagnostic mode on the CCC2 thermostat, ensure the thermostat is turned "OFF" (the display should be blank or only showing the clock). Then, simultaneously press and hold the "Program", "Fan", and "F/C" buttons. 
+
+When in diagnostic mode, the display backlight will remain on continuously, and the LCD will show "dIGN", the zone, and a two-digit diagnostic command number.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, System Configuration): To enter the diagnostic mode, simultaneously press the “Program”, “Fan” & “F/C” buttons.
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+Turn 2: And on the CT thermostat?
+Rewrite: How to enter diagnostic mode on the CT thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+
+To enter diagnostic mode on the CT thermostat, follow these steps:
+
+1. Power the system completely down.
+2. Press the **MODE** button on the left side of the thermostat a few times until the screen is blank.
+3. Press all three buttons (**MODE**, **UP**, and **DOWN**) at the same time. You only need to press and release them simultaneously; you do not need to hold them.
+
+The display should read "00" to indicate you are in Diagnostic Mode.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, Diagnostic Mode): To prepare the thermostat for the system Diagnostic Mode; first power the system completely down (just like in preparation for a system initialization).
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig2.png
+
+Turn 3: How do those two button combinations differ?
+Rewrite: difference between entering diagnostic mode on CCC2 thermostat and CT thermostat button combinations
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'program'
+  [PASS] (answer) says 'F\\s*/\\s*C'
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+  [PASS] (answer) at most 1 extra searches
+
+The button combinations for entering diagnostic mode differ as follows:
+
+* **CCC2 Thermostat**: Requires simultaneously pressing and **holding** three buttons: **"Program"**, **"Fan"**, and **"F/C"**.
+* **CT Thermostat**: Requires simultaneously pressing and **releasing** three buttons: **MODE**, **UP**, and **DOWN** (there is no need to hold them).
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, System Configuration): To enter the diagnostic mode, simultaneously press the “Program”, “Fan” & “F/C” buttons.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, Diagnostic Mode): At this point, now press all three buttons at the same time (MODE, UP, & DOWN). No need to hold the buttons in this case, simply press and release all three buttons at the same time.
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img2.png
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img3.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig0.png
+
+================================================================================
+M06: Memory - follow-up after an insufficient reply
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What does a sail switch cost for a DF series furnace?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (decision) kind is insufficient
+  [PASS] (answer) does not say '\\$\\s?\\d'
+
+⚠️  Insufficient Information
+
+The provided documents do not contain pricing information for the sail switch or any other replacement parts. The Operating Instructions manual directs users to visit www.eDometic.com for the most current replacement part information.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dometic/Guides/Furnaces/DF/DF Series Service Manual.pdf (page 38, II > 7.11 Servicing the sail switch)
+  Snippet: Figure on page 38 of DF Series Service Manual.pdf Text in figure: Perform the steps in Accessing the furnace components (on page 30) before…
+
+
+Turn 2: Okay, then what is its part number?
+Rewrite: part number for a sail switch for a DF series furnace
+Kind: answer   Status: response_generated   Extra searches: 1
+  [PASS] (rewrite) rewrite has 'sail switch'
+  [PASS] (rewrite) rewrite has '\\bDF\\b'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites DF Series Parts List.pdf
+  [PASS] (answer) says '33063'
+
+The part number for the sail switch for the DF series furnace is 4524 (SCV_KIT 33063).
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 5, 2 PART NUMBER LIST): X X X X 4524 33063 SAIL SWITCH
+
+Diagrams:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 5, vector_figure, 2 PART NUMBER LIST): /home/michael24/4300-CS/HaRVey/extracted_diagrams/DF Series Parts List-c64f1d7c_p4_fig0.png
+
+================================================================================
+R01: Retrieval - part number from a description
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the kit number for the 190 degree limit switch on a DF series furnace?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'DF Series Parts List.pdf', 'pages': [6]}
+  [PASS] (answer) says '31091'
+
+The kit number for the 190 degree limit switch on a DF series furnace is 31091.
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 6, 2 PART NUMBER LIST): 4560 31091 KIT, LIMIT SWITCH 190
+
+================================================================================
+R02: Retrieval - description from a part number
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is part number 33063?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites DF Series Parts List.pdf
+  [PASS] (answer) says 'sail switch'
+
+Part number 33063 is a SAIL SWITCH, used in the DF Series furnaces.
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 5, 2 PART NUMBER LIST): X X X X 4524 33063 SAIL SWITCH
+
+Diagrams:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 5, vector_figure, 2 PART NUMBER LIST): /home/michael24/4300-CS/HaRVey/extracted_diagrams/DF Series Parts List-c64f1d7c_p4_fig0.png
+
+================================================================================
+R03: Retrieval - fault code on one furnace series
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: On a DF series furnace, what do three flashes with a three second pause mean?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'DF Series Service Manual.pdf', 'pages': [11]}
+  [PASS] (answer) says 'lockout'
+  [PASS] (answer) says '(three|3)\\s*(times|tries|attempts)|failed'
+
+On a DF series furnace, three flashes with a three-second pause indicates an **Ignition Safety Lockout**. This means the furnace attempted ignition three times and failed to light, resulting in a one-hour soft safety lockout of the furnace.
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/DF/DF Series Service Manual.pdf (page 11, 4 GENERAL INFORMATION > 4.4 Sequence of operation/wiring diagrams > Information): Three (3) Flashes with Three-second (3) Pause Ignition Safety Lockout The furnace attempted ignition three times and failed to light.
+
+================================================================================
+R04: Retrieval - second fault chart in the same manual
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: On an 89 series furnace with the 2-stage ignition control, what do four LED flashes mean?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': '89 Series Installation Instructions.pdf', 'pages': [8]}
+  [PASS] (answer) says 'sail switch'
+
+On an 89 series furnace with 2-stage ignition control, four LED flashes (with a 3-second pause) indicate a **Stuck Sail Switch** fault, which results in a **Hard** lockout.
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/89/89 Series Installation Instructions.pdf (page 8, Figure 10 > Standard 3 tries for Ignition Controls): Stuck Sail Switch 4-Flashes With 3-Second Pause Hard
+
+Diagrams:
+- Dometic/Guides/Furnaces/89/89 Series Installation Instructions.pdf (page 8, vector_figure, Figure 10 > Standard 3 tries for Ignition Controls): /home/michael24/4300-CS/HaRVey/extracted_diagrams/89 Series Installation Instructions-bdd7adfc_p7_fig2.png
+
+================================================================================
+R05: Retrieval - same table, different model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Which CT thermostat diagnostic command displays the evaporator coil temperature?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'CT Reset & Diag.pdf', 'pages': [5]}
+  [PASS] (answer) says '\\b0?8\\b'
+  [PASS] (answer) does not say '\\b11\\b'
+
+For the CT thermostat, diagnostic command **08** displays the evaporator coil temperature. Note that if the sensor is missing, it will display error code E5.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, Diagnostic Mode): | 08 | LCD shows Evaporator Coil Temperature | Or E5 if missing |
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig1.png
+
+================================================================================
+R06: Retrieval - variant table value, non-ducted
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the R-410A refrigerant charge of the non-ducted 15,000 BTU Blizzard H540316?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+  [PASS] (answer) says '20\\.1'
+
+The R-410A refrigerant charge for the non-ducted 15,000 BTU Blizzard H540316 (Model No. H540316.72X) is 20.1 oz.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, SPECIFICATIONS > A. Table - Unit Data): | H540316.72X | 15,000 | | 13.2 | 70.0 | 2.8 | 8.0 | 20.1 | | 20 Amp | 3.5 kW / 5.0 kW |
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, vector_figure, SPECIFICATIONS > A. Table - Unit Data): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p3_fig0.png
+
+================================================================================
+R07: Retrieval - variant table value, ducted
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the R-410A refrigerant charge of the ducted 15,000 BTU Blizzard H540316?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Blizzard Installation H5403XX Ducted.pdf', 'pages': [4]}
+  [PASS] (answer) says '\\b21(\\.0)?\\s*(oz|ounce)'
+  [PASS] (answer) does not say '20\\.1'
+
+The R-410A refrigerant charge for the ducted 15,000 BTU Blizzard model H540316 is 21.0 oz.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf (page 4, SPECIFICATIONS > A. Table - Unit Data): H540316.72X 15,000 13.2 70.0 2.8 8.0 21.0 20 Amp 3.5 kW / 5.0 kW
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf (page 4, vector_figure, SPECIFICATIONS > A. Table - Unit Data): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Ducted-a5df1341_p3_fig0.png
+
+================================================================================
+R08: Retrieval - torque on the right variant
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What tightening torque is recommended for the hold down bolts on the non-ducted Air Command air conditioner?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Air Command - Non-Ducted IOM.pdf', 'pages': [8]}
+  [PASS] (answer) says '\\b7\\s*N|5\\.2'
+  [PASS] (answer) does not say '4\\.4'
+
+The recommended tightening torque for the four M8 bolts used to attach the duct to the non-ducted Air Command unit is 7 N.m (5.2 lb-ft). As a guide, the bolts should be tightened until the unit compresses the roof seal gasket to approximately half its height.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Air Command/Air Command - Non-Ducted IOM.pdf (page 8, INSTALLATION PARTS LIST > ATTACH DUCT TO UNIT): Recommended tightening torque of the bolts is 7 N.m (5.2 lb-ft).
+
+================================================================================
+R09: Retrieval - near-identical leveling system symptoms
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: All the lights on my Power Gear leveling touch pad are flashing, a buzzer is sounding and the jacks are retracting. What is happening?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': '3010001202_operations_manual_power_level_automatic_hydraulic_leveling_.pdf', 'pages': [7]}
+  [PASS] (answer) says 'emergency retract'
+  [PASS] (answer) says 'park(ing)? brake'
+  [PASS] (answer) says 'fluid'
+  [PASS] (answer) does not say 'zero mode'
+
+Your system is in **Emergency Retract** mode. 
+
+This occurs because the coach parking brake is disengaged while the jacks are extended and the ignition is in the run position, or because there is low fluid in the reservoir.
+
+**Corrective Actions:**
+* Engage the park brake and ensure the coach is not in gear while the jacks are down or while extending jacks.
+* Check the fluid level in the reservoir. If the problem persists, check the wiring of the neutral safety switch and/or the parking brake wire(s) for improper wiring.
+
+---
+
+Sources:
+- Lippert/3010001202_operations_manual_power_level_automatic_hydraulic_leveling_.pdf (page 7, Troubleshooting > Error Codes): Mode: Emergency Retract Indication: Audible alarm from touch pad, all lights are flashing, (if extended) jacks are retracting.
+
+Diagrams:
+- Lippert/3010001202_operations_manual_power_level_automatic_hydraulic_leveling_.pdf (page 7, vector_figure, Troubleshooting > Error Codes): /home/michael24/4300-CS/HaRVey/extracted_diagrams/3010001202_operations_manual_power_level_automatic_hydraulic_leveling_-7a540ec8_p6_fig0.png
+
+================================================================================
+R10: Retrieval - two revisions disagree
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: On the Nautilus IW60 fan control board input block, which black pin do I measure against yellow pin 4 to check for 3.2 VDC?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer or clarify
+  [FAIL] (answer) cites one of ['205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf'] -- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf p18
+  [FAIL] (answer) says 'pin\\s*#?\\s*2\\b|#2\\b' -- not in the reply
+
+To check for 3.2 VDC on the Nautilus IW60 fan control board input block, you should measure the voltage between pin #4 (yellow) and pin #4 (black).
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 18, TROUBLESHOOTING GUIDE > MODEL: > IW60 > NAUTILUS (IW60) ON DEMAND WATER HEATER TROUBLESHOOTING GUIDE): Check voltage between pin #4 (yellow) and pin #4 (black) on input on fan control board input block - should be 3.2 VDC
+
+Diagrams:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 18, vector_figure, TROUBLESHOOTING GUIDE > MODEL: > IW60 > NAUTILUS (IW60) ON DEMAND WATER HEATER TROUBLESHOOTING GUIDE): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019-f12bd300_p17_fig0.png
+
+================================================================================
+R11: Retrieval - short error code shared by many manuals
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What does error code E5 mean on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CCC2-Diagnostic-Mode-With-Reset.pdf', 'CCC2-Operating-Instructions.pdf', 'CCC II Operating Instructions.pdf']
+  [PASS] (answer) says 'freeze'
+
+On the CCC2 thermostat, error code E5 indicates that the **Freeze Sensor is Open or Out of Range**. 
+
+When this error occurs, air conditioner and dehumidification operations are locked out, but heat pump, furnace, heat strip, and fan operations can continue to operate (though the display will show the last temperature set-point).
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 10, LCD Error Code): E5 Open circuit or out of range Freeze Sensor. Air conditioner and dehumidification operation will be locked out.
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, Error Codes): E5 – Freeze Sensor is Open or Out of Range
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 36, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 Freeze Sensor Open/Out of Range “No Cool operation” “Furnace, Heat Strip, Heat Pump & Fan modes will still operate”

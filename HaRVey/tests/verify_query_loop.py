@@ -78,6 +78,8 @@ class FakeStore:
         # Same queue and recorded kwargs (query_text included) as query_similarity,
         # so subclasses overriding query_similarity (e.g. BoomStore) still apply
         return self.query_similarity(**kwargs)
+    def source_filenames(self):
+        return []  # no named-manual matches unless a test subclass lists files
     contains: list[dict] = []  # returned by every get_chunks_containing call (substring filter applied)
     contains_calls: list[tuple] = []
     def get_chunks_containing(self, text, where, query_embedding=None):
@@ -1395,6 +1397,101 @@ def test_find_code() -> None:
     check("prompt tells the agent when to use find_code", "call find_code" in nodes.SYSTEM_PROMPT)
 
 
+def test_named_manuals() -> None:
+    section("Named manuals, manuals list and clarify guard")
+    names = [
+        "Dometic/CCC 5 Button/5 Button Comfort Control Operation Manual_3108664.040.pdf",
+        "Dometic/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf",
+        "Dometic/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf",
+        "Dometic/CCC 4 Button/4 Button Comfort Control Trouble Shooting Bulletin_3108317.029.pdf",
+        "Dometic/Blizzard/Blizzard Installation H5403XX Ducted.pdf",
+        "Dometic/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf",
+        "Dometic/CT-SZLCD/CT Reset & Diag.pdf", "CCC2-Operating-Instructions.pdf", "CCC2-Diagnostic-Mode-With-Reset.pdf",
+        "Dometic/Water Heaters/Electric Models IOM.pdf", "Dometic/Water Heaters/LP Models IOM.pdf",
+        "Airxcel/Suburban/205621_WATER HEATER STM, RC, 07-18-2019.pdf",
+        "Lippert/3010001202_operations_manual_power_level_automatic_hydraulic_leveling_.pdf",
+    ]
+    short = lambda q: [n.rsplit("/", 1)[-1][:9] for n in nodes._named_manuals(q, names)]
+    check("a number counts in a pair: '5 button' picks the 5 button manuals",
+          short("How do I reset the 5 button comfort control center?") == ["5 Button ", "5 Button "],
+          str(short("How do I reset the 5 button comfort control center?")))
+    check("pair outranks the shared word: non-ducted first",
+          nodes._named_manuals("non-ducted Blizzard roof thickness", names)[0].endswith("Non-Ducted.pdf"))
+    check("a name shared by variants picks both",
+          sorted(short("Blizzard roof thickness")) == ["Blizzard ", "Blizzard "])
+    check("generic and category words match nothing", all(nodes._named_manuals(q, names) == [] for q in (
+        "How do I reset my thermostat?", "How do I winterize my water heater?", "electric heat strip operation",
+        "check the power module board", "Which comfort control center do I have?",
+        "How do I get my thermostat into diagnostic mode?")))
+    check("folder names are ignored", nodes._named_manuals("water heaters", names) == [])
+    check("at most two manuals", len(nodes._named_manuals("4 button 5 button blizzard", names)) <= nodes.NAMED_MANUAL_MAX)
+
+    # Lookup: adds the named manual's closest passages, marks retrieved ones, lists them first
+    class NamedStore(FakeStore):
+        def source_filenames(self): return ["five button bulletin.pdf", "four button bulletin.pdf"]
+        def query_similarity(self, **kwargs):
+            FakeStore.calls.append(kwargs)
+            return [hit(i, page=8, filename="five button bulletin.pdf") for i in (3, 4, 5, 6)]
+    retrieved = [nodes._build_query_result(hit(0, filename="four button bulletin.pdf")),
+                 nodes._build_query_result(hit(4, page=8, filename="five button bulletin.pdf"))]
+    FakeStore.calls = []
+    out = nodes._mark_named(list(retrieved), NamedStore(), "reset the five button control", [0.1])
+    added = [r.metadata.chunk_sequence for r in out if r.matched_manual]
+    check("named manual: 3 new closest passages added, retrieved one marked, others not",
+          added == [4, 3, 5, 6] and not out[0].matched_manual, str(added))
+    where = FakeStore.calls[0]["where"]
+    check("named-manual passages exclude diagrams and stay in that manual",
+          {"chunk_type": {"$ne": nodes.DIAGRAM_CHUNK_TYPE}} in where["$and"]
+          and {"source_filename": {"$eq": "five button bulletin.pdf"}} in where["$and"], str(where))
+    ordered = sorted(out, key=nodes._context_order_key)
+    check("named-manual passages listed first", all(r.matched_manual for r in ordered[:4]) and not ordered[4].matched_manual)
+    check("LLM sees named_manual", nodes._format_result_for_llm(0, ordered[0]).get("named_manual") is True
+          and "named_manual" not in nodes._format_result_for_llm(1, retrieved[0]))
+    check("no match leaves results unchanged",
+          nodes._mark_named(list(retrieved[:1]), NamedStore(), "reset my thermostat", [0.1]) == retrieved[:1])
+
+    class BrokenNames(FakeStore):
+        def source_filenames(self): raise RuntimeError("down")
+    check("lookup failure leaves results unchanged",
+          nodes._mark_named(list(retrieved), BrokenNames(), "five button", [0.1]) == retrieved)
+
+    # search_documents also adds the named manual (but not when the agent filters by filename)
+    nodes.ChromaVectorStore = NamedStore
+    nodes.EmbeddingService = FakeEmbedding
+    FakeStore.queue, FakeStore.chunk_queue = [], []
+    found, _ = nodes._run_search(config(), {"query": "five button reset"}, list(retrieved[:1]))
+    check("search_documents adds the named manual's passages first",
+          found and all(r.matched_manual for r in found), str([(r.metadata.source_filename, r.matched_manual) for r in found]))
+    FakeStore.calls = []
+    nodes._run_search(config(), {"query": "five button reset", "filename": "four button bulletin.pdf"},
+                      list(retrieved[:1]))
+    check("no named-manual lookup when the search names a file", len(FakeStore.calls) == 1)
+
+    # Manuals list
+    mixed = [nodes._build_query_result(hit(i, filename=f)) for i, f in enumerate(["b.pdf", "a.pdf", "b.pdf"])]
+    summary = nodes._manuals_summary(mixed)
+    check("manuals list: one line per manual, most passages first",
+          summary == "Manuals in your context:\n- b.pdf: 2 passage(s)\n- a.pdf: 1 passage(s)", summary)
+    check("no manuals list for a single manual", nodes._manuals_summary(mixed[:1]) == "")
+    install_fakes(script=[("insufficient_evidence", {"explanation": "x"})], queue=[])
+    run_graph(initial_state(search_results=list(mixed)))
+    check("manuals list sent with the documents", "Manuals in your context:" in ScriptedLLM.seen[0]["messages"][-1]["content"])
+
+    # Clarify guard
+    asked = ChatTurn(question="How do I reset my thermostat?", answer="Which one?", kind="clarify")
+    install_fakes(script=[("respond_to_user", {"answer": "a", "diagram_refs": []})], queue=[])
+    run_graph(initial_state(chat_history=[asked]))
+    check("no clarifying question right after one", "ask_clarifying_question" not in ScriptedLLM.seen[0]["tools"]
+          and nodes.JUST_CLARIFIED_NOTE in ScriptedLLM.seen[0]["messages"][-1]["content"])
+    install_fakes(script=[("respond_to_user", {"answer": "a", "diagram_refs": []})], queue=[])
+    run_graph(initial_state(chat_history=[past_turn("q", "a", [0])]))
+    check("clarifying allowed otherwise", "ask_clarifying_question" in ScriptedLLM.seen[0]["tools"]
+          and nodes.JUST_CLARIFIED_NOTE not in ScriptedLLM.seen[0]["messages"][-1]["content"])
+    check("prompt has the which-model checklist", "## Which model" in nodes.SYSTEM_PROMPT)
+    check("clarify options stay capped at 4", nodes.MAX_CLARIFY_OPTIONS == 4 and len(nodes._build_clarify_response(
+        {"question": "q", "options": list("abcdef")})["options"]) == 4)
+
+
 def test_nested_filenames() -> None:
     section("Citations of documents in subfolders")
     docs = [nodes._build_query_result(h) for h in (
@@ -1468,6 +1565,8 @@ def test_query_grader() -> None:
         "steps": [], "sources": [], "diagrams": []})
     check("clarify options graded",
           all(c["passed"] for c in tq.grade_turn({"kind": "clarify", "options_has": ["5 button", r"\bCT\b"]}, clarify)))
+    check("option count graded", tq.grade_turn({"options_min": 2}, clarify)[0]["passed"]
+          and not tq.grade_turn({"options_min": 3}, clarify)[0]["passed"])
     failed = tq.grade_turn({"kind": "answer"}, QueryState(original_query="q", errors=["LLM down"]))
     check("a failed turn is reported as a pipeline error", failed[0]["stage"] == "error" and not failed[0]["passed"])
     check("no documents found is 'empty'",
@@ -1495,7 +1594,7 @@ def test_query_grader() -> None:
 
 
 if __name__ == "__main__":
-    for test in (test_rewrite_context, test_find_code, test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
+    for test in (test_named_manuals, test_rewrite_context, test_find_code, test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
                  test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
                  test_failure_routes_to_fallback, test_read_page, test_neighbors, test_search_cutoff_env, test_steps_formatting, test_where_builder,
                  test_chroma_where, test_graph_wiring, test_conversation, test_sections, test_cited_documents,

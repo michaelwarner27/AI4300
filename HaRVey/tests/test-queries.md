@@ -34,6 +34,7 @@ turns:                        # run in order; each reply becomes history
       facts: ["..."]          # patterns in the answer, steps or options
       not_facts: ["..."]
       options_has: ["..."]    # patterns in a clarifying question or its options
+      options_min: 3          # a clarifying question offers at least this many options
       diagrams: true          # at least one diagram shown (false: none)
       max_searches: 1         # extra searches and reads the agent may use
 ```
@@ -573,6 +574,51 @@ turns:
       rewrite_has: ['temperature', 'nautilus']
       kind: answer
       facts: ['\bup\b', '\bdown\b']
+```
+
+## C12: Clarify - model named without a code
+
+The 5 button manuals are about 7th by meaning for this question; the answer must not use 4 button or CCC2 steps.
+
+```yaml
+turns:
+  - ask: How do I reset the 5 button Comfort Control Center?
+    expect:
+      kind: answer
+      facts: ['mode', 'zone']
+      not_facts: ['\bup\b.{0,20}\bdown\b', 'IniT']
+      cited_any:
+        - {file: "5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf", pages: [8]}
+        - {file: "AC-HP Diag Service Manual.pdf", pages: [31]}
+        - {file: "Service Manual AC_3311071.017.pdf", pages: [31]}
+```
+
+## C13: Clarify - generic question offers several families
+
+Only manuals that were retrieved can be offered (at most 4 options).
+
+```yaml
+turns:
+  - ask: How do I reset my thermostat?
+    expect:
+      kind: clarify
+      options_has: ['\bCT\b', 'CCC|comfort control']
+      options_min: 3
+```
+
+## C14: Clarify - never asked twice, even when the reply settles nothing
+
+```yaml
+history:
+  - ask: How do I winterize my water heater?
+    kind: clarify
+    answer: Which water heater do you have?
+    options: ["Suburban tank water heater", "Suburban Nautilus on-demand water heater", "Dometic LP water heater"]
+turns:
+  - ask: Either one, I just want the general idea.
+    expect:
+      kind: answer
+      facts: ['drain']
 ```
 
 ## M01: Memory - follow-up answered from the previous documents

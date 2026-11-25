@@ -7,6 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 import json
+import math
 import os
 import re
 import time
@@ -64,6 +65,24 @@ SHORT_CODE_MAX_CHARS = 3  # codes this short (after removing separators) get the
 AUTO_CODE_MATCHES = 5  # passages the automatic lookup adds to the first retrieval
 FIND_CODE_MAX_RESULTS = 10  # passages one find_code call returns
 CODE_MATCH_TYPE = "exact_code"
+# Named-manual match: words of the question that name a manual's model in its filename
+# ("5 button", "Blizzard", "Non-Ducted"). See _named_manuals.
+NAMED_MANUAL_MAX = 2  # manuals added per question
+NAMED_MANUAL_PASSAGES = 3  # passages added per manual (closest to the question)
+NAMED_MANUAL_MAX_DF = 4  # a filename word (or pair) names a model only if at most this many manuals share it
+NAMED_MANUAL_RELATIVE = 0.6  # a second manual must score at least this share of the best
+# Filename words that describe the document type or a whole category, not a model
+_NAME_GENERIC = {
+    "a", "and", "the", "of", "for", "with", "to", "in", "on", "my", "s", "pdf", "print",
+    "manual", "manuals", "instructions", "instruction", "installation", "install", "operating", "operation",
+    "operations", "service", "series", "stm", "iom", "models", "model", "parts", "part", "list", "bulletin",
+    "trouble", "shooting", "troubleshooting", "guide", "guides", "users", "user", "reset", "diag", "diagnostic", "mode",
+    "maintenance", "maintenanceguide", "procedure", "information", "feature", "sheet", "chart", "flow",
+    "comfort", "control", "controls", "center", "button", "buttons", "air", "conditioner", "conditioners", "conditioning", "ac", "hp",
+    "water", "heater", "heaters", "furnace", "furnaces", "thermostat", "stat", "roof", "top", "heat", "pump",
+    "kit", "gas", "wiring", "cooling", "rnew", "ra", "rb", "rc",
+    "electric", "power", "lp",  # also common component words ("electric heat strip", "power module")
+}
 AGENT_LOOP_TOOLS = {"search_documents", "read_page", "read_section", "find_code"}  # non-terminal tools handled by search_more
 DIAGRAM_CHUNK_TYPE = "diagram_reference"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -104,6 +123,8 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 - "neighbor": true means it was not matched directly but sits next to a match, or is a diagram on the same page as a match.
 - "earlier_turn": true means it was retrieved for an earlier question in this conversation and is still available.
 - "matched_part" means the passage contains that exact model, part or error code from the search. When the question names a specific model or part number, answer from passages for that exact number and do not substitute specifications or parts for a different model.
+- "named_manual": true means the passage is from a manual whose filename names the model in the question (e.g. "5 Button" for "the 5 button Comfort Control Center").
+- When documents come from more than one manual, a "Manuals in your context" list after the documents names each manual and how many passages you have from it.
 - "page" is the PDF page number, which can differ from the page number printed in the document (e.g. PDF page 16 may be printed as page 13). Always use the "page" value for citations and for read_page / search filters.
 - Most documents have a "section": the heading path in the source document where the passage appears, e.g. "MAINTENANCE > A. Air Filter". Passages with the same section belong together, and a section can span several pages. Use the section to tell which procedure, component or model a passage belongs to, and do not mix steps from different sections unless the question needs both.
 
@@ -145,7 +166,13 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 ## Finishing
 - respond_to_user when the documents support an answer. If your answer would be that the documents do not mention or cover what was asked, call insufficient_evidence instead; never use respond_to_user to say the information is missing.
 - insufficient_evidence only when the documents clearly do not address the question after you have searched, or when no more searches are available. Explain why, referring to the question.
-- ask_clarifying_question only when the question does not say which model, series or document it is about AND the documents give materially different answers for them. Offer the choices found in the documents as options. Do not ask when the question can be answered as asked.
+- ask_clarifying_question only as described in "Which model" below.
+
+## Which model (decide before answering)
+1. The question, or the conversation so far, names a model, series or product (e.g. "5 button Comfort Control Center", "non-ducted Blizzard", "CT thermostat"): answer ONLY from passages for that model (its manual, "named_manual" passages, or passages whose section names it). If none of them answers the question, search that manual (search_documents with its filename, or read_section) before answering. Never give another model's procedure or values for it, even if they look similar; if its manual does not cover the question, say so.
+2. No model is named, and the passages come from different models or manuals that give materially different answers (different steps, buttons or values): call ask_clarifying_question. Offer up to 4 of those models as options, most likely first, using names the user would recognize. Do not answer for one of them.
+3. No model is named, and the manuals agree (or only one model is relevant): answer, and say which models it applies to.
+- Never ask a clarifying question twice in a row; after one, answer as the note in the question tells you.
 
 Answer ONLY based on the information in the provided documents. Do not hallucinate or infer beyond what the documents contain.
 """
@@ -636,9 +663,11 @@ def vector_store_search(state: QueryState) -> dict[str, Any]:
             diagrams = _page_diagrams(vector_store, hits, {_chunk_key(r) for r in search_results})
             if diagrams:
                 search_results = search_results + diagrams
-            codes = _short_codes(state.retrieval_query or state.original_query)
+            query_text = state.retrieval_query or state.original_query
+            codes = _short_codes(query_text)
             if codes:
                 search_results = _add_code_matches(vector_store, search_results, hits, codes, state.query_embedding)
+            search_results = _mark_named(search_results, vector_store, query_text, state.query_embedding)
             # Passages with an exact code / part number from the question first, then reading order
             search_results = sorted(search_results, key=_context_order_key)
 
@@ -766,6 +795,8 @@ def _format_result_for_llm(ref: int, result: QueryResult) -> dict:
     if result.matched_parts:
         # Contains a part / model number named in the search query
         part["matched_part"] = ", ".join(result.matched_parts)
+    if result.matched_manual:
+        part["named_manual"] = True
     if result.metadata.chunk_type == DIAGRAM_CHUNK_TYPE:
         # No diagram_path: the LLM picks diagrams by ref and must not echo file paths
         part["diagram_kind"] = result.metadata.diagram_kind
@@ -821,7 +852,137 @@ def _context_order_key(result: QueryResult) -> tuple[bool, str, int, int]:
     Order of the documents the LLM sees: this turn's passages containing an
     exact code or part number from the question first, then reading order.
     """
-    return (not (result.matched_parts and not result.from_history), *_reading_order_key(result))
+    priority = (result.matched_parts or result.matched_manual) and not result.from_history
+    return (not priority, *_reading_order_key(result))
+
+
+def _words(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", (text or "").lower())
+
+
+def _named_manuals(query: str, filenames: list[str]) -> list[str]:
+    """
+    Manuals whose filename names the model the question asks about, best first
+    (at most NAMED_MANUAL_MAX).
+
+    Only the file's own name counts, not its folders. A filename word counts
+    when it appears in the question, is not generic (_NAME_GENERIC) or a bare
+    number, and at most NAMED_MANUAL_MAX_DF filenames contain it. A pair of
+    consecutive filename words counts when the question has the same pair and
+    at most NAMED_MANUAL_MAX_DF filenames contain that pair ("5 button", "non
+    ducted"), so numbers and generic words count in pairs. Matches are weighted
+    by rarity (log N/df) to rank manuals; a second manual needs
+    NAMED_MANUAL_RELATIVE of the best score.
+    """
+    query_words = _words(query)
+    if not query_words or not filenames:
+        return []
+    query_set = set(query_words)
+    query_pairs = set(zip(query_words, query_words[1:]))
+    names = {f: _words(re.sub(r"\.pdf$", "", f.rsplit("/", 1)[-1], flags=re.IGNORECASE)) for f in filenames}
+    df: dict[Any, int] = {}
+    for words in names.values():
+        for key in set(words) | set(zip(words, words[1:])):
+            df[key] = df.get(key, 0) + 1
+    total = len(filenames) + 1  # +1 keeps the weight positive when every file shares a word
+
+    def weight(key: Any) -> float:
+        return math.log(total / df[key])
+
+    def word_counts(w: str) -> bool:
+        return (w not in _NAME_GENERIC and not w.isdigit() and len(w) >= 2
+                and w in query_set and df[w] <= NAMED_MANUAL_MAX_DF)
+
+    def pair_counts(pair: tuple[str, str]) -> bool:
+        a, b = pair
+        return (pair in query_pairs and df[pair] <= NAMED_MANUAL_MAX_DF
+                and not (a in _NAME_GENERIC and b in _NAME_GENERIC) and not (a.isdigit() and b.isdigit()))
+
+    scored: list[tuple[float, str]] = []
+    for f, words in names.items():
+        score = sum(weight(w) for w in set(words) if word_counts(w))
+        score += sum(2 * weight(p) for p in set(zip(words, words[1:])) if pair_counts(p))
+        if score > 0:
+            scored.append((score, f))
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    if not scored:
+        return []
+    best = scored[0][0]
+    return [f for s, f in scored if s >= NAMED_MANUAL_RELATIVE * best][:NAMED_MANUAL_MAX]
+
+
+def _named_manual_passages(vector_store: Any, query: str, embedding: list[float] | None,
+                           have: set[tuple[str, int]]) -> tuple[list[str], list[QueryResult]]:
+    """
+    The manuals the question names, and up to NAMED_MANUAL_PASSAGES passages
+    (text and tables, closest to the question) from each, skipping chunks in
+    `have`, marked matched_manual. Failures are logged and return ([], []).
+    """
+    if not embedding:
+        return [], []
+    manuals: list[str] = []
+    try:
+        manuals = _named_manuals(query, vector_store.source_filenames())
+        added: list[QueryResult] = []
+        for filename in manuals:
+            where = {"$and": [{"source_filename": {"$eq": filename}},
+                              {"chunk_type": {"$ne": DIAGRAM_CHUNK_TYPE}}]}
+            count = 0
+            for raw in vector_store.query_similarity(query_embedding=embedding, k=NAMED_MANUAL_PASSAGES + len(have),
+                                                     where=where):
+                if count >= NAMED_MANUAL_PASSAGES:
+                    break
+                result = _build_query_result(raw)
+                if _chunk_key(result) in have:
+                    continue
+                result.matched_manual = True
+                result.match_type = result.match_type or "named_manual"
+                have.add(_chunk_key(result))
+                added.append(result)
+                count += 1
+    except Exception as e:
+        logger.warning(f"Named-manual lookup failed, continuing without it: {str(e)}")
+        return [], []
+    if manuals:
+        logger.info(f"Manuals named in the question: {manuals}; added {len(added)} passage(s)")
+    return manuals, added
+
+
+def _mark_named(results: list[QueryResult], vector_store: Any, query: str,
+                embedding: list[float] | None) -> list[QueryResult]:
+    """Add passages from the manuals the question names, and mark the ones already retrieved."""
+    manuals, added = _named_manual_passages(vector_store, query, embedding, {_chunk_key(r) for r in results})
+    named = set(manuals)
+    for r in results:
+        if r.metadata.source_filename in named and not r.is_neighbor:
+            r.matched_manual = True
+    return results + added
+
+
+JUST_CLARIFIED_NOTE = (
+    "You asked a clarifying question in your last reply, so do not ask another one. If the user's reply "
+    "settles which model they mean, answer for that model only. If it does not (e.g. they don't know), "
+    "answer for each of the likely models, labelled, and say how to tell them apart if the documents do."
+)
+
+
+def _just_clarified(history: list[ChatTurn]) -> bool:
+    """The previous turn was a clarifying question."""
+    return bool(history) and history[-1].kind == "clarify"
+
+
+def _manuals_summary(results: list[QueryResult]) -> str:
+    """
+    "Manuals in your context" list appended after the documents, so the LLM can
+    see which models it has passages for. "" when there is only one manual.
+    """
+    counts: dict[str, int] = {}
+    for r in results:
+        counts[r.metadata.source_filename] = counts.get(r.metadata.source_filename, 0) + 1
+    if len(counts) < 2:
+        return ""
+    lines = [f"- {name}: {n} passage(s)" for name, n in sorted(counts.items(), key=lambda x: (-x[1], x[0]))]
+    return "Manuals in your context:\n" + "\n".join(lines)
 
 
 def _short_codes(text: str) -> list[str]:
@@ -1138,6 +1299,11 @@ Retrieved Documents:
         menu = _diagram_menu(state.search_results)
         if menu:
             user_message += f"\n{menu}\n"
+        manuals = _manuals_summary(state.search_results)
+        if manuals:
+            user_message += f"\n{manuals}\n"
+        if _just_clarified(state.chat_history):
+            user_message += f"\n{JUST_CLARIFIED_NOTE}\n"
         note = _dropped_turns_note(state.chat_history)
         if note:
             user_message = f"{note}\n\n{user_message}"
@@ -1163,7 +1329,10 @@ Retrieved Documents:
                 "content": messages[-1]["content"]
                 + "\n\n[No further searches or page reads are available. Answer now with respond_to_user or insufficient_evidence.]",
             }
-    
+    if _just_clarified(state.chat_history):
+        # Never ask twice in a row: the user has already been asked which model they mean
+        tools = [t for t in tools if t["name"] != "ask_clarifying_question"]
+
     llm_service = LLMService(
         base_url=state.config.llm_base_url,
         model=state.config.llm_model,
@@ -1312,6 +1481,14 @@ def _run_search(config: Any, params: dict, existing: list[QueryResult]) -> tuple
             continue
         seen.add(key)
         new_results.append(result)
+
+    if not filename:
+        # A search naming a model ("5 button reset") also gets that manual's closest passages, listed first
+        manuals, extra = _named_manual_passages(vector_store, query_text.strip(), embedding, seen)
+        for r in new_results:
+            if r.metadata.source_filename in manuals:
+                r.matched_manual = True
+        new_results = sorted(extra + new_results, key=lambda r: not r.matched_manual)
 
     if new_results:
         new_results.extend(_page_diagrams(vector_store, new_results, seen))

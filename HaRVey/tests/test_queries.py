@@ -55,6 +55,7 @@ EXPECT_KEYS = {
     "facts": "answer",
     "not_facts": "answer",
     "options_has": "answer",
+    "options_min": "answer",
     "diagrams": "answer",
     "max_searches": "answer",
 }
@@ -98,6 +99,9 @@ def _check_expect(expect: dict) -> None:
     for key in FILE_KEYS:
         for value in _as_list(expect.get(key)):
             file_spec(value)
+    for key in ("options_min", "max_searches"):
+        if key in expect and (isinstance(expect[key], bool) or not isinstance(expect[key], int)):
+            raise ValueError(f"{key} must be a whole number")
 
 
 def _check_case(body) -> None:
@@ -241,6 +245,10 @@ def grade_turn(expect: dict, result: QueryState) -> list[dict]:
         checks.append(_check("answer", f"offers {pattern!r}", any(_matches(pattern, o) for o in options),
                              f"options: {response.get('options', [])}"))
 
+    if "options_min" in expect:
+        offered = response.get("options", []) if kind == "clarify" else []
+        checks.append(_check("answer", f"offers at least {expect['options_min']} options",
+                             len(offered) >= expect["options_min"], f"options: {offered}"))
     if "diagrams" in expect:
         count = len(response.get("diagrams", []))
         wanted = bool(expect["diagrams"])

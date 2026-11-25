@@ -192,6 +192,7 @@ class QueryResult:
     bm25_score: float = 0.0  # Raw BM25 score
     match_type: str = ""  # "exact_part" | "hybrid" | "dense" | "lexical"
     matched_parts: list[str] = field(default_factory=list)  # Query part numbers in this chunk
+    matched_manual: bool = False  # From a manual whose filename names the model in the question
 
 
 @dataclass

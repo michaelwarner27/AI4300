@@ -183,11 +183,35 @@ Documents carrying `matched_part` from this turn (hybrid `exact_part` hits and e
 
 ---
 
+## Named-Manual Match
+
+**Why**: a model named in words rather than a code is invisible to the part-number matching. "5 button Comfort Control Center reset" retrieved 4-button and CCC2 manuals; the 5-button manuals were about 7th by meaning, and "5" is not a code.
+
+**How** (`_named_manuals`, `_named_manual_passages`, `_mark_named` in `src/query/nodes.py`):
+- The stored manuals come from `ChromaVectorStore.source_filenames()` (cached with the lexical index, `LexicalIndex.filenames`). Only the file's own name is used, not its folders.
+- A filename word counts when the question contains it, it is not generic (`_NAME_GENERIC`: document types such as "manual", "instructions", "service"; categories such as "water", "heater", "thermostat", "furnace"; common component words such as "electric", "power", "button", "mode"), it is not a bare number, and at most `NAMED_MANUAL_MAX_DF` (4) filenames contain it
+- A pair of consecutive filename words counts when the question has the same pair and at most 4 filenames contain it: "5 button", "non ducted". This is how numbers and generic words take part
+- Matches are weighted by rarity (log of manuals / manuals containing it, pairs double) to rank manuals. Up to `NAMED_MANUAL_MAX` (2) manuals; a second one needs `NAMED_MANUAL_RELATIVE` (0.6) of the best score
+- From each matching manual, the `NAMED_MANUAL_PASSAGES` (3) text or table chunks closest to the question by meaning are added (`query_similarity` filtered to that manual, no cutoff). They and the manual's already-retrieved direct hits get `matched_manual = True`, shown to the LLM as `"named_manual": true`, and are listed first with the `matched_part` documents
+- Runs in the first retrieval and in `search_documents` (not when the agent filters by filename). Failures are logged and ignored
+
+| Question | Manuals matched |
+|---|---|
+| 5 button Comfort Control Center reset | both 5 Button manuals |
+| Blizzard roof thickness | Blizzard Ducted and Non-Ducted |
+| Non-ducted Blizzard roof thickness | Blizzard Non-Ducted, Air Command Non-Ducted |
+| reset the CT thermostat | CT Operating Instructions, CT Reset & Diag |
+| How do I reset my thermostat? / winterize my water heater / get my thermostat into diagnostic mode | none (left open for a clarifying question) |
+
+**Limitations**: depends on descriptive filenames (`Roof top service manual (1).pdf` names no model); a filename word that is also an ordinary word in a question can match wrongly, so such words go in `_NAME_GENERIC`.
+
+---
+
 ## Pipeline Integration
 
 **File**: `src/query/nodes.py`, via `_hybrid_search(vector_store, query_text, embedding, k, where)`
 
-- **`vector_store_search`** (first retrieval): query text is `retrieval_query or original_query`, the same text that was embedded (a rewritten follow-up when there is one). `k` = `DEFAULT_K` (10). Neighbor and page-diagram expansion run on the hybrid hits unchanged, then the exact-code lookup for short codes, then documents with `matched_part` are moved first
+- **`vector_store_search`** (first retrieval): query text is `retrieval_query or original_query`, the same text that was embedded (a rewritten follow-up when there is one). `k` = `DEFAULT_K` (10). Neighbor and page-diagram expansion run on the hybrid hits unchanged, then the exact-code lookup for short codes and the named-manual match, then documents with `matched_part` or `named_manual` are moved first
 - **`search_documents`** (`_run_search`): query text is the LLM's `query`; `k` and the `where` filter (filename, page range) as before
 
 **What the LLM sees**: documents from exact hits and exact-code matches carry `"matched_part": "457915.70X"` (or `"E1"`) and are listed first. The system prompt explains the field and tells the LLM to answer from passages for the exact model / part number asked about, without substituting another model's specifications. The `search_documents` tool description asks the LLM to include exact model, part or error codes in its search query.
@@ -215,6 +239,7 @@ Invalid values fall back to the default with a warning.
 - `HYBRID_ALPHA`, `HYBRID_CANDIDATES`, `PART_BOOST` - `src/query/nodes.py` (env-overridable)
 - `bm25_saturation` (10), `specific_part_max` (20) - `hybrid_search` keyword arguments
 - `SHORT_CODE_MAX_CHARS` (3), `AUTO_CODE_MATCHES` (5), `FIND_CODE_MAX_RESULTS` (10) - exact-code lookup, `src/query/nodes.py`
+- `NAMED_MANUAL_MAX` (2), `NAMED_MANUAL_PASSAGES` (3), `NAMED_MANUAL_MAX_DF` (4), `NAMED_MANUAL_RELATIVE` (0.6), `_NAME_GENERIC` - named-manual match, `src/query/nodes.py`
 - Extraction rules: `_UNIT`, `_WORD_SEGMENTS`, `_MAX_LETTER_RUN` (4), `_MIN_PURE_DIGITS` (5) - `src/utils/part_numbers.py`
 - `_STOPWORDS` - `src/query/lexical.py`
 
@@ -255,6 +280,7 @@ Full run: `tests/results/query_results_003.txt` (12/12 completed) vs baseline `t
 - `test_hybrid_search` (real temporary Chroma database) - exact-part chunk below the cutoff ranks first, other model still returned, unrelated chunk dropped, off-topic query empty, `where` filter applies to lexical hits, broad keys give no bypass, guarantee beyond `k`, fallback when the index fails
 - `test_hybrid_wiring` - query text (and rewritten follow-up) passed, default and env-overridden settings, `QueryResult` breakdown, `matched_part` only on exact hits, prompt mentions it
 - `FakeStore.hybrid_search` delegates to `query_similarity`, so the agent-loop tests exercise the hybrid call path
+- `test_named_manuals` - filename matching (pairs, shared names, generic words, folders ignored, limit), passages added and marked, filters, ordering, failures, `search_documents` wiring; also the manuals list and the clarify guard
 - `test_find_code` - short-code detection, whole-token matching, `get_chunks_containing` and `_code_matches` on a real temporary database (filter, case, ranking), the automatic pass (marking, adding, scope, ordering, failure), wiring with the rewritten query, history ordering, and the `find_code` tool through the agent loop (new vs already-in-context matches, no match, bad input)
 
 **End-to-end** (`python tests/test_queries.py`, live services): Q02 (E1), Q03 (command 10), Q04 (457915.70X), Q07 (457915) and Q11 (capacitor part numbers) depend on exact tokens; Q10 and Q12 must still decline. R11 (E5 on the CCC2), RW07, M03 and S04 cover short codes; all passed after the exact-code lookup was added (`tests/results/query_results_008.txt`).
@@ -280,7 +306,7 @@ Full run: `tests/results/query_results_003.txt` (12/12 completed) vs baseline `t
 | File | Purpose |
 |------|---------|
 | `src/utils/part_numbers.py` | Part-number extraction, normalization, family, filename keys, storage format |
-| `src/query/lexical.py` | `tokenize`, `LexicalIndex` (BM25 + part index), cached `get_lexical_index` |
+| `src/query/lexical.py` | `tokenize`, `LexicalIndex` (BM25 + part index + list of stored filenames), cached `get_lexical_index` |
 | `src/ingestion/tools.py` | `TextChunker.chunk_all` (sets `part_numbers`), `store_chunks` (stores it), `ChromaVectorStore.hybrid_search`, `get_chunks_containing`, `_cosine` |
 | `src/data_models.py` | `ChunkMetadata.part_numbers`; `QueryResult.dense_score`, `bm25_score`, `match_type`, `matched_parts` |
 | `src/query/nodes.py` | `HYBRID_*` / `PART_BOOST` settings, `_hybrid_search`, callers, `matched_part` for the LLM, prompt lines; exact-code lookup (`_short_codes`, `_code_matches`, `_add_code_matches`, `_run_find_code`, `find_code` tool, `_context_order_key`) |
