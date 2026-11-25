@@ -1,0 +1,524 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-25 14:41:35
+Model: Gemma-4-26B-A4B   Embeddings: Qwen3-Embedding-8B   Repeat: 1
+================================================================================
+
+PASS  Q04    1/1  Table - Dometic 457915.70X electrical specs
+PASS  Q08    1/1  Multi-document - filter maintenance
+PASS  RW05   1/1  Rewrite - topic switch drops the old model
+PASS  C01    1/1  Clarify - which thermostat to reset, answered by name
+FAIL  C03    0/1  Clarify - ducted or non-ducted
+             x1 kind is clarify
+             x1 offers 'non[\\s-]*ducted'
+PASS  C04    1/1  Clarify - which water heater to winterize
+FAIL  C07    0/1  Clarify - not needed when the variants agree
+             x1 kind is answer
+             x1 says '14[\\s-]*(1/4|¼)|14\\.25'
+FAIL  C09    0/1  Clarify - answered by position
+             x1 cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+PASS  C10    1/1  Clarify - user doesn't know, so never ask twice
+PASS  C12    1/1  Clarify - model named without a code
+PASS  M02    1/1  Memory - return to a topic after a switch
+PASS  R01    1/1  Retrieval - part number from a description
+PASS  R06    1/1  Retrieval - variant table value, non-ducted
+PASS  R07    1/1  Retrieval - variant table value, ducted
+PASS  R08    1/1  Retrieval - torque on the right variant
+
+Runs passed: 12/15
+Failed checks by stage: decision 2, answer 3
+
+
+================================================================================
+Q04: Table - Dometic 457915.70X electrical specs
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What are the rated cooling capacity (BTU/hr), running amps, and recommended circuit breaker size for the Dometic 457915.70X unit?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dometic 457915 Installation & Operating Instructions Manual1.pdf', 'pages': [7]}
+  [PASS] (answer) says '13,?500'
+  [PASS] (answer) says '12\\.4'
+  [PASS] (answer) says '\\b20[\\s-]*A'
+
+For the Dometic 457915.70X unit, the specifications are as follows:
+* **Rated Cooling Capacity:** 13,500 BTU/hr
+* **Running Amps (Compressor Rated Load):** 12.4 Amps
+* **Recommended Circuit Breaker Size:** 20 Amp
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 7, SPECIFICATIONS > A. Table - Unit Data): 457915.70X 13,500 12.4 63.0 2.5 5.8 18.0 20 Amp 3.5 kW / 5.0 kW
+
+Diagrams:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 7, vector_figure, SPECIFICATIONS > A. Table - Unit Data): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dometic 457915 Installation & Operating Instructions Manual1_p6_fig0.png
+
+================================================================================
+Q08: Multi-document - filter maintenance
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How often should the return air filter be cleaned on the Dometic 457915 unit, and how does the CCC2 thermostat remind the user about filter maintenance?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dometic 457915 Installation & Operating Instructions Manual1.pdf', 'pages': [16]}
+  [PASS] (answer) cites one of ['CCC2-Operating-Instructions.pdf', 'CCC II Operating Instructions.pdf']
+  [PASS] (answer) says '(two|2)\\s*weeks'
+  [PASS] (answer) says '1,?000\\s*hours'
+
+For the Dometic 457915 unit, the return air filter should be cleaned periodically, at a minimum of every 2 weeks of operation. 
+
+The CCC2 thermostat reminds the user about filter maintenance by displaying a filter icon on the LCD when the system fan run time exceeds 1000 hours.
+
+---
+
+Sources:
+- Dometic 457915 Installation & Operating Instructions Manual1.pdf (page 16, MAINTENANCE > A. Air Filter): Periodically (a minimum of every 2 weeks of operation) remove the return air filter located behind the return air grille and wash it with soap and warm water, let dry and then reinstall.
+- CCC2-Operating-Instructions.pdf (page 12, Maintenance): When a system fan run time exceeds 1000 hours the filter icon is displayed in the LCD.
+
+================================================================================
+RW05: Rewrite - topic switch drops the old model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How does the rain sensor on the MaxxFan work?
+Rewrite: How does the rain sensor on the MaxxFan work?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'rain sensor'
+  [PASS] (rewrite) rewrite has 'maxx'
+  [PASS] (rewrite) rewrite lacks 'blizzard'
+  [PASS] (rewrite) rewrite lacks 'ducted'
+  [PASS] (rewrite) rewrite lacks 'roof thickness'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites MaxxFan Operation.pdf
+  [PASS] (answer) says 'close'
+  [PASS] (answer) says 'off'
+
+On Electric Lift Standard Models, when the Rain Sensor detects rain, it will turn the fan off and close the lid. A blinking Red LED indicates the sensor has shut the fan down. Once the fan has dried, you can press the Rain Sensor key to reset the sensor and turn off the blinking Red LED.
+
+---
+
+Sources:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): When the Rain Sensor detects rain it will turn the fan Off and Close the lid.
+
+Diagrams:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img0.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img1.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img2.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img3.jpg
+
+================================================================================
+C01: Clarify - which thermostat to reset, answered by name
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I reset my thermostat?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+  [PASS] (answer) offers 'CCC|comfort control|\\bCT\\b|LCD|button|analog|coleman'
+
+Which thermostat model are you using? I have reset procedures for the CCC 2, the CCC II 10 Button, and the CT thermostat.
+- CCC 2 thermostat
+- CCC II 10 Button thermostat
+- CT thermostat
+
+Turn 2: The 5 button Comfort Control Center.
+Rewrite: 5 button Comfort Control Center thermostat reset procedure
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'reset'
+  [PASS] (rewrite) rewrite has '(5|five)[\\s-]*button'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}]
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says 'zone'
+
+To perform a system reset on the 5 Button Comfort Control Center, follow these steps:
+
+1. Turn the ON/OFF switch to the **OFF** position.
+2. Simultaneously depress and hold the **MODE** and **ZONE** push-buttons while turning the ON/OFF switch to the **ON** position.
+3. Continue holding the **MODE** and **ZONE** buttons until **FF** appears on the LCD display, then release them.
+
+**Note:** A system reset is required whenever a dip switch is changed after the initial configuration.
+
+Steps:
+1. Turn the ON/OFF switch to the “OFF” position. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+2. Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+3. Release the MODE and ZONE push-buttons once FF appears in the LCD display. (Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf, p.31, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.5 COMFORT CONTROL CENTER T-STAT)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Operation Manual_3108664.040.pdf (page 8): a. Turn the ON/OFF switch to “OFF” position.
+- Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf (page 7, 16. SYSTEM RESET): b. Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 31, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.5 COMFORT CONTROL CENTER T-STAT): Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”.
+
+================================================================================
+C03: Clarify - ducted or non-ducted
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How thick can my roof be for a Blizzard air conditioner install?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [FAIL] (decision) kind is clarify -- got answer
+  [FAIL] (answer) offers 'non[\\s-]*ducted' -- options: []
+
+The allowed roof thickness for a Blizzard air conditioner installation depends on whether you are installing the Ducted or Non-Ducted model:
+
+*   **Ducted Model:** The distance between the roof and the ceiling must be a **minimum of 2 inches and a maximum of 5 inches**.
+*   **Non-Ducted Model:** The distance between the roof and the ceiling must be a **minimum of 1-3/4 inches and a maximum of 3-3/4 inches**.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf (page 4, SPECIFICATIONS > B. Roof Requirements): Minimum of 2 inches and maximum of 5 inches distance between roof to ceiling of RV.
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, SPECIFICATIONS > B. Roof Requirements): Minimum of 1-3/4 inches and maximum of 3-3/4 inches distance between roof to ceiling of RV.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, vector_figure, INSTALLATION INSTRUCTIONS > A. Choosing Proper Location For Unit): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p3_fig1.png
+
+Turn 2: Non-ducted.
+Rewrite: Blizzard air conditioner Non-Ducted model roof thickness requirements
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'non[\\s-]*ducted'
+  [PASS] (rewrite) rewrite has 'roof'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+  [PASS] (answer) says '1[\\s-]*(3/4|¾)|1\\.75'
+  [PASS] (answer) says '3[\\s-]*(3/4|¾)|3\\.75'
+
+For a Blizzard non-ducted air conditioner installation, the distance between the roof and the ceiling must be a minimum of 1-3/4 inches and a maximum of 3-3/4 inches.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, SPECIFICATIONS > B. Roof Requirements): Minimum of 1-3/4 inches and maximum of 3-3/4 inches distance between roof to ceiling of RV.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, vector_figure, INSTALLATION INSTRUCTIONS > A. Choosing Proper Location For Unit): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p3_fig1.png
+
+================================================================================
+C04: Clarify - which water heater to winterize
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I winterize my water heater?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+
+To provide the correct winterization instructions, could you specify which water heater model or manual you are using? The available documents provide different procedures for Airxcel Suburban and Dometic models.
+- Airxcel Suburban Water Heater (205621)
+- Dometic Water Heaters (Service Manual 2020)
+- Dometic LP Models (IOM)
+
+Turn 2: The Suburban Nautilus on-demand one.
+Rewrite: winterize Airxcel Suburban Nautilus on-demand water heater
+Kind: answer   Status: response_generated   Extra searches: 1
+  [PASS] (rewrite) rewrite has 'winteri[sz]'
+  [PASS] (rewrite) rewrite has 'nautilus|on[\\s-]*demand'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf', '205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf']
+  [PASS] (answer) says 'drain'
+  [PASS] (answer) says 'antifreeze'
+
+To winterize the Suburban Nautilus (IW60) on-demand water heater, follow these steps:
+
+1. Follow the RV manufacturer's instructions for draining the entire water system.
+2. Once the system is drained, you may add RV non-toxic antifreeze if recommended by your coach manufacturer.
+
+Steps:
+WINTERIZING:
+1. Follow RV manufacturer's instructions for draining entire water system. (Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf, p.7, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > WINTERIZING)
+2. Once drained, add RV NON-TOXIC antifreeze if recommended by your coach manufacturer. (Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf, p.7, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > WINTERIZING)
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 7, INTRODUCTION > NAUTILUS (IW60) ON DEMAND WATER HEATER DIMENSIONS > WINTERIZING): Once drained, RV NON-TOXIC antifreeze can be added if recommended by your coach manufacturer.
+
+================================================================================
+C07: Clarify - not needed when the variants agree
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: What size roof opening does a Blizzard air conditioner need?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got clarify
+  [FAIL] (answer) says '14[\\s-]*(1/4|¼)|14\\.25' -- not in the reply
+
+Are you asking about the Blizzard Ducted or Non-Ducted model? The roof opening requirements differ between them.
+- Blizzard Ducted model
+- Blizzard Non-Ducted model
+
+================================================================================
+C09: Clarify - answered by position
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: The second one.
+Rewrite: Blizzard H5403XX non-ducted roof thickness for installation
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'non[\\s-]*ducted'
+  [PASS] (rewrite) rewrite has 'roof'
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]} -- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf p9
+  [PASS] (answer) says '3[\\s-]*(3/4|¾)|3\\.75'
+
+For the Blizzard H5403XX non-ducted model, the ceiling thickness requirements depend on the number of rows to cut in the duct divider:
+
+*   **1.25" – 1.75"**: 9 rows to cut
+*   **1.75" – 2.25"**: 8 rows to cut
+*   **2.25" – 2.75"**: 7 rows to cut
+*   **2.75" – 3.25"**: 6 rows to cut
+*   **3.25" – 3.75"**: 5 rows to cut
+*   **3.75" – 4.25"**: 4 rows to cut
+*   **4.25" – 4.75"**: 3 rows to cut
+*   **4.75" – 5.25"**: 2 rows to cut
+*   **5.25" – 5.75"**: 1 row to cut
+*   **5.75" – 6.25"**: 0 rows to cut
+
+**Note:** If the ceiling thickness is greater than 6.25", you will require the Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig1.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig3.png
+
+================================================================================
+C10: Clarify - user doesn't know, so never ask twice
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: I'm not sure which one I have.
+Rewrite: maximum roof thickness for Blizzard air conditioner installation
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'blizzard'
+  [PASS] (rewrite) rewrite has 'roof|ducted'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\b5\\b'
+  [PASS] (answer) says '1[\\s-]*(3/4|¾)|1\\.75'
+
+Since you are unsure which Blizzard model you have, here are the roof thickness requirements for both the Ducted and Non-Ducted versions. You can tell them apart by checking if your unit uses a Return Air Grille (RAG) or an Air Distribution Box (ADB).
+
+**Blizzard H5403XX Ducted**
+*   **Thickness Range:** The installation involves a divider plate that accommodates ceiling-to-roof thicknesses between **2.0" and 5.5"**.
+*   **Adjustment:** 
+    *   For **2.0" – 3.75"**, you must remove the perforated tab from the divider plate.
+    *   For **3.75" – 5.5"**, do not remove any tabs.
+
+**Blizzard H5403XX Non-Ducted**
+*   **Thickness Range:** This model uses a duct divider that accommodates thicknesses from **1.25" up to 6.25"**.
+*   **Adjustment:** The number of rows to cut from the divider depends on the thickness:
+    *   **1.25" – 1.75"**: Cut 9 rows.
+    *   **1.75" – 2.25"**: Cut 8 rows.
+    *   **2.25" – 2.75"**: Cut 7 rows.
+    *   **2.75" – 3.25"**: Cut 6 rows.
+    *   **3.25" – 3.75"**: Cut 5 rows.
+    *   **3.75" – 4.25"**: Cut 4 rows.
+    *   **4.25" – 4.75"**: Cut 3 rows.
+    *   **4.75" – 5.25"**: Cut 2 rows.
+    *   **5.25" – 5.75"**: Cut 1 row.
+    *   **5.75" – 6.25"**: Cut 0 rows.
+*   **Note:** If the thickness is **greater than 6.25"**, you will require a specific Duct Divider Kit (3315575.000) and Bolt Kit (3100895.014).
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf (page 11, INSTALLATION INSTRUCTIONS > H. Installing Unit): If distance is 2.0″ - 3-3/4″, remove perforated tab from divider plate.
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): Table from Blizzard Installation H5403XX Non-Ducted.pdf, page 9: | Ceiling Thickness | Min. | Max. | # Of Rows To Cut |
+
+================================================================================
+C12: Clarify - model named without a code
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I reset the 5 button Comfort Control Center?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}]
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says 'zone'
+  [PASS] (answer) does not say '\\bup\\b.{0,20}\\bdown\\b'
+  [PASS] (answer) does not say 'IniT'
+
+To perform a system reset on the 5 button Comfort Control Center, follow these steps:
+
+1. Turn the ON/OFF switch to the "OFF" position.
+2. Simultaneously depress and hold the **MODE** and **ZONE** push-buttons while turning the ON/OFF switch to the "ON" position.
+3. Continue holding the **MODE** and **ZONE** buttons until "FF" appears on the LCD display.
+
+**Note:** If "EE" appears on the display after releasing the buttons, repeat the reset process. If "EE" continues to appear, there may be a communication problem with the cable.
+
+Steps:
+System Reset:
+1. Turn the ON/OFF switch to “OFF” position. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+2. Simultaneously depress and hold the MODE and ZONE push-buttons while turning the ON/OFF switch to “ON”. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+3. Release the MODE and ZONE push-buttons once "FF" appears in the LCD display. (Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf, p.8, 16. SYSTEM RESET)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf (page 8, 16. SYSTEM RESET): Turn the ON/OFF switch to “OFF” position.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 31, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.5 COMFORT CONTROL CENTER T-STAT): If EE appears when the buttons released, do the reset again.
+
+================================================================================
+M02: Memory - return to a topic after a switch
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: In CCC2 diagnostic mode, which command shows the outdoor temperature?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\b10\\b'
+
+In CCC2 diagnostic mode, command **10** shows the outdoor temperature (the LCD will display E4 if the sensor is missing).
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 10 LCD shows Outdoor Temperature E4 if missing
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+Turn 2: How does the MaxxFan rain sensor work?
+Rewrite: How does the MaxxFan rain sensor work?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites MaxxFan Operation.pdf
+
+When the rain sensor detects rain, it will turn the fan off and close the lid. A blinking Red LED indicates that the rain sensor has shut the fan down. To reset the sensor and turn off the blinking LED, press the Rain Sensor key after the fan has dried.
+
+---
+
+Sources:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): When the Rain Sensor detects rain it will turn the fan Off and Close the lid.
+
+Diagrams:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img0.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img1.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img2.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img3.jpg
+
+Turn 3: Going back to the thermostat, what does that command show if the sensor is missing?
+Rewrite: In CCC2 diagnostic mode, what does command 10 show if the outdoor temperature sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)|thermostat'
+  [PASS] (rewrite) rewrite has 'outdoor|\\b10\\b'
+  [PASS] (rewrite) rewrite lacks 'maxx'
+  [PASS] (rewrite) rewrite lacks 'rain'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bE4\\b'
+
+For the CCC2 thermostat, the command that shows the outdoor temperature is **10**. If the sensor is missing, the LCD will display **E4**.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 10 LCD shows Outdoor Temperature E4 if missing
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+================================================================================
+R01: Retrieval - part number from a description
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the kit number for the 190 degree limit switch on a DF series furnace?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'DF Series Parts List.pdf', 'pages': [5, 6]}
+  [PASS] (answer) says '31091'
+
+The kit number for the 190 degree limit switch on a DF series furnace is 31091 (SCV_KIT) or 4560 (SPI No.).
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 6, 2 PART NUMBER LIST): | X | X | X | X | 4560 | 31091 | KIT, LIMIT SWITCH 190 |
+
+================================================================================
+R06: Retrieval - variant table value, non-ducted
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the R-410A refrigerant charge of the non-ducted 15,000 BTU Blizzard H540316?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+  [PASS] (answer) says '20\\.1'
+
+The R-410A refrigerant charge for the non-ducted 15,000 BTU Blizzard H540316 (Model No. H540316.72X) is 20.1 oz.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, SPECIFICATIONS > A. Table - Unit Data): | H540316.72X | 15,000 | | 13.2 | 70.0 | 2.8 | 8.0 | 20.1 | | 20 Amp | 3.5 kW / 5.0 kW |
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, vector_figure, SPECIFICATIONS > A. Table - Unit Data): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p3_fig0.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, vector_figure, INSTALLATION INSTRUCTIONS > A. Choosing Proper Location For Unit): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p3_fig1.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 4, vector_figure, INSTALLATION INSTRUCTIONS > A. Choosing Proper Location For Unit): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p3_fig2.png
+
+================================================================================
+R07: Retrieval - variant table value, ducted
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the R-410A refrigerant charge of the ducted 15,000 BTU Blizzard H540316?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Blizzard Installation H5403XX Ducted.pdf', 'pages': [4]}
+  [PASS] (answer) says '\\b21(\\.0)?\\s*(oz|ounce)'
+  [PASS] (answer) does not say '20\\.1'
+
+The R-410A refrigerant charge for the ducted Blizzard H540316 (15,000 BTU) is 21.0 oz.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf (page 4, SPECIFICATIONS > A. Table - Unit Data): | H540316.72X | 15,000 | 13.2 | 70.0 | 2.8 | 8.0 | 21.0 | 20 Amp | 3.5 kW / 5.0 kW |
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf (page 4, vector_figure, SPECIFICATIONS > A. Table - Unit Data): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Ducted-a5df1341_p3_fig0.png
+
+================================================================================
+R08: Retrieval - torque on the right variant
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What tightening torque is recommended for the hold down bolts on the non-ducted Air Command air conditioner?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Air Command - Non-Ducted IOM.pdf', 'pages': [8]}
+  [PASS] (answer) says '\\b7\\s*N|5\\.2'
+  [PASS] (answer) does not say '4\\.4'
+
+The recommended tightening torque for the M8 hold down bolts on the non-ducted Air Command air conditioner is 7 N.m (5.2 lb-ft). As a rough guide, the bolts should be tightened until the unit compresses the roof seal gasket to approximately half its height.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Air Command/Air Command - Non-Ducted IOM.pdf (page 8, INSTALLATION PARTS LIST > ATTACH DUCT TO UNIT): Recommended tightening torque of the bolts is 7 N.m (5.2 lb-ft).

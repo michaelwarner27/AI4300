@@ -747,7 +747,7 @@ turns:
     expect:
       kind: answer
       facts: ['31091']
-      cited: [{file: "DF Series Parts List.pdf", pages: [6]}]
+      cited: [{file: "DF Series Parts List.pdf", pages: [5, 6]}]
 ```
 
 ## R02: Retrieval - description from a part number

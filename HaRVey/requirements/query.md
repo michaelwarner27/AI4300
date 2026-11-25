@@ -152,7 +152,7 @@ User Query (+ chat history)
 - Read each result's metadata: filename, page, chunk sequence, character range, and (with defaults, so older records still load) `chunk_type`, `diagram_kind`, `diagram_path`, `section_path` and `part_numbers`. `section_path` (`"A > B"`) is split back into `ChunkMetadata.section_headings`; the hybrid breakdown goes to `QueryResult.dense_score`, `bm25_score`, `match_type` and `matched_parts`
 - Add neighbor chunks (see below)
 - **Exact-code lookup**: when the search query contains a short code (3 characters or fewer, e.g. `E1`), mark retrieved passages that contain it and add up to 5 more passages containing it from the manuals of the direct hits, best match to the question first (`match_type` `exact_code`; see [hybrid_search.md](hybrid_search.md#exact-code-lookup-short-codes)). A failure is logged and the results are used unchanged
-- **Named-manual match**: when the question names a manual's model in words ("5 button", "Blizzard", "non-ducted"), add up to 3 passages closest to the question from up to 2 matching manuals and mark that manual's direct hits (`"named_manual": true`; see [hybrid_search.md](hybrid_search.md#named-manual-match))
+- **Named-manual match**: when the question names a manual's model in words ("5 button", "Blizzard", "non-ducted"), add the closest passage of each of the 5 closest sections of up to 2 matching manuals and mark that manual's direct hits (`"named_manual": true`; see [hybrid_search.md](hybrid_search.md#named-manual-match))
 - Order the results: this turn's passages carrying `matched_part` (exact part-number hits and exact-code matches) or `named_manual` first, then reading order
 - Handle the no-results case gracefully (status: `no_results_found`)
 - Handle database connection errors
@@ -192,7 +192,7 @@ User Query (+ chat history)
 **Outputs**: One tool call
 
 **Responsibilities**:
-- First turn: build the conversation as system prompt → last 5 earlier turns (user question / assistant answer pairs) → current question with all documents as JSON, followed by the "Diagrams available" list and, when documents come from two or more manuals, a "Manuals in your context" list (each manual with its passage count, most first)
+- First turn: build the conversation as system prompt → last 5 earlier turns (user question / assistant answer pairs) → current question with all documents as JSON, followed by the "Diagrams available" list and, when documents come from two or more manuals or the question names a manual, a "Manuals in your context" list (each manual with its passage count, most first). For each manual the question names (this turn's `named_manual` passages), the list also gives its section paths in reading order (at most `NAMED_SECTION_LIST_MAX`, 40), so the agent can open the right one with `read_section`
 - Right after a clarifying turn, `ask_clarifying_question` is not offered and the current question carries a note (`JUST_CLARIFIED_NOTE`): answer for the model the reply names, or for each likely model, labelled, when it settles nothing
 - Later turns: continue from `state.messages`
 - Offer the non-final tools only while searching is allowed (see Limits); otherwise offer only the three final tools and tell the LLM to answer
@@ -229,6 +229,7 @@ User Query (+ chat history)
 - Give procedures as `steps`, one action each, in order, with citations
 - When context is incomplete (missing steps, "see section X", a heading without its content): call `read_section` for a section whose start was found, `read_page` when a document has no section, otherwise `search_documents`; never repeat the same call
 - When the question names a code and no passage for the model asked about contains it: call `find_code`
+- Before answering, check that a passage states the exact fact asked for each model answered for (a related point, such as a kit needed above some thickness, is not enough). If not: `read_section` for a named manual's section that should hold it, otherwise `search_documents` with the manual's own wording ("roof requirements", not "how thick can my roof be"). Read or search a manual before saying it does not cover something
 - Select diagrams by `ref` only; never invent refs or file paths
 
 **Configuration**:
@@ -359,6 +360,13 @@ Only `code` is required (1-24 characters). Finds passages containing the exact c
 - Route to the handler for the tool name; unknown or missing tool calls get the fallback response
 - Format citations with sections (see Citations)
 - Record `source_documents`: the retrieved chunks the answer cited, i.e. every chunk on a cited source's page (matching filename), plus each diagram that is shown. These, not all retrieved chunks, are what a caller stores in `ChatTurn.documents` and what `add_history_documents` carries into later turns
+
+**Not-covered answers**: a `respond_to_user` call without steps whose first sentence says the documents don't cover the question (e.g. "the provided documents do not contain ...", "there is no mention of ...", `_says_not_covered`) is handled as `insufficient_evidence` with the answer as its explanation.
+
+**Citation correction** (sources and steps are checked against the retrieved passages):
+- A source whose snippet is found in exactly one retrieved page, other than the one cited, is moved to that file and page
+- A step citing a file and page that was never retrieved is moved to the retrieved passage sharing most of its words (at least 60%); otherwise its location is dropped rather than shown
+- The carried-over `source_documents` follow the corrected sources
 
 **Handler: respond_to_user**
 - Answer text, then `Steps:` (if any), then `---` and `Sources:` (unless `include_sources=false`), then `Diagrams:` (if any)
@@ -577,8 +585,9 @@ DOCUMENT_INPUT_DIR=./documents
 - `SEARCH_DEFAULT_K`, `SEARCH_MAX_K` - Results per `search_documents` call (default: 5, 10)
 - `READ_PAGE_MAX_PAGES` - Pages per `read_page` call (default: 3)
 - `READ_SECTION_MAX_CHUNKS`, `READ_SECTION_LIST_LIMIT` - Passages per `read_section` call, sections listed on no match (default: 25, 60)
-- `NAMED_MANUAL_MAX`, `NAMED_MANUAL_PASSAGES`, `NAMED_MANUAL_MAX_DF`, `NAMED_MANUAL_RELATIVE` - Named-manual match: manuals per question, passages per manual, how many filenames may share a matching word, share of the best score a second manual needs (default: 2, 3, 4, 0.6)
+- `NAMED_MANUAL_MAX`, `NAMED_MANUAL_PASSAGES`, `NAMED_MANUAL_CANDIDATES`, `NAMED_MANUAL_MAX_DF`, `NAMED_MANUAL_RELATIVE` - Named-manual match: manuals per question, sections (one passage each) per manual, passages considered, how many filenames may share a matching word, share of the best score a second manual needs (default: 2, 5, 60, 4, 0.6)
 - `MAX_CLARIFY_OPTIONS` - Options offered by a clarifying question (default: 4)
+- `NAMED_SECTION_LIST_MAX` - Sections listed per named manual in "Manuals in your context" (default: 40)
 - `SHORT_CODE_MAX_CHARS`, `AUTO_CODE_MATCHES`, `FIND_CODE_MAX_RESULTS` - Exact-code lookup: longest code that triggers the automatic pass, passages it adds, passages per `find_code` call (default: 3, 5, 10)
 - `MAX_HISTORY_TURNS`, `HISTORY_DOC_TURNS`, `MAX_HISTORY_DOCS` - Conversation history (default: 5, 2, 30)
 - `REWRITE_MAX_TOKENS`, `REWRITE_ANSWER_CHARS`, `REWRITE_ANSWER_TAIL_CHARS`, `REWRITE_MAX_QUERY_CHARS` - Follow-up rewriting (default: 4096, 1500, 500, 500)

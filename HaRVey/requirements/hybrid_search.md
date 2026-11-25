@@ -192,7 +192,7 @@ Documents carrying `matched_part` from this turn (hybrid `exact_part` hits and e
 - A filename word counts when the question contains it, it is not generic (`_NAME_GENERIC`: document types such as "manual", "instructions", "service"; categories such as "water", "heater", "thermostat", "furnace"; common component words such as "electric", "power", "button", "mode"), it is not a bare number, and at most `NAMED_MANUAL_MAX_DF` (4) filenames contain it
 - A pair of consecutive filename words counts when the question has the same pair and at most 4 filenames contain it: "5 button", "non ducted". This is how numbers and generic words take part
 - Matches are weighted by rarity (log of manuals / manuals containing it, pairs double) to rank manuals. Up to `NAMED_MANUAL_MAX` (2) manuals; a second one needs `NAMED_MANUAL_RELATIVE` (0.6) of the best score
-- From each matching manual, the `NAMED_MANUAL_PASSAGES` (3) text or table chunks closest to the question by meaning are added (`query_similarity` filtered to that manual, no cutoff). They and the manual's already-retrieved direct hits get `matched_manual = True`, shown to the LLM as `"named_manual": true`, and are listed first with the `matched_part` documents
+- From each matching manual, the closest text or table chunk of each of its `NAMED_MANUAL_PASSAGES` (5) closest sections is added (from the `NAMED_MANUAL_CANDIDATES` (60) chunks of that manual closest by meaning, no cutoff; a section already represented by a retrieved passage counts as covered). Picking by section stops one long section from crowding out the one that answers: for "how thick can my roof be" the Blizzard "Roof Requirements" passage is about 8th by passage but 4th-5th by section, and the Nautilus "WINTERIZING" section 5th. They and the manual's already-retrieved direct hits get `matched_manual = True`, shown to the LLM as `"named_manual": true`, and are listed first with the `matched_part` documents
 - Runs in the first retrieval and in `search_documents` (not when the agent filters by filename). Failures are logged and ignored
 
 | Question | Manuals matched |
@@ -239,7 +239,7 @@ Invalid values fall back to the default with a warning.
 - `HYBRID_ALPHA`, `HYBRID_CANDIDATES`, `PART_BOOST` - `src/query/nodes.py` (env-overridable)
 - `bm25_saturation` (10), `specific_part_max` (20) - `hybrid_search` keyword arguments
 - `SHORT_CODE_MAX_CHARS` (3), `AUTO_CODE_MATCHES` (5), `FIND_CODE_MAX_RESULTS` (10) - exact-code lookup, `src/query/nodes.py`
-- `NAMED_MANUAL_MAX` (2), `NAMED_MANUAL_PASSAGES` (3), `NAMED_MANUAL_MAX_DF` (4), `NAMED_MANUAL_RELATIVE` (0.6), `_NAME_GENERIC` - named-manual match, `src/query/nodes.py`
+- `NAMED_MANUAL_MAX` (2), `NAMED_MANUAL_PASSAGES` (5), `NAMED_MANUAL_CANDIDATES` (60), `NAMED_MANUAL_MAX_DF` (4), `NAMED_MANUAL_RELATIVE` (0.6), `_NAME_GENERIC` - named-manual match, `src/query/nodes.py`
 - Extraction rules: `_UNIT`, `_WORD_SEGMENTS`, `_MAX_LETTER_RUN` (4), `_MIN_PURE_DIGITS` (5) - `src/utils/part_numbers.py`
 - `_STOPWORDS` - `src/query/lexical.py`
 

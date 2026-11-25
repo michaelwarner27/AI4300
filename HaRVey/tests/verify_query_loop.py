@@ -1431,20 +1431,27 @@ def test_named_manuals() -> None:
         def source_filenames(self): return ["five button bulletin.pdf", "four button bulletin.pdf"]
         def query_similarity(self, **kwargs):
             FakeStore.calls.append(kwargs)
-            return [hit(i, page=8, filename="five button bulletin.pdf") for i in (3, 4, 5, 6)]
+            # Best first: two passages of section S1, then S2..S6 (one each)
+            sections = {3: "S1", 4: "S2", 7: "S1", 5: "S3", 6: "S4", 8: "S5", 9: "S6"}
+            out = []
+            for i, s in sections.items():
+                raw = hit(i, page=8, filename="five button bulletin.pdf")
+                raw["metadata"]["section_path"] = s
+                out.append(raw)
+            return out
     retrieved = [nodes._build_query_result(hit(0, filename="four button bulletin.pdf")),
                  nodes._build_query_result(hit(4, page=8, filename="five button bulletin.pdf"))]
     FakeStore.calls = []
     out = nodes._mark_named(list(retrieved), NamedStore(), "reset the five button control", [0.1])
     added = [r.metadata.chunk_sequence for r in out if r.matched_manual]
-    check("named manual: 3 new closest passages added, retrieved one marked, others not",
-          added == [4, 3, 5, 6] and not out[0].matched_manual, str(added))
+    check("named manual: best passage of each of the 5 closest sections, retrieved one marked, others not",
+          added == [4, 3, 5, 6, 8] and not out[0].matched_manual, str(added))
     where = FakeStore.calls[0]["where"]
     check("named-manual passages exclude diagrams and stay in that manual",
           {"chunk_type": {"$ne": nodes.DIAGRAM_CHUNK_TYPE}} in where["$and"]
           and {"source_filename": {"$eq": "five button bulletin.pdf"}} in where["$and"], str(where))
     ordered = sorted(out, key=nodes._context_order_key)
-    check("named-manual passages listed first", all(r.matched_manual for r in ordered[:4]) and not ordered[4].matched_manual)
+    check("named-manual passages listed first", all(r.matched_manual for r in ordered[:5]) and not ordered[5].matched_manual)
     check("LLM sees named_manual", nodes._format_result_for_llm(0, ordered[0]).get("named_manual") is True
           and "named_manual" not in nodes._format_result_for_llm(1, retrieved[0]))
     check("no match leaves results unchanged",
@@ -1490,6 +1497,98 @@ def test_named_manuals() -> None:
     check("prompt has the which-model checklist", "## Which model" in nodes.SYSTEM_PROMPT)
     check("clarify options stay capped at 4", nodes.MAX_CLARIFY_OPTIONS == 4 and len(nodes._build_clarify_response(
         {"question": "q", "options": list("abcdef")})["options"]) == 4)
+
+
+def text_hit(i: int, text: str, page: int = 1, filename: str = "manual.pdf", section: str = "") -> QueryResult:
+    raw = code_hit(i, text, page, filename)
+    if section:
+        raw["metadata"]["section_path"] = section
+    return nodes._build_query_result(raw)
+
+
+def test_step5() -> None:
+    section("Not-covered answers, citation correction, section lists")
+    yes = [
+        "Based on the provided documents, there is no mention of the CCC2 thermostat supporting Wi-Fi.",
+        "I cannot provide a guess for the cost, as the provided documents do not contain prices.",
+        "I am sorry, but the provided documents do not contain the details of the drawing.",
+        "**The manuals don't cover** smartphone control.",
+    ]
+    no = [
+        "Actually, the provided documents state that shorting the terminals is **not recommended**.",
+        "No, error code E6 indicates an air pressure switch fault.",
+        "Command 10 shows the outdoor temperature. The documents do not say more about it.",
+        "The CT thermostat does not have a heat strip mode on this unit.",
+    ]
+    check("answers that only say 'not covered' are detected", all(nodes._says_not_covered({"answer": a}) for a in yes),
+          str([a for a in yes if not nodes._says_not_covered({"answer": a})]))
+    check("real answers are not", not any(nodes._says_not_covered({"answer": a}) for a in no),
+          str([a for a in no if nodes._says_not_covered({"answer": a})]))
+    check("answers with steps are not", not nodes._says_not_covered({"answer": yes[0], "steps": [{"instruction": "x"}]}))
+
+    docs = [text_hit(0, "Section: 16. SYSTEM RESET\nTurn the ON/OFF switch to “OFF” position. Simultaneously "
+                        "depress and hold the MODE and ZONE push-buttons.", 8, "five.pdf", "16. SYSTEM RESET"),
+            text_hit(1, "Operation overview of the five button control center.", 2, "five-op.pdf")]
+    state = QueryState(original_query="q", search_results=docs, tool_call=ToolCall(
+        tool_name="respond_to_user", parameters={"answer": yes[2], "diagram_refs": []}))
+    out = nodes.process_tool_call(state)
+    check("a not-covered answer becomes an insufficient reply",
+          out["response"]["kind"] == "insufficient" and out["status"] == "insufficient_evidence_returned"
+          and out["response"]["answer"] == yes[2], str(out["response"]))
+
+    moved = nodes._build_sources([{"filename": "five-op.pdf", "page": 2,
+                                   "snippet": "Turn the ON/OFF switch to “OFF” position."}], docs)
+    check("source moved to where its snippet is", (moved[0]["filename"], moved[0]["page"]) == ("five.pdf", 8)
+          and moved[0]["section"] == "16. SYSTEM RESET", str(moved))
+    hyphen = [text_hit(5, "Periodically (a minimum of every 2 weeks of op-\neration) remove the return air filter "
+                          "and wash it with soap and warm water.", 16, "dometic.pdf"),
+              text_hit(6, "Periodically (a minimum of every 2 weeks of operation) remove the return air filter "
+                          "and wash it with soap and warm water.", 13, "szlcd.pdf")]
+    stays = nodes._build_sources([{"filename": "dometic.pdf", "page": 16, "snippet": "Periodically (a minimum of "
+                                   "every 2 weeks of operation) remove the return air filter"}], hyphen)
+    check("source kept when the cited page has the quote split by a line-break hyphen",
+          (stays[0]["filename"], stays[0]["page"]) == ("dometic.pdf", 16), str(stays))
+    kept = nodes._build_sources([{"filename": "five-op.pdf", "page": 2, "snippet": "Something not in any passage"}], docs)
+    check("source kept when its snippet is nowhere", (kept[0]["filename"], kept[0]["page"]) == ("five-op.pdf", 2))
+
+    steps = nodes._build_steps([
+        {"instruction": "Simultaneously depress and hold the MODE and ZONE push-buttons", "source_filename": "four.pdf",
+         "page": 8},
+        {"instruction": "Call the dealer for a replacement board kit", "source_filename": "four.pdf", "page": 8},
+        {"instruction": "Turn the switch off", "source_filename": "five.pdf", "page": 8},
+    ], docs)
+    check("step citing a page never retrieved moves to the passage it comes from",
+          steps[0]["citation"].startswith("five.pdf, p.8"), steps[0]["citation"])
+    check("unmatched step loses its invented location", steps[1]["citation"] == "", steps[1]["citation"])
+    check("step citing a retrieved page is unchanged", steps[2]["citation"].startswith("five.pdf, p.8"))
+
+    state = QueryState(original_query="q", search_results=docs, tool_call=ToolCall(tool_name="respond_to_user", parameters={
+        "answer": "Hold MODE and ZONE.", "diagram_refs": [],
+        "sources": [{"filename": "five-op.pdf", "page": 2, "snippet": "Turn the ON/OFF switch to “OFF” position."}]}))
+    carried = nodes.process_tool_call(state)["source_documents"]
+    check("carried-over documents follow the corrected citation",
+          [(d.metadata.source_filename, d.metadata.page_number) for d in carried] == [("five.pdf", 8)])
+
+    # Section lists for named manuals
+    class SectionStore(FakeStore):
+        def get_chunks(self, where):
+            return [code_hit(i, "t", 1, "five.pdf") | {"metadata": {**hit(i, filename="five.pdf")["metadata"],
+                                                                     "section_path": s}}
+                    for i, s in enumerate(["INTRO", "SPECIFICATIONS > B. Roof Requirements", "INTRO", ""])]
+    check("manual sections listed once each, in order",
+          nodes._manual_sections(SectionStore(), "five.pdf") == ["INTRO", "SPECIFICATIONS > B. Roof Requirements"])
+    named = [replace(docs[0], matched_manual=True)]
+    summary = nodes._manuals_summary(named, {"five.pdf": ["INTRO", "SPECIFICATIONS > B. Roof Requirements"]})
+    check("named manual's sections shown even with one manual",
+          "- five.pdf: 1 passage(s)\n  Sections of this manual (named in the question): INTRO; "
+          "SPECIFICATIONS > B. Roof Requirements" in summary, summary)
+    nodes.ChromaVectorStore = SectionStore
+    check("sections fetched only for this turn's named manuals",
+          list(nodes._named_manual_sections(named, config())) == ["five.pdf"]
+          and nodes._named_manual_sections(docs, config()) == {}
+          and nodes._named_manual_sections([replace(named[0], from_history=True)], config()) == {})
+    check("prompt asks for the exact fact and the manual's own words",
+          "roof requirements" in nodes.SYSTEM_PROMPT and "read its relevant section" in nodes.SYSTEM_PROMPT)
 
 
 def test_nested_filenames() -> None:
@@ -1594,7 +1693,7 @@ def test_query_grader() -> None:
 
 
 if __name__ == "__main__":
-    for test in (test_named_manuals, test_rewrite_context, test_find_code, test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
+    for test in (test_step5, test_named_manuals, test_rewrite_context, test_find_code, test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
                  test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
                  test_failure_routes_to_fallback, test_read_page, test_neighbors, test_search_cutoff_env, test_steps_formatting, test_where_builder,
                  test_chroma_where, test_graph_wiring, test_conversation, test_sections, test_cited_documents,

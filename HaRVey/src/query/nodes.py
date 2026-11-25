@@ -68,9 +68,11 @@ CODE_MATCH_TYPE = "exact_code"
 # Named-manual match: words of the question that name a manual's model in its filename
 # ("5 button", "Blizzard", "Non-Ducted"). See _named_manuals.
 NAMED_MANUAL_MAX = 2  # manuals added per question
-NAMED_MANUAL_PASSAGES = 3  # passages added per manual (closest to the question)
+NAMED_MANUAL_PASSAGES = 5  # passages added per manual: the closest passage of each of its 5 closest sections
+NAMED_MANUAL_CANDIDATES = 60  # passages of the manual considered when picking those sections
 NAMED_MANUAL_MAX_DF = 4  # a filename word (or pair) names a model only if at most this many manuals share it
 NAMED_MANUAL_RELATIVE = 0.6  # a second manual must score at least this share of the best
+NAMED_SECTION_LIST_MAX = 40  # sections listed per named manual in the "Manuals in your context" block
 # Filename words that describe the document type or a whole category, not a model
 _NAME_GENERIC = {
     "a", "and", "the", "of", "for", "with", "to", "in", "on", "my", "s", "pdf", "print",
@@ -124,7 +126,7 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 - "earlier_turn": true means it was retrieved for an earlier question in this conversation and is still available.
 - "matched_part" means the passage contains that exact model, part or error code from the search. When the question names a specific model or part number, answer from passages for that exact number and do not substitute specifications or parts for a different model.
 - "named_manual": true means the passage is from a manual whose filename names the model in the question (e.g. "5 Button" for "the 5 button Comfort Control Center").
-- When documents come from more than one manual, a "Manuals in your context" list after the documents names each manual and how many passages you have from it.
+- When documents come from more than one manual, or the question names a manual, a "Manuals in your context" list after the documents names each manual and how many passages you have from it. For a manual named in the question it also lists that manual's sections, which you can read with read_section.
 - "page" is the PDF page number, which can differ from the page number printed in the document (e.g. PDF page 16 may be printed as page 13). Always use the "page" value for citations and for read_page / search filters.
 - Most documents have a "section": the heading path in the source document where the passage appears, e.g. "MAINTENANCE > A. Air Filter". Passages with the same section belong together, and a section can span several pages. Use the section to tell which procedure, component or model a passage belongs to, and do not mix steps from different sections unless the question needs both.
 
@@ -155,6 +157,10 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 
 ## Gathering more context
 - If the documents are not enough to answer fully, do not answer with partial information and do not give up yet: first search or read more, then answer from the new context.
+- Before answering, check that a passage states the exact fact asked (the value, limit, step or setting) for each model you answer for. A passage on a related point (e.g. a kit needed above some thickness, when asked for the allowed roof thickness) is not enough. If it is missing:
+  * A manual named in the question lists a section that should hold it (e.g. "SPECIFICATIONS > B. Roof Requirements", "WINTERIZING"): call read_section for that section
+  * Otherwise call search_documents with the words a manual would use (e.g. "roof requirements" or "roof to ceiling distance" rather than "how thick can my roof be"), with the manual's filename when you know it
+- Before saying that a manual does not cover something, read its relevant section or search it first.
 - Signs the documents are incomplete: missing steps, "see section X", missing prerequisites, warnings or specifications, a procedure that starts or stops abruptly, or a heading without its content.
   * Found the start of a section (e.g. "MAINTENANCE > A. Air Filter") but not all of its content: call read_section with that document's filename and "section" value instead of searching again. For "see section X", call read_section with X
   * A document has no "section": call read_page for its page and the next one
@@ -915,8 +921,11 @@ def _named_manual_passages(vector_store: Any, query: str, embedding: list[float]
                            have: set[tuple[str, int]]) -> tuple[list[str], list[QueryResult]]:
     """
     The manuals the question names, and up to NAMED_MANUAL_PASSAGES passages
-    (text and tables, closest to the question) from each, skipping chunks in
-    `have`, marked matched_manual. Failures are logged and return ([], []).
+    from each, marked matched_manual: the closest passage (text or table) of
+    each of the manual's closest sections, so one long section can't crowd out
+    the one that answers ("Roof Requirements" ranks about 8th by passage but
+    4th-5th by section for "how thick can my roof be"). Sections already
+    represented in `have` count as covered. Failures are logged and return ([], []).
     """
     if not embedding:
         return [], []
@@ -927,19 +936,22 @@ def _named_manual_passages(vector_store: Any, query: str, embedding: list[float]
         for filename in manuals:
             where = {"$and": [{"source_filename": {"$eq": filename}},
                               {"chunk_type": {"$ne": DIAGRAM_CHUNK_TYPE}}]}
-            count = 0
-            for raw in vector_store.query_similarity(query_embedding=embedding, k=NAMED_MANUAL_PASSAGES + len(have),
+            sections_seen: set[str] = set()
+            for raw in vector_store.query_similarity(query_embedding=embedding, k=NAMED_MANUAL_CANDIDATES,
                                                      where=where):
-                if count >= NAMED_MANUAL_PASSAGES:
+                if len(sections_seen) >= NAMED_MANUAL_PASSAGES:
                     break
                 result = _build_query_result(raw)
-                if _chunk_key(result) in have:
+                section = _section_of(result)
+                if section in sections_seen:
                     continue
+                sections_seen.add(section)
+                if _chunk_key(result) in have:
+                    continue  # this section is already represented by a retrieved passage
                 result.matched_manual = True
                 result.match_type = result.match_type or "named_manual"
                 have.add(_chunk_key(result))
                 added.append(result)
-                count += 1
     except Exception as e:
         logger.warning(f"Named-manual lookup failed, continuing without it: {str(e)}")
         return [], []
@@ -971,17 +983,53 @@ def _just_clarified(history: list[ChatTurn]) -> bool:
     return bool(history) and history[-1].kind == "clarify"
 
 
-def _manuals_summary(results: list[QueryResult]) -> str:
+def _manual_sections(vector_store: Any, filename: str) -> list[str]:
+    """A manual's section paths in reading order (at most NAMED_SECTION_LIST_MAX). Failures return []."""
+    try:
+        chunks = [_build_query_result(raw) for raw in vector_store.get_chunks({"source_filename": {"$eq": filename}})]
+    except Exception as e:
+        logger.warning(f"Could not list sections of {filename}: {str(e)}")
+        return []
+    paths: list[str] = []
+    for chunk in sorted(chunks, key=lambda c: c.metadata.chunk_sequence):
+        section = _section_of(chunk)
+        if section and section not in paths:
+            paths.append(section)
+    return paths[:NAMED_SECTION_LIST_MAX]
+
+
+def _named_manual_sections(results: list[QueryResult], config: Any) -> dict[str, list[str]]:
+    """Section lists of the manuals the question names (this turn's named_manual passages)."""
+    named = sorted({r.metadata.source_filename for r in results if r.matched_manual and not r.from_history})
+    if not named:
+        return {}
+    try:
+        vector_store = ChromaVectorStore(persist_directory=config.chroma_persist_directory,
+                                         collection_name=config.chroma_collection_name)
+        vector_store.initialize_collection()
+    except Exception as e:
+        logger.warning(f"Could not open the vector store to list sections: {str(e)}")
+        return {}
+    return {f: s for f in named if (s := _manual_sections(vector_store, f))}
+
+
+def _manuals_summary(results: list[QueryResult], sections: dict[str, list[str]] | None = None) -> str:
     """
     "Manuals in your context" list appended after the documents, so the LLM can
-    see which models it has passages for. "" when there is only one manual.
+    see which models it has passages for, with the section list of each manual
+    the question names (for read_section). "" for a single manual without one.
     """
+    sections = sections or {}
     counts: dict[str, int] = {}
     for r in results:
         counts[r.metadata.source_filename] = counts.get(r.metadata.source_filename, 0) + 1
-    if len(counts) < 2:
+    if len(counts) < 2 and not sections:
         return ""
-    lines = [f"- {name}: {n} passage(s)" for name, n in sorted(counts.items(), key=lambda x: (-x[1], x[0]))]
+    lines: list[str] = []
+    for name, n in sorted(counts.items(), key=lambda x: (-x[1], x[0])):
+        lines.append(f"- {name}: {n} passage(s)")
+        if sections.get(name):
+            lines.append("  Sections of this manual (named in the question): " + "; ".join(sections[name]))
     return "Manuals in your context:\n" + "\n".join(lines)
 
 
@@ -1299,7 +1347,7 @@ Retrieved Documents:
         menu = _diagram_menu(state.search_results)
         if menu:
             user_message += f"\n{menu}\n"
-        manuals = _manuals_summary(state.search_results)
+        manuals = _manuals_summary(state.search_results, _named_manual_sections(state.search_results, state.config))
         if manuals:
             user_message += f"\n{manuals}\n"
         if _just_clarified(state.chat_history):
@@ -1836,10 +1884,15 @@ def process_tool_call(state: QueryState) -> dict[str, Any]:
     params = state.tool_call.parameters if isinstance(state.tool_call.parameters, dict) else {}
     source_documents: list[QueryResult] = []
     try:
+        if name == "respond_to_user" and _says_not_covered(params):
+            # An "answer" that only says the documents don't cover the question is an insufficient_evidence reply
+            logger.info("process_tool_call: respond_to_user says the documents don't cover it; treating as insufficient_evidence")
+            name, params = "insufficient_evidence", {"explanation": params.get("answer", "")}
         if name == "respond_to_user":
             params = _with_fallback_diagrams(params, state.search_results)
             response = _build_answer_response(params, state.search_results)
-            source_documents = _cited_documents(params, state.search_results)
+            # Carry over what the corrected citations point at, not the raw ones
+            source_documents = _cited_documents({**params, "sources": response["sources"]}, state.search_results)
             status = "response_generated"
         elif name == "insufficient_evidence":
             response = _build_insufficient_response(params, state.search_results)
@@ -1872,6 +1925,75 @@ def process_tool_call(state: QueryState) -> dict[str, Any]:
         logger.error(error_msg)
         errors.append(error_msg)
         return _error_result(errors)
+
+
+_NOT_COVERED = re.compile(
+    r"\b(no mention|not mention(ed)?|no information|(does|do|did) not (contain|cover|include|provide|specify|mention"
+    r"|list|state|describe|say|address)|(doesn't|don't|didn't) (contain|cover|include|provide|specify|mention|list"
+    r"|state|describe|say|address)|cannot (provide|find|answer|give)|can't (provide|find|answer|give)|unable to"
+    r"|not (covered|available|found|included|provided))\b",
+    re.IGNORECASE,
+)
+_DOCUMENT_WORDS = re.compile(r"\b(documents?|manuals?|provided|information|sources?|passages?)\b", re.IGNORECASE)
+
+
+def _first_sentence(text: str) -> str:
+    text = re.sub(r"[*_#`>]", "", text or "").strip()
+    return re.split(r"(?<=[.!?])\s+|\n", text, maxsplit=1)[0]
+
+
+def _says_not_covered(params: dict) -> bool:
+    """
+    respond_to_user whose answer opens by saying the documents don't cover the
+    question ("the provided documents do not contain ...", "there is no mention
+    of ..."), with no steps. The model should have called insufficient_evidence.
+    """
+    answer = params.get("answer")
+    if not isinstance(answer, str) or params.get("steps"):
+        return False
+    first = _first_sentence(answer)
+    return bool(_NOT_COVERED.search(first) and _DOCUMENT_WORDS.search(first))
+
+
+def _norm_text(text: str) -> str:
+    """Text for quote matching: lowercase, straight quotes, no bullets or ellipsis, single spaces."""
+    text = (text or "").replace("\\n", " ").translate(str.maketrans("“”‘’„‟", "\"\"''\"\""))
+    text = re.sub(r"[•…]|(?<!\w)- ", " ", text.lower())
+    return " ".join(text.split())
+
+
+def _containing_chunk(quote: str, search_results: list[QueryResult]) -> QueryResult | None:
+    """The retrieved text/table chunk that contains a quote (its first 50 characters), if exactly one place does."""
+    needle = _norm_text(quote)[:50].strip()
+    if len(needle) < 15:
+        return None
+    places = {(r.metadata.source_filename, r.metadata.page_number): r for r in search_results
+              if r.metadata.chunk_type != DIAGRAM_CHUNK_TYPE and needle in _norm_text(r.content)}
+    return next(iter(places.values())) if len(places) == 1 else None
+
+
+def _content_words(text: str) -> set[str]:
+    return {w for w in _words(text) if len(w) > 2 and w not in _NAME_GENERIC}
+
+
+def _best_matching_chunk(text: str, search_results: list[QueryResult], min_overlap: float = 0.6) -> QueryResult | None:
+    """The retrieved text/table chunk sharing the most of text's words (at least min_overlap of them)."""
+    words = _content_words(text)
+    if len(words) < 3:
+        return None
+    best, best_share = None, min_overlap
+    for r in search_results:
+        if r.metadata.chunk_type == DIAGRAM_CHUNK_TYPE:
+            continue
+        share = len(words & _content_words(r.content)) / len(words)
+        if share > best_share:
+            best, best_share = r, share
+    return best
+
+
+def _cited_location_exists(filename: Any, page: Any, search_results: list[QueryResult]) -> bool:
+    return any(_same_file(filename, r.metadata.source_filename) and r.metadata.page_number == page
+               for r in search_results) if isinstance(filename, str) and filename.strip() else False
 
 
 def _error_result(errors: list[str]) -> dict[str, Any]:
@@ -2014,6 +2136,17 @@ def _build_sources(sources: Any, search_results: list[QueryResult]) -> list[dict
         filename = src.get("filename") if isinstance(src.get("filename"), str) and src.get("filename").strip() else "unknown"
         page = _as_page(src.get("page"))
         filename = _stored_filename(filename.strip(), page, search_results)
+        # A snippet quoted from a different retrieved page than the one cited: cite where it really is
+        snippet = src.get("snippet") if isinstance(src.get("snippet"), str) else ""
+        holder = _containing_chunk(snippet, search_results) if snippet else None
+        cited_holds_it = any(  # the cited page has the quote, maybe split by a line-break hyphen
+            _same_file(filename, r.metadata.source_filename) and r.metadata.page_number == page
+            and _best_matching_chunk(snippet, [r], min_overlap=0.7) for r in search_results)
+        if holder and not cited_holds_it and not (_same_file(filename, holder.metadata.source_filename)
+                                                  and holder.metadata.page_number == page):
+            logger.info(f"Source moved from {filename} p{page} to {holder.metadata.source_filename} "
+                        f"p{holder.metadata.page_number} (where the snippet is)")
+            filename, page = holder.metadata.source_filename, holder.metadata.page_number
         section = _cite_section(search_results, filename, page, src.get("section"), src.get("snippet"))
         key = (filename.strip().lower(), page, section)
         if key in seen:
@@ -2050,6 +2183,16 @@ def _build_steps(steps: Any, search_results: list[QueryResult] | None = None) ->
             page_ok = isinstance(page, int) and not isinstance(page, bool)
             if isinstance(filename, str) and filename:
                 filename = _stored_filename(filename.strip(), page if page_ok else None, search_results or [])
+            if search_results and isinstance(filename, str) and filename and page_ok \
+                    and not _cited_location_exists(filename, page, search_results):
+                # Cited a file / page that was never retrieved: use the passage the step comes from, or no location
+                match = _best_matching_chunk(instruction, search_results)
+                logger.info(f"Step citation {filename} p{page} not retrieved; "
+                            + (f"moved to {match.metadata.source_filename} p{match.metadata.page_number}"
+                               if match else "dropped"))
+                filename = match.metadata.source_filename if match else None
+                page = match.metadata.page_number if match else None
+                page_ok = match is not None
             section = _cite_section(search_results or [], filename, page, step.get("section")) if page_ok else ""
             pieces = []
             if isinstance(filename, str) and filename:
