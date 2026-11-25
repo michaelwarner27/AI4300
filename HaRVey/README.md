@@ -120,7 +120,10 @@ Browser chat UI: ask follow-up questions in a conversation thread. Answers rende
 ### Run Tests
 
 ```bash
-python tests/test_queries.py          # Execute all required queries
+python tests/test_queries.py          # Run and grade the live cases in tests/test-queries.md (format described there)
+python tests/test_queries.py --only C,RW01 --repeat 3   # Chosen cases or groups, with pass rates
+python tests/test_queries.py --rewrite-only             # Grade only the follow-up query rewrite
+python tests/build_corpus.py --copy   # Copy the test manuals (tests/corpus-manifest.txt) into documents/
 python tests/verify_ingestion.py      # Self-contained ingestion checks (fixture PDF, temp Chroma, fake embeddings)
 python tests/verify_ingestion.py --live   # ...plus a sanity check of your real Chroma database
 python tests/verify_query_loop.py     # Offline checks of the query agent loop and hybrid search (part numbers, BM25 blend)

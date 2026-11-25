@@ -1,0 +1,55 @@
+# Test corpus: paths relative to Harvey-Manuals-All/, copied into documents/ by
+# tests/build_corpus.py. See tests/corpus.md for what each file tests.
+
+# Thermostats (confusable siblings)
+Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf
+Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Trouble Shooting Bulletin_3108317.029.pdf
+Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Operation Manual_3108664.040.pdf
+Dometic/Guides/Air Conditioning/CCC 5 Button/5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf
+Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf
+Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf
+Dometic/Guides/Air Conditioning/CT-SZLCD/CT Operating Instructions.pdf
+Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf
+Dometic/Guides/Air Conditioning/CT-SZLCD/CT-Bluetooth.pdf
+Dometic/Guides/Air Conditioning/CT-SZLCD/SZLCD Operating Instructions.pdf
+Dometic/Guides/Air Conditioning/Analog & Bi-Metal/Analog Operating Instructions_3107556.031.pdf
+
+# Dometic air conditioners (variant pairs, service data)
+Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Ducted.pdf
+Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf
+Dometic/Guides/Air Conditioning/Air Command/Air Command - Ducted IOM.pdf
+Dometic/Guides/Air Conditioning/Air Command/Air Command - Non-Ducted IOM.pdf
+Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf
+Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf
+Dometic/Guides/Air Conditioning/Discharging Start and Run Capacitors.pdf
+Dometic/Guides/Air Conditioning/Air Conditioner Freeze-Up.pdf
+
+# Dometic furnaces (series that share some answers and differ on others)
+Dometic/Guides/Furnaces/79/79 Series User's Manual.pdf
+Dometic/Guides/Furnaces/85/85 Series Installation Instructions.pdf
+Dometic/Guides/Furnaces/89/89 Series Installation Instructions.pdf
+Dometic/Guides/Furnaces/AF/AFS Installation Instructions.pdf
+Dometic/Guides/Furnaces/AF/AFM Installation Instructions.pdf
+Dometic/Guides/Furnaces/DF/DF Series Operating Instructions.pdf
+Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf
+Dometic/Guides/Furnaces/DF/DF Series Service Manual.pdf
+
+# Water heaters and Suburban (cross-brand, two revisions)
+Dometic/Guides/Water Heaters/LP Models IOM.pdf
+Dometic/Guides/Water Heaters/Electric Models IOM.pdf
+Dometic/Guides/Water Heaters/Service Manual 2020.pdf
+Airxcel/Airxcel Suburban Mfg/205621_WATER HEATER STM, RC, 07-18-2019.pdf
+Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf
+Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf
+Airxcel/Airxcel Suburban Mfg/205620_FURNACE_STM, RC, 08-06-2019.pdf
+
+# Coleman Mach (flowchart, and one image-only page expected to fail)
+Airxcel/Airxcel Coleman Mach/Mach 8/Mach 8 service manual (1).pdf
+Airxcel/Airxcel Coleman Mach/Air Conditioning/Roof top service manual (1).pdf
+Airxcel/Airxcel Coleman Mach/Air Conditioning/no comp flow chart.pdf
+Airxcel/Airxcel Coleman Mach/Thermostats/Heat-Cool T-Stat wiring.pdf
+
+# Unrelated categories (topic switches)
+Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf
+Airxcel/Airxcel MAXXAIR/MaxxFan Troubleshooting_K models.pdf
+Lippert/3010001202_operations_manual_power_level_automatic_hydraulic_leveling_.pdf

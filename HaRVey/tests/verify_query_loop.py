@@ -1242,8 +1242,85 @@ def test_nested_filenames() -> None:
         .startswith("brand_b/other.pdf, p.3"))
 
 
+def test_query_grader() -> None:
+    section("Live test runner: parsing and grading (tests/test_queries.py)")
+    import test_queries as tq
+
+    cases = tq.parse_cases(tq.QUERIES_FILE.read_text())
+    ids = [c["id"] for c in cases]
+    check("test-queries.md parses, format example ignored", ids[:1] == ["Q01"] and len(ids) == len(set(ids)),
+          str(ids))
+    sample = [{"id": i} for i in ("Q01", "R01", "RW01", "C02")]
+    check("--only takes IDs and group prefixes",
+          [c["id"] for c in tq.select_cases(sample, "r, c02")] == ["R01", "C02"])
+
+    def rejected(body: str) -> bool:
+        try:
+            tq.parse_cases(f"## X1: t\n\n```yaml\n{body}\n```\n")
+        except ValueError as e:
+            return "X1" in str(e)
+        return False
+
+    check("typos in a case are rejected", all(rejected(b) for b in (
+        "turns: [{ask: q, expect: {fact: [a]}}]", "turns: [{ask: q, expect: {kind: answr}}]",
+        "turns: [{ask: q, expect: {facts: ['(']}}]", "turns: [{ask: q, expect: {cited: [{page: 1}]}}]",
+        "turns: []", "history: [{ask: q}]\nturns: [{ask: q}]")))
+
+    docs = [nodes._build_query_result(hit(0, page=2, filename="brand/manual.pdf")),
+            replace(nodes._build_query_result(hit(1, page=3, filename="old.pdf")), from_history=True)]
+    result = QueryState(
+        original_query="and that one?", retrieval_query="CCC 5 button diagnostic mode", search_results=docs,
+        search_round=1,
+        response={"kind": "answer", "answer": "Press **MODE** twice.", "options": [], "diagrams": [],
+                  "steps": [], "sources": [{"filename": "brand/manual.pdf", "page": 2}]})
+    good = {"kind": "answer", "rewrite_has": ["5 button"], "rewrite_lacks": ["CCC2"],
+            "retrieved": ["manual.pdf"], "cited": [{"file": "Manual.pdf", "pages": [2, 4]}],
+            "cited_any": ["nope.pdf", "brand/manual.pdf"], "facts": ["press mode"], "not_facts": ["thrice"],
+            "diagrams": False, "max_searches": 1}
+    checks = tq.grade_turn(good, result)
+    check("a correct turn passes every check", checks and all(c["passed"] for c in checks), str(checks))
+    bad = {"kind": "clarify", "rewrite_has": ["furnace"], "rewrite_lacks": ["CCC"], "retrieved": ["old.pdf"],
+           "cited": [{"file": "manual.pdf", "pages": [9]}], "cited_any": ["al.pdf"], "facts": ["thrice"],
+           "not_facts": ["mode"], "options_has": ["CCC"], "diagrams": True, "max_searches": 0}
+    checks = tq.grade_turn(bad, result)
+    check("each wrong expectation fails", len(checks) == len(bad) and not any(c["passed"] for c in checks),
+          str([c for c in checks if c["passed"]]))
+    check("failures are tagged by stage",
+          {c["stage"] for c in checks} == {"rewrite", "retrieval", "decision", "answer"})
+
+    clarify = QueryState(original_query="q", response={
+        "kind": "clarify", "answer": "Which thermostat?", "options": ["CCC 5 Button", "CT"],
+        "steps": [], "sources": [], "diagrams": []})
+    check("clarify options graded",
+          all(c["passed"] for c in tq.grade_turn({"kind": "clarify", "options_has": ["5 button", r"\bCT\b"]}, clarify)))
+    failed = tq.grade_turn({"kind": "answer"}, QueryState(original_query="q", errors=["LLM down"]))
+    check("a failed turn is reported as a pipeline error", failed[0]["stage"] == "error" and not failed[0]["passed"])
+    check("no documents found is 'empty'",
+          all(c["passed"] for c in tq.grade_turn({"kind": ["empty", "insufficient"]}, QueryState(original_query="q"))))
+
+    history = tq.scripted_history([{"ask": "q", "answer": "Which one?", "kind": "clarify",
+                                    "options": ["A", "B"]}], None)
+    check("scripted clarify history keeps its options", history[0].kind == "clarify"
+          and "Options: A; B" in history[0].answer, history[0].answer)
+
+    install_fakes(script=[], queue=[])
+    ScriptedLLM.rewrite_reply = "CCC 5 button reset"
+    case = {"history": [{"ask": "q", "answer": "a"}],
+            "turns": [{"ask": "reset it", "expect": {"rewrite_has": ["5 button"], "kind": "answer"}}]}
+    records = tq.run_rewrite(case, config())
+    check("--rewrite-only grades just the rewrite", [c["stage"] for c in records[0]["checks"]] == ["rewrite"]
+          and records[0]["checks"][0]["passed"])
+    check("--rewrite-only skips cases without scripted history",
+          tq.run_rewrite({**case, "history": []}, config()) is None)
+
+    runs = [records, [{**records[0], "checks": [{"stage": "rewrite", "name": "n", "passed": False, "detail": ""}]}]]
+    summary = "\n".join(tq.summarize([{"case": {"id": "RW01", "title": "t"}, "runs": runs}]))
+    check("repeated runs report a pass rate", "FLAKY" in summary and "1/2" in summary
+          and "rewrite 1" in summary, summary)
+
+
 if __name__ == "__main__":
-    for test in (test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
+    for test in (test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
                  test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
                  test_failure_routes_to_fallback, test_read_page, test_neighbors, test_search_cutoff_env, test_steps_formatting, test_where_builder,
                  test_chroma_where, test_graph_wiring, test_conversation, test_sections, test_cited_documents,
