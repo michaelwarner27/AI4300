@@ -95,7 +95,8 @@ User Query (+ chat history)
 
 **Responsibilities**:
 - With no chat history, use the query as-is (no LLM call)
-- Otherwise make one LLM call (`REWRITE_PROMPT`, temperature 0) with the last `MAX_HISTORY_TURNS` (5) turns; earlier answers are truncated to `REWRITE_ANSWER_CHARS` (1500)
+- Otherwise make one LLM call (`REWRITE_PROMPT`, temperature 0) with the last `MAX_HISTORY_TURNS` (5) turns. An earlier answer longer than `REWRITE_ANSWER_CHARS` (1500) keeps its first 1000 and last `REWRITE_ANSWER_TAIL_CHARS` (500) characters, so "the last one in that list" still resolves. Clarifying questions are labelled `Assistant (clarifying question)` and include their options. When older turns were dropped, a note says how many are not shown
+- `REWRITE_PROMPT` rules: return standalone messages unchanged; after a clarifying question, combine the original question with the user's reply, keeping the user's distinguishing words (e.g. "5 button") even when they were not among the options, and treating "the second one" as the second option; apply corrections and drop the old model; don't carry the old model across a topic change; keep exact codes; don't add models the conversation doesn't mention; leave references to turns that are not shown unchanged
 - Clean the reply: remove `<think>` blocks, a `Query:` prefix and surrounding quotes
 - Fall back to the original query on any error, an empty reply, or a reply longer than `REWRITE_MAX_QUERY_CHARS` (500)
 
@@ -507,7 +508,7 @@ class ChatTurn:
 ChatTurn(question=user_message, answer=result.final_response, documents=list(result.source_documents))
 ```
 
-- The last `MAX_HISTORY_TURNS` (5) turns are sent to the LLM as user/assistant messages and used by `rewrite_query`
+- The last `MAX_HISTORY_TURNS` (5) turns are sent to the LLM as user/assistant messages and used by `rewrite_query`. When older turns were dropped, both the rewrite and the current question start with a note saying how many are not shown; the system prompt tells the LLM to reply with `insufficient_evidence` when asked about those turns instead of guessing
 - Documents cited in the last `HISTORY_DOC_TURNS` (2) turns are carried into the next turn's context
 - The web UI keeps history per browser session (in server memory, lost on restart). `query_main.py` treats each query separately
 
@@ -574,7 +575,7 @@ DOCUMENT_INPUT_DIR=./documents
 - `READ_SECTION_MAX_CHUNKS`, `READ_SECTION_LIST_LIMIT` - Passages per `read_section` call, sections listed on no match (default: 25, 60)
 - `SHORT_CODE_MAX_CHARS`, `AUTO_CODE_MATCHES`, `FIND_CODE_MAX_RESULTS` - Exact-code lookup: longest code that triggers the automatic pass, passages it adds, passages per `find_code` call (default: 3, 5, 10)
 - `MAX_HISTORY_TURNS`, `HISTORY_DOC_TURNS`, `MAX_HISTORY_DOCS` - Conversation history (default: 5, 2, 30)
-- `REWRITE_MAX_TOKENS`, `REWRITE_ANSWER_CHARS`, `REWRITE_MAX_QUERY_CHARS` - Follow-up rewriting (default: 4096, 1500, 500)
+- `REWRITE_MAX_TOKENS`, `REWRITE_ANSWER_CHARS`, `REWRITE_ANSWER_TAIL_CHARS`, `REWRITE_MAX_QUERY_CHARS` - Follow-up rewriting (default: 4096, 1500, 500, 500)
 - `DEFAULT_MAX_TOKENS`, `DEFAULT_LLM_TEMPERATURE`, `RETRY_LLM_TEMPERATURE`, `MAX_TOOL_CALL_RETRIES` - LLM call (default: 50000, 0.7, 0.9, 2)
 - `SYSTEM_PROMPT`, `REWRITE_PROMPT` - LLM instructions
 

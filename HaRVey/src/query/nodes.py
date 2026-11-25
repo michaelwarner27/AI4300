@@ -74,12 +74,22 @@ MAX_HISTORY_TURNS = 5  # earlier Q&A turns sent to the LLM
 HISTORY_DOC_TURNS = 2  # cited documents are carried over from this many most recent turns
 MAX_HISTORY_DOCS = 30  # cap on carried-over documents (most recent kept)
 REWRITE_MAX_TOKENS = 4096  # room for reasoning models when rewriting a follow-up
-REWRITE_ANSWER_CHARS = 1500  # earlier answers are truncated to this in the rewrite prompt
+REWRITE_ANSWER_CHARS = 1500  # longer earlier answers keep their start and end in the rewrite prompt
+REWRITE_ANSWER_TAIL_CHARS = 500  # of which this much comes from the end ("the last one" refers to it)
 REWRITE_MAX_QUERY_CHARS = 500  # longer rewrites are treated as failures
 
 REWRITE_PROMPT = """You rewrite the user's latest message into a standalone search query for a document database.
 Use the conversation for context: resolve references such as "it", "that", "the diagram" or "step 3" to what they mean.
-If the latest message is already standalone, return it unchanged.
+
+Rules:
+- If the latest message is already standalone, return it unchanged.
+- If the assistant last asked a clarifying question, combine the question it was clarifying with the user's reply. The user's own words decide the model, even when they name something that was not among the offered options: copy their distinguishing words (e.g. "5 button", "non-ducted") into the query and never replace them with the name of an offered option. A reply such as "the second one" means the second option.
+- If the user corrects themselves ("no, I meant ..."), use the corrected model and drop the old one.
+- If the user changes topic, do not carry the earlier model or topic into the query.
+- Keep exact model numbers, part numbers and error codes exactly as written.
+- Do not add a model, brand or detail that the conversation does not mention.
+- If the message refers to an earlier turn that is not shown, return it unchanged.
+
 Output only the query text, with no explanation, quotes or prefix."""
 
 SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equipment manuals using only the documents retrieved for you.
@@ -99,6 +109,7 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 
 ## Conversation
 - Earlier user questions and your earlier replies (shown as your tool calls) come before the current question. Use them to understand follow-up questions (e.g. "that diagram", "step 3", "what about the other model?"). Answer only from the documents, not from your earlier replies alone.
+- Only the most recent turns are shown. When a note says earlier turns are not shown and the user asks about them (e.g. "the first thing I asked"), do not guess from the turns you can see: call insufficient_evidence and say those turns are no longer visible.
 
 ## Answering (respond_to_user)
 - Write a clear, concise "answer" synthesized from the documents. Markdown is allowed (short paragraphs, bullet lists, **bold** for warnings). Keep it short: your whole reply must be a valid tool call, and very long arguments can fail to parse.
@@ -353,6 +364,23 @@ def _recent_history(history: list[ChatTurn]) -> list[ChatTurn]:
     return list(history[-MAX_HISTORY_TURNS:]) if MAX_HISTORY_TURNS > 0 else []
 
 
+def _dropped_turns_note(history: list[ChatTurn]) -> str:
+    """A note that older turns are not shown, or "" when the whole conversation is."""
+    dropped = len(history) - len(_recent_history(history))
+    if dropped <= 0:
+        return ""
+    return (f"Note: {dropped} earlier turn(s) of this conversation are not shown. The first turn shown "
+            "below is NOT the user's first question, and you cannot see what the earlier turns said.")
+
+
+def _shorten_answer(answer: str) -> str:
+    """An earlier answer for the rewrite prompt: kept whole, or its start and its end."""
+    if len(answer) <= REWRITE_ANSWER_CHARS:
+        return answer
+    head = REWRITE_ANSWER_CHARS - REWRITE_ANSWER_TAIL_CHARS
+    return f"{answer[:head]}\n[...]\n{answer[-REWRITE_ANSWER_TAIL_CHARS:]}"
+
+
 def _strip_think(text: str) -> str:
     """Remove <think>...</think> reasoning blocks some models put in their content."""
     return re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL).strip()
@@ -382,12 +410,11 @@ def rewrite_query(state: QueryState) -> dict[str, Any]:
 
     transcript: list[str] = []
     for turn in history:
-        answer = turn.answer
-        if len(answer) > REWRITE_ANSWER_CHARS:
-            answer = answer[:REWRITE_ANSWER_CHARS] + "..."
-        transcript.append(f"User: {turn.question}\nAssistant: {answer}")
+        label = "Assistant (clarifying question)" if turn.kind == "clarify" else "Assistant"
+        transcript.append(f"User: {turn.question}\n{label}: {_shorten_answer(turn.answer)}")
+    note = _dropped_turns_note(state.chat_history)
     user_message = (
-        "Conversation so far:\n\n" + "\n\n".join(transcript)
+        "Conversation so far:\n\n" + (f"{note}\n\n" if note else "") + "\n\n".join(transcript)
         + f"\n\nLatest message: {state.original_query}\n\nStandalone search query:"
     )
 
@@ -1111,6 +1138,9 @@ Retrieved Documents:
         menu = _diagram_menu(state.search_results)
         if menu:
             user_message += f"\n{menu}\n"
+        note = _dropped_turns_note(state.chat_history)
+        if note:
+            user_message = f"{note}\n\n{user_message}"
         # Earlier turns (replayed as tool calls) go between the system prompt and the current question
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},

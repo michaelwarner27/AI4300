@@ -754,6 +754,51 @@ def test_conversation() -> None:
     check("answer produced", state.final_response.startswith("Hold reset 5s"), state.final_response)
 
 
+def test_rewrite_context() -> None:
+    section("Rewrite context: long answers, clarifying questions, dropped turns")
+    install_fakes(script=[], queue=[])
+    ScriptedLLM.rewrite_reply = "q"
+
+    commands = "\n".join(f"{i:02d} command number {i} with a long explanation of what it does" for i in range(40))
+    nodes.rewrite_query(QueryState(original_query="What does the last one show?", query_validated=True,
+                                   config=config(), chat_history=[past_turn("List the commands", commands, [0])]))
+    sent = ScriptedLLM.chat_seen[-1][1]["content"]
+    check("long answer keeps its start and its end",
+          "00 command number 0 " in sent and "39 command number 39 " in sent and "[...]" in sent
+          and len(sent) < len(commands), f"{len(sent)} chars")
+    check("short answer kept whole", nodes._shorten_answer("short") == "short")
+
+    clarify = ChatTurn(question="How do I reset my thermostat?", answer="Which one?\nOptions: CCC 2; CT",
+                       kind="clarify")
+    nodes.rewrite_query(QueryState(original_query="the 5 button one", query_validated=True, config=config(),
+                                   chat_history=[clarify]))
+    sent = ScriptedLLM.chat_seen[-1][1]["content"]
+    check("clarifying question labelled, with its options",
+          "Assistant (clarifying question): Which one?" in sent and "Options: CCC 2; CT" in sent, sent[:300])
+    check("prompt: the user's reply overrides the offered options",
+          "not among the offered options" in nodes.REWRITE_PROMPT)
+
+    many = [past_turn(f"q{i}", f"a{i}", [i]) for i in range(nodes.MAX_HISTORY_TURNS + 2)]
+    nodes.rewrite_query(QueryState(original_query="What did I ask first?", query_validated=True, config=config(),
+                                   chat_history=many))
+    sent = ScriptedLLM.chat_seen[-1][1]["content"]
+    check("rewrite told that 2 earlier turns are not shown", "2 earlier turn(s)" in sent and "User: q0" not in sent)
+    few = [past_turn("q0", "a0", [0])]
+    nodes.rewrite_query(QueryState(original_query="And then?", query_validated=True, config=config(),
+                                   chat_history=few))
+    check("no note when the whole conversation is shown", "not shown" not in ScriptedLLM.chat_seen[-1][1]["content"])
+
+    install_fakes(script=[("insufficient_evidence", {"explanation": "not shown"})], queue=[])
+    run_graph(initial_state(chat_history=many))
+    current = ScriptedLLM.seen[0]["messages"][-1]["content"]
+    check("answering model told that earlier turns are not shown", current.startswith("Note: 2 earlier turn(s)"),
+          current[:120])
+    install_fakes(script=[("insufficient_evidence", {"explanation": "x"})], queue=[])
+    run_graph(initial_state(chat_history=few))
+    check("no note for the answering model without dropped turns",
+          not ScriptedLLM.seen[0]["messages"][-1]["content"].startswith("Note:"))
+
+
 def diagram_hit(i: int, page: int, path: str, filename: str = "manual.pdf") -> dict:
     raw = hit(i, page=page, filename=filename)
     raw["metadata"].update(chunk_type=nodes.DIAGRAM_CHUNK_TYPE, diagram_path=path, diagram_kind="figure")
@@ -1450,7 +1495,7 @@ def test_query_grader() -> None:
 
 
 if __name__ == "__main__":
-    for test in (test_find_code, test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
+    for test in (test_rewrite_context, test_find_code, test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
                  test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
                  test_failure_routes_to_fallback, test_read_page, test_neighbors, test_search_cutoff_env, test_steps_formatting, test_where_builder,
                  test_chroma_where, test_graph_wiring, test_conversation, test_sections, test_cited_documents,

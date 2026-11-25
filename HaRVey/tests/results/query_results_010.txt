@@ -1,0 +1,751 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-25 14:00:28
+Model: Gemma-4-26B-A4B   Embeddings: Qwen3-Embedding-8B   Repeat: 1
+================================================================================
+
+PASS  RW01   1/1  Rewrite - pronoun
+PASS  RW02   1/1  Rewrite - ellipsis to another model
+PASS  RW03   1/1  Rewrite - reference to a step number
+PASS  RW04   1/1  Rewrite - standalone question stays unchanged
+PASS  RW05   1/1  Rewrite - topic switch drops the old model
+PASS  RW06   1/1  Rewrite - correction
+PASS  RW07   1/1  Rewrite - keeps an exact error code
+PASS  RW08   1/1  Rewrite - keeps an exact part number
+PASS  RW09   1/1  Rewrite - reply to a clarifying question restores the question
+PASS  RW10   1/1  Rewrite - reference to a diagram
+PASS  RW11   1/1  Rewrite - off-topic follow-up stays off-topic
+FAIL  RW12   0/1  Rewrite - does not invent a model
+             x1 says '18.{0,12}20'
+PASS  RW13   1/1  Rewrite - detail past the history truncation
+FAIL  C01    0/1  Clarify - which thermostat to reset, answered by name
+             x1 rewrite has '(5|five)[\\s-]*button'
+             x1 cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}]
+FAIL  C08    0/1  Clarify - not needed when the model is already established
+             x1 says 'power.{0,30}down|blank'
+FAIL  C09    0/1  Clarify - answered by position
+             x1 cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+             x1 says '3[\\s-]*(3/4|¾)|3\\.75'
+FAIL  C10    0/1  Clarify - user doesn't know, so never ask twice
+             x1 says '\\b5\\b'
+             x1 says '1[\\s-]*(3/4|¾)|1\\.75'
+PASS  M02    1/1  Memory - return to a topic after a switch
+FAIL  M04    0/1  Memory - reference older than the history window
+             x1 kind is clarify or insufficient
+PASS  M05    1/1  Memory - compare two models discussed earlier
+
+Runs passed: 14/20
+Failed checks by stage: rewrite 1, decision 1, answer 7
+
+
+================================================================================
+RW01: Rewrite - pronoun
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I get out of it?
+Rewrite: How do I exit diagnostic mode on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'on\\s*/\\s*off|power|turn\\w*.{0,40}off'
+
+To exit the diagnostic mode, press the ON/OFF button.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, System Configuration): To exit the diagnostic mode, press the ON/OFF button.
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+================================================================================
+RW02: Rewrite - ellipsis to another model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: And on the CCC2?
+Rewrite: How to enter diagnostic mode on the CCC2 thermostat
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite lacks '\\bCT\\b'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CCC2-Diagnostic-Mode-With-Reset.pdf', 'CCC II Reset & Diag.pdf']
+  [PASS] (answer) says 'program'
+  [PASS] (answer) says 'F\\s*/\\s*C'
+
+To enter diagnostic mode on the CCC2, ensure the thermostat is turned "OFF" (display is blank or only showing the clock). Then, simultaneously press the **"Program"**, **"Fan"**, and **"F/C"** buttons.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, System Configuration): To enter the diagnostic mode, simultaneously press the “Program”, “Fan” & “F/C” buttons.
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+================================================================================
+RW03: Rewrite - reference to a step number
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What was step 4 again?
+Rewrite: How to reset the 4 button Comfort Control Center: step 4 (depress and hold the temperature UP and DOWN buttons, while holding them, depress the MODE button once and release)
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'reset'
+  [PASS] (rewrite) rewrite has '(4|four)[\\s-]*button'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says 'hold'
+
+Step 4 of the reset procedure for the 4 Button Comfort Control Center is: "While holding these buttons down, depress the MODE button once and release."
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf (page 1, Comfort Control Center Reset Instructions): 4) While holding these buttons down, depress the MODE button once and release.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf (page 1, raster, Comfort Control Center Reset Instructions): /home/michael24/4300-CS/HaRVey/extracted_diagrams/4 Button Comfort Control Center Reset Instructions-5ea2d3ec_p0_img0.png
+- Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf (page 1, raster, Comfort Control Center Reset Instructions): /home/michael24/4300-CS/HaRVey/extracted_diagrams/4 Button Comfort Control Center Reset Instructions-5ea2d3ec_p0_img1.png
+- Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf (page 1, raster, Comfort Control Center Reset Instructions): /home/michael24/4300-CS/HaRVey/extracted_diagrams/4 Button Comfort Control Center Reset Instructions-5ea2d3ec_p0_img2.png
+- Dometic/Guides/Air Conditioning/CCC 4 Button/4 Button Comfort Control Center Reset Instructions.pdf (page 1, vector_figure, Comfort Control Center Reset Instructions): /home/michael24/4300-CS/HaRVey/extracted_diagrams/4 Button Comfort Control Center Reset Instructions-5ea2d3ec_p0_fig0.png
+
+================================================================================
+RW04: Rewrite - standalone question stays unchanged
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What propane gas pressure does the Atwood 89 series furnace require?
+Rewrite: What propane gas pressure does the Atwood 89 series furnace require?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\b89\\b'
+  [PASS] (rewrite) rewrite has 'pressure'
+  [PASS] (rewrite) rewrite lacks 'CCC'
+  [PASS] (rewrite) rewrite lacks 'thermostat'
+  [PASS] (rewrite) rewrite lacks '\\bE1\\b'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites 89 Series Installation Instructions.pdf
+  [PASS] (answer) says '\\b11\\b'
+
+For the Atwood 89 series furnace, the required propane (LP) line pressure depends on the BTU rating:
+* **40,000 BTU/hr:** 11” WC
+* **35,000 BTU/hr:** 11” WC
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/89/89 Series Installation Instructions.pdf (page 6, Figure 10 > CONVERTIBLE GAS CONTROL): Propane (LP) 40,000 11” WC 10.5” WC 49P
+
+Diagrams:
+- Dometic/Guides/Furnaces/89/89 Series Installation Instructions.pdf (page 6, vector_figure, Figure 10 > CONVERTIBLE GAS CONTROL): /home/michael24/4300-CS/HaRVey/extracted_diagrams/89 Series Installation Instructions-bdd7adfc_p5_fig2.png
+- Dometic/Guides/Furnaces/89/89 Series Installation Instructions.pdf (page 6, vector_figure, Figure 9 > VALVE CONVERSION): /home/michael24/4300-CS/HaRVey/extracted_diagrams/89 Series Installation Instructions-bdd7adfc_p5_fig0.png
+
+================================================================================
+RW05: Rewrite - topic switch drops the old model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How does the rain sensor on the MaxxFan work?
+Rewrite: How does the rain sensor on the MaxxFan work?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'rain sensor'
+  [PASS] (rewrite) rewrite has 'maxx'
+  [PASS] (rewrite) rewrite lacks 'blizzard'
+  [PASS] (rewrite) rewrite lacks 'ducted'
+  [PASS] (rewrite) rewrite lacks 'roof thickness'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites MaxxFan Operation.pdf
+  [PASS] (answer) says 'close'
+  [PASS] (answer) says 'off'
+
+When the Rain Sensor detects rain, it will turn the fan Off and Close the lid. A blinking Red LED indicates that the Rain Sensor has shut the fan down. To reset the sensor and turn off the blinking Red LED, press the Rain Sensor key after the fan has dried.
+
+---
+
+Sources:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): When the Rain Sensor detects rain it will turn the fan Off and Close the lid.
+
+Diagrams:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img0.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, vector_figure, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_fig0.png
+
+================================================================================
+RW06: Rewrite - correction
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: No, sorry, I meant the CT thermostat.
+Rewrite: How to reset the CT thermostat
+Kind: answer   Status: response_generated   Extra searches: 1
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'reset|initiali[sz]'
+  [PASS] (rewrite) rewrite lacks '(5|five)[\\s-]*button'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CT Reset & Diag.pdf', 'CT Operating Instructions.pdf']
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says '\\bup\\b'
+
+To perform a system initialization (reset) on the CT thermostat, follow these steps:
+
+**System Initialization (System Reset) Stages:**
+
+**Preparation**
+* Power the system completely down.
+* Press the MODE button (located on the left side) several times until the screen is blank.
+
+**Initialization**
+* Press the MODE button and the UP arrow button at the same time.
+* Continue to hold both buttons until two dash marks ( - - ) appear on the display.
+* Release the MODE and UP buttons once the dashes appear.
+* Turn the thermostat off and back on using the MODE button to complete the process.
+
+**Note:** If you have trouble pressing the buttons simultaneously due to the sensitive touch display, you can remove the faceplate and touch the spades on the PCB directly. For CT thermostats with Bluetooth, this process also resets the Bluetooth system and removes all paired mobile devices.
+
+Ask me for the full steps of any stage.
+
+Steps:
+Preparation:
+1. Power the system completely down. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.2, System Initialization (System Reset))
+2. Press the MODE Button on the left side of the thermostat a few times until the screen is blank. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.2, System Initialization (System Reset))
+
+Initialization:
+1. Press the MODE Button and the UP Arrow at the same time and hold for several seconds until two dash marks ( - - ) appear. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.2, System Initialization (System Reset))
+2. Release the MODE and UP Buttons once the two dashes appear. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+3. Turn the thermostat off and back on using the MODE button to complete initialization. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 2, System Initialization (System Reset)): To prepare the thermostat for a system initialization; first power the system completely down.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, System Initialization (System Reset)): Once you see the two dashes appear on the display you can now release the MODE and UP Buttons.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT-Bluetooth.pdf (page 21, BLUETOOTH® PROGRAMMING AND OPERATION > G. A Note On CT Thermostat Factory Reset And Lost Pairs): On CT thermostats equipped with Bluetooth® control the system initialization feature also resets the Bluetooth® system and removes all known mobile device pairs from the CT thermostat.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, raster, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig2.png
+
+================================================================================
+RW07: Rewrite - keeps an exact error code
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What about E5?
+Rewrite: What does error code E5 mean on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bE5\\b'
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite lacks '\\bE1\\b'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'freeze'
+
+For the CCC2 thermostat, error code E5 indicates the **Freeze Sensor is Open or Out of Range**. 
+
+Depending on the specific system mode:
+* **Air conditioner/cooling operation** will be locked out.
+* **Furnace, heat strip, heat pump, and fan operation** can continue to operate, but the display will show the last temperature set-point.
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 10, LCD Error Code): E5 Open circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 36, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 Freeze Sensor Open/Out of Range “No Cool operation” “Furnace, Heat Strip, Heat Pump & Fan modes will still operate”
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, Error Codes): E5 – Freeze Sensor is Open or Out of Range
+
+================================================================================
+RW08: Rewrite - keeps an exact part number
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: And what is 33063?
+Rewrite: What is part number 33063?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '33063'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites DF Series Parts List.pdf
+  [PASS] (answer) says 'sail switch'
+
+On the DF series furnace, 33063 is the part number for the SAIL SWITCH.
+
+---
+
+Sources:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 5, 2 PART NUMBER LIST): | X | X | X | X | 4524 | 33063 | SAIL SWITCH |
+
+Diagrams:
+- Dometic/Guides/Furnaces/DF/DF Series Parts List.pdf (page 5, vector_figure, 2 PART NUMBER LIST): /home/michael24/4300-CS/HaRVey/extracted_diagrams/DF Series Parts List-c64f1d7c_p4_fig0.png
+
+================================================================================
+RW09: Rewrite - reply to a clarifying question restores the question
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: CT
+Rewrite: How to enter diagnostic mode on CT thermostat
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites CT Reset & Diag.pdf
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+  [PASS] (answer) does not say 'F\\s*/\\s*C'
+
+To enter the Diagnostic Mode on the CT Thermostat, follow these steps:
+
+1. Power the system completely down.
+2. Press the **MODE** button (located on the left side of the thermostat) several times until the screen is blank.
+3. Simultaneously press and release the **MODE**, **UP**, and **DOWN** buttons at the same time.
+
+Once successful, the display should read "00", indicating you are in Diagnostic Mode. You can then use the UP and DOWN arrows to cycle through commands.
+
+Steps:
+Prepare thermostat:
+1. Power the system completely down. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+2. Press the MODE Button located on the left hand side of the thermostat a few times until you are left with a blank screen. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+
+Enter Diagnostic Mode:
+1. Press the MODE, UP, & DOWN buttons at the same time (press and release). (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, Diagnostic Mode): To prepare the thermostat for the system Diagnostic Mode; first power the system completely down (just like in preparation for a system initialization).
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig4.png
+
+================================================================================
+RW10: Rewrite - reference to a diagram
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Can you show me the diagram of that?
+Rewrite: diagram of the dividing points between the high side and low side in the Coleman refrigeration circuit
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'refrigera'
+  [PASS] (rewrite) rewrite has 'diagram'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) shows a diagram
+
+Here is the refrigeration system diagram for the Coleman circuit.
+
+---
+
+Sources:
+- Coleman-Mechanical-controls-1.pdf (page 4, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > REFRIGERATION SYSTEM DIAGRAM): REFRIGERATION SYSTEM DIAGRAM
+
+Diagrams:
+- Coleman-Mechanical-controls-1.pdf (page 4, raster, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > REFRIGERATION SYSTEM DIAGRAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Coleman-Mechanical-controls-1_p3_img0.jpg
+- Coleman-Mechanical-controls-1.pdf (page 4, vector_figure, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > REFRIGERATION SYSTEM DIAGRAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Coleman-Mechanical-controls-1_p3_fig0.png
+
+================================================================================
+RW11: Rewrite - off-topic follow-up stays off-topic
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Do you have a good recipe for banana bread?
+Rewrite: Do you have a good recipe for banana bread?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'banana'
+  [PASS] (rewrite) rewrite lacks 'CCC'
+  [PASS] (rewrite) rewrite lacks 'thermostat'
+  [PASS] (rewrite) rewrite lacks 'diagnostic'
+  [PASS] (decision) kind is empty or insufficient
+
+⚠️  Insufficient Information
+
+The provided documents contain technical information regarding the CCC2 thermostat's diagnostic mode and error codes, but they do not contain any information or recipes for banana bread.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration)
+  Snippet: Diagnostic Description Comment Command 00 All outputs OFF 01 Low Speed Fan ON 02 Medium Speed Fan ON 03 High Speed Fan ON 04 Reversing Valve ON 05…
+
+
+================================================================================
+RW12: Rewrite - does not invent a model
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: What temperature difference should I see between the return and discharge air?
+Rewrite: What temperature difference should I see between the return and discharge air of an RV air conditioner?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'temperature'
+  [PASS] (rewrite) rewrite has 'return|discharge'
+  [PASS] (rewrite) rewrite lacks '457915'
+  [PASS] (rewrite) rewrite lacks 'blizzard'
+  [PASS] (rewrite) rewrite lacks 'penguin'
+  [PASS] (rewrite) rewrite lacks 'H540'
+  [PASS] (rewrite) rewrite lacks 'coleman'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites Air Conditioner Freeze-Up.pdf
+  [FAIL] (answer) says '18.{0,12}20' -- not in the reply
+
+A properly running air conditioning unit should have a temperature difference of approximately 18 to 22 degrees F between the return air and the discharge air. 
+
+Note that slightly less temperature differences may occur under extremely humid conditions, and differences greater than 22 degrees are possible in warm, dry weather or may be caused by restricted airflow over the evaporator.
+
+---
+
+Sources:
+- Coleman-Mechanical-controls-1.pdf (page 19, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > THEIR SOLUTIONS > Problem): A properly running air conditioning unit should have a temperature difference of approximately 18 to 22 degrees F.
+- Dometic/Guides/Air Conditioning/Air Conditioner Freeze-Up.pdf (page 1, TAKE THE FOLLOWING AIR TEMPERATURE READINGS-): There should be a difference of approximately 18-20 degrees between the return air temperature and the discharge air temperature.
+
+Diagrams:
+- Coleman-Mechanical-controls-1.pdf (page 19, vector_figure, AIR CONDITIONERS, REFER TO MANUAL R-332 (2-86) > THEIR SOLUTIONS > Problem): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Coleman-Mechanical-controls-1_p18_fig0.png
+
+================================================================================
+RW13: Rewrite - detail past the history truncation
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What does the last command in that list show?
+Rewrite: What does CCC2 diagnostic command 20 show?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (rewrite) rewrite has '\\b20\\b|ext'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'ext(ernal)?\\.?\\s*stage'
+
+The last command in the list (command 20) shows the external stage DIP switch position, which will display as "On" or "– –".
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 20 LCD shows Ext Stage DIP Switch Position „On‟ or „– – ‟
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+
+================================================================================
+C01: Clarify - which thermostat to reset, answered by name
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How do I reset my thermostat?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+  [PASS] (answer) offers 'CCC|comfort control|\\bCT\\b|LCD|button|analog|coleman'
+
+Which thermostat model are you using? The reset procedure differs depending on whether you have a CCC 2 thermostat or a CT thermostat.
+- Dometic CCC 2 thermostat
+- CT thermostat
+
+Turn 2: The 5 button Comfort Control Center.
+Rewrite: How to reset Dometic CCC 2 Comfort Control Center thermostat
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'reset'
+  [FAIL] (rewrite) rewrite has '(5|five)[\\s-]*button' -- How to reset Dometic CCC 2 Comfort Control Center thermostat
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}] -- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf p4
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says 'zone'
+
+To perform a system reset on the CCC 2 thermostat, follow these steps:
+
+1. Ensure the CCC 2 thermostat is in **OFF** mode.
+2. Simultaneously press and hold the **MODE** and **ZONE** buttons.
+3. The LCD will display "**IniT**" and all available zones.
+4. Release the **MODE** and **ZONE** buttons.
+5. Press the **ON/OFF** button to exit system setup.
+
+**Note:** Performing a system reset restores the factory default settings. Ask me for the full steps of any stage if needed.
+
+Steps:
+1. Make sure the CCC 2 thermostat is in the OFF mode. (Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf, p.4, ABOUT YOUR NEW THERMOSTAT)
+2. Simultaneously press and hold the MODE and ZONE buttons. (Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf, p.4, ABOUT YOUR NEW THERMOSTAT)
+3. Wait for the LCD to display “IniT” and all available zones. (Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf, p.4, ABOUT YOUR NEW THERMOSTAT)
+4. Release the MODE and ZONE buttons. (Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf, p.4, ABOUT YOUR NEW THERMOSTAT)
+5. Press the ON/OFF button to exit system set up. (Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf, p.4, ABOUT YOUR NEW THERMOSTAT)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf (page 4, ABOUT YOUR NEW THERMOSTAT): Once the system is completely installed, do a system reset:
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf (page 1, vector_figure, CCC II Operating Instructions): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC II Operating Instructions-0c91c56c_p0_fig0.png
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf (page 4, vector_figure, ABOUT YOUR NEW THERMOSTAT): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC II Operating Instructions-0c91c56c_p3_fig0.png
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Operating Instructions.pdf (page 4, vector_figure, ABOUT YOUR NEW THERMOSTAT): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC II Operating Instructions-0c91c56c_p3_fig1.png
+
+================================================================================
+C08: Clarify - not needed when the model is already established
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How do I reset the thermostat?
+Rewrite: How do I reset the CT thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'reset|initiali[sz]'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says '\\bup\\b'
+  [FAIL] (answer) says 'power.{0,30}down|blank' -- not in the reply
+
+To reset the thermostat (System Initialization), perform the following steps:
+
+1. Press the MODE and UP buttons at the exact same time.
+2. Once two dashes appear on the display, release the MODE and UP buttons.
+3. Turn the thermostat off and back on using the MODE button to complete the initialization.
+
+**Note:** For thermostats equipped with Bluetooth, system initialization also resets the Bluetooth system and removes all known mobile device pairs. Any previously paired mobile devices will need to be paired again.
+
+If you have difficulty pressing the buttons at the same time, you can remove the faceplate and touch the spades on the PCB directly.
+
+Steps:
+System Initialization (System Reset):
+1. Press the MODE and UP buttons at the exact same time. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+2. Once two dashes appear on the display, release the MODE and UP buttons. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+3. Turn the thermostat off and back on using the MODE button to complete the initialization. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.3, System Initialization (System Reset))
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, System Initialization (System Reset)): Once you see the two dashes appear on the display you can now release the MODE and UP Buttons.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT-Bluetooth.pdf (page 21, BLUETOOTH® PROGRAMMING AND OPERATION > G. A Note On CT Thermostat Factory Reset And Lost Pairs): On CT thermostats equipped with Bluetooth® control the system initialization feature also resets the Bluetooth® system and removes all known mobile device pairs from the CT thermostat.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, raster, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 3, vector_figure, System Initialization (System Reset)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p2_fig2.png
+
+================================================================================
+C09: Clarify - answered by position
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: The second one.
+Rewrite: Blizzard H5403XX non-ducted maximum roof thickness for installation
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'non[\\s-]*ducted'
+  [PASS] (rewrite) rewrite has 'roof'
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]} -- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf p9, Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf p10
+  [FAIL] (answer) says '3[\\s-]*(3/4|¾)|3\\.75' -- not in the reply
+
+For the Blizzard H5403XX Non-Ducted model, the standard installation handles ceiling thicknesses up to 6.25″. If your ceiling thickness is greater than 6.25″, you will require a Duct Divider Kit (3315575.000) and a Bolt Kit (3100895.014), which are available for purchase from Dometic.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig1.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig3.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p9_fig0.png
+
+================================================================================
+C10: Clarify - user doesn't know, so never ask twice
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: I'm not sure which one I have.
+Rewrite: maximum roof thickness for Blizzard air conditioner installation
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'blizzard'
+  [PASS] (rewrite) rewrite has 'roof|ducted'
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) says '\\b5\\b' -- not in the reply
+  [FAIL] (answer) says '1[\\s-]*(3/4|¾)|1\\.75' -- not in the reply
+
+For the Blizzard H5403XX Non-Ducted model, if the ceiling thickness is greater than 6.25 inches, you will require a Duct Divider Kit (3315575.000) and a Bolt Kit (3100895.014). 
+
+Because the documentation for the Ducted model does not explicitly state a maximum thickness limit (only providing a table for adjustments), please confirm if your unit is the Ducted or Non-Ducted version to ensure I provide the exact specifications.
+
+================================================================================
+M02: Memory - return to a topic after a switch
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: In CCC2 diagnostic mode, which command shows the outdoor temperature?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\b10\\b'
+
+In CCC2 diagnostic mode, command **10** shows the outdoor temperature on the LCD (it will display E4 if the sensor is missing).
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 10 LCD shows Outdoor Temperature E4 if missing
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf (page 6, Diagnostic Mode): 10 LCD shows Outdoor Temperature | E4 if missing |
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf (page 6, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC II Reset & Diag-b46134c7_p5_fig0.png
+
+Turn 2: How does the MaxxFan rain sensor work?
+Rewrite: How does the MaxxFan rain sensor work?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites MaxxFan Operation.pdf
+
+When the MaxxFan rain sensor detects rain, it automatically turns the fan off and closes the lid. A blinking Red LED indicates that the rain sensor has shut the fan down. To reset the sensor and turn off the blinking Red LED, press the Rain Sensor key after the fan has dried.
+
+---
+
+Sources:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): When the Rain Sensor detects rain it will turn the fan Off and Close the lid.
+
+Diagrams:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img0.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, vector_figure, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_fig0.png
+
+Turn 3: Going back to the thermostat, what does that command show if the sensor is missing?
+Rewrite: What does CCC2 diagnostic mode command 10 show if the outdoor temperature sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)|thermostat'
+  [PASS] (rewrite) rewrite has 'outdoor|\\b10\\b'
+  [PASS] (rewrite) rewrite lacks 'maxx'
+  [PASS] (rewrite) rewrite lacks 'rain'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bE4\\b'
+
+Depending on which sensor is missing, the command shows the following:
+
+*   **Command 09 (Indoor Temperature):** Displays **E2** if the remote sensor is missing.
+*   **Command 10 (Outdoor Temperature):** Displays **E4** if the sensor is missing.
+*   **Command 11 (Evaporator Coil Temperature):** Displays **E5** if the sensor is missing.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 09 LCD shows Indoor Temperature for the Remote Sensor E2 if missing, E3 if shorted
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf (page 6, Diagnostic Mode): 09 LCD shows Indoor Temperature for the Remote Sensor E2 if missing, E3 if shorted
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf (page 6, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC II Reset & Diag-b46134c7_p5_fig0.png
+
+================================================================================
+M04: Memory - reference older than the history window
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: What was the answer to the very first thing I asked you?
+Rewrite: How does the MaxxFan rain sensor work?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [FAIL] (decision) kind is clarify or insufficient -- got answer
+  [PASS] (answer) does not say 'water column'
+
+The answer to your first question ("How does the MaxxFan rain sensor work?") was: "When it detects rain it turns the fan off and closes the lid."
+
+---
+
+Sources:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): When the Rain Sensor detects rain it will turn the fan Off and Close the lid.
+
+Diagrams:
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img0.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img1.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img2.jpg
+- Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, raster, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/MaxxFan Operation-62d113ef_p5_img3.jpg
+
+================================================================================
+M05: Memory - compare two models discussed earlier
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I enter diagnostic mode on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+
+To enter diagnostic mode on the CCC2 thermostat, ensure the thermostat is turned "OFF" (indicated by either a blank display or only the clock showing). Then, simultaneously press the **"Program"**, **"Fan"**, and **"F/C"** buttons.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, System Configuration): To enter the diagnostic mode, simultaneously press the “Program”, “Fan” & “F/C” buttons.
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, CCC2 Diagnostic Mode With Reset): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img0.png
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, CCC2 Diagnostic Mode With Reset): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img1.png
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img2.png
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img3.png
+
+Turn 2: And on the CT thermostat?
+Rewrite: How to enter diagnostic mode on the CT thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+
+To enter diagnostic mode on the CT thermostat, follow these steps:
+
+1. Power the system completely down.
+2. Press the **MODE** button (located on the left side of the thermostat) several times until the screen is blank.
+3. Simultaneously press the **MODE**, **UP**, and **DOWN** buttons once (you can simply press and release all three at the same time).
+
+Once successful, the display should read "00".
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, Diagnostic Mode): To prepare the thermostat for the system Diagnostic Mode; first power the system completely down (just like in preparation for a system initialization).
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig1.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig2.png
+
+Turn 3: How do those two button combinations differ?
+Rewrite: difference between diagnostic mode button combinations for CCC2 thermostat and CT thermostat
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'program'
+  [PASS] (answer) says 'F\\s*/\\s*C'
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+  [PASS] (answer) at most 1 extra searches
+
+The button combinations for entering diagnostic mode differ as follows:
+
+* **CCC2 Thermostat**: Requires simultaneously pressing the **"Program"**, **"Fan"**, and **"F/C"** buttons while the thermostat is "OFF".
+* **CT Thermostat**: Requires simultaneously pressing the **"MODE"**, **"UP"**, and **"DOWN"** buttons after the system is powered down and the MODE button has been pressed several times to leave a blank screen.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, System Configuration): To enter the diagnostic mode, simultaneously press the “Program”, “Fan” & “F/C” buttons.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, Diagnostic Mode): At this point, now press all three buttons at the same time (MODE, UP, & DOWN).
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img2.png
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 1, raster, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p0_img3.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig0.png

@@ -1,0 +1,230 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-25 13:58:20
+Model: Gemma-4-26B-A4B   Embeddings: Qwen3-Embedding-8B   Repeat: 1   Rewrite only
+================================================================================
+
+PASS  RW01   1/1  Rewrite - pronoun
+PASS  RW02   1/1  Rewrite - ellipsis to another model
+PASS  RW03   1/1  Rewrite - reference to a step number
+PASS  RW04   1/1  Rewrite - standalone question stays unchanged
+PASS  RW05   1/1  Rewrite - topic switch drops the old model
+PASS  RW06   1/1  Rewrite - correction
+PASS  RW07   1/1  Rewrite - keeps an exact error code
+PASS  RW08   1/1  Rewrite - keeps an exact part number
+PASS  RW09   1/1  Rewrite - reply to a clarifying question restores the question
+PASS  RW10   1/1  Rewrite - reference to a diagram
+PASS  RW11   1/1  Rewrite - off-topic follow-up stays off-topic
+PASS  RW12   1/1  Rewrite - does not invent a model
+PASS  RW13   1/1  Rewrite - detail past the history truncation
+PASS  C08    1/1  Clarify - not needed when the model is already established
+PASS  C09    1/1  Clarify - answered by position
+PASS  C10    1/1  Clarify - user doesn't know, so never ask twice
+PASS  M03    1/1  Memory - reference beyond the carried documents
+
+Runs passed: 17/17
+Failed checks by stage: none
+
+
+================================================================================
+RW01: Rewrite - pronoun
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I get out of it?
+Rewrite: How do I exit diagnostic mode on the CCC2 thermostat?
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+
+================================================================================
+RW02: Rewrite - ellipsis to another model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: And on the CCC2?
+Rewrite: How to enter diagnostic mode on the CCC2 thermostat
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite lacks '\\bCT\\b'
+
+================================================================================
+RW03: Rewrite - reference to a step number
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What was step 4 again?
+Rewrite: How to reset the 4 button Comfort Control Center: step 4 (depress and hold the temperature UP and DOWN buttons, while holding them, depress the MODE button once and release)
+  [PASS] (rewrite) rewrite has 'reset'
+  [PASS] (rewrite) rewrite has '(4|four)[\\s-]*button'
+
+================================================================================
+RW04: Rewrite - standalone question stays unchanged
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What propane gas pressure does the Atwood 89 series furnace require?
+Rewrite: What propane gas pressure does the Atwood 89 series furnace require?
+  [PASS] (rewrite) rewrite has '\\b89\\b'
+  [PASS] (rewrite) rewrite has 'pressure'
+  [PASS] (rewrite) rewrite lacks 'CCC'
+  [PASS] (rewrite) rewrite lacks 'thermostat'
+  [PASS] (rewrite) rewrite lacks '\\bE1\\b'
+
+================================================================================
+RW05: Rewrite - topic switch drops the old model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How does the rain sensor on the MaxxFan work?
+Rewrite: How does the rain sensor on the MaxxFan work?
+  [PASS] (rewrite) rewrite has 'rain sensor'
+  [PASS] (rewrite) rewrite has 'maxx'
+  [PASS] (rewrite) rewrite lacks 'blizzard'
+  [PASS] (rewrite) rewrite lacks 'ducted'
+  [PASS] (rewrite) rewrite lacks 'roof thickness'
+
+================================================================================
+RW06: Rewrite - correction
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: No, sorry, I meant the CT thermostat.
+Rewrite: How to reset the CT thermostat
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'reset|initiali[sz]'
+  [PASS] (rewrite) rewrite lacks '(5|five)[\\s-]*button'
+
+================================================================================
+RW07: Rewrite - keeps an exact error code
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What about E5?
+Rewrite: What does error code E5 mean on the CCC2 thermostat?
+  [PASS] (rewrite) rewrite has '\\bE5\\b'
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite lacks '\\bE1\\b'
+
+================================================================================
+RW08: Rewrite - keeps an exact part number
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: And what is 33063?
+Rewrite: What is part number 33063?
+  [PASS] (rewrite) rewrite has '33063'
+
+================================================================================
+RW09: Rewrite - reply to a clarifying question restores the question
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: CT
+Rewrite: How to enter diagnostic mode on CT thermostat
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'diagnostic'
+
+================================================================================
+RW10: Rewrite - reference to a diagram
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Can you show me the diagram of that?
+Rewrite: diagram of the dividing points between the high side and low side in the Coleman refrigeration circuit
+  [PASS] (rewrite) rewrite has 'refrigera'
+  [PASS] (rewrite) rewrite has 'diagram'
+
+================================================================================
+RW11: Rewrite - off-topic follow-up stays off-topic
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Do you have a good recipe for banana bread?
+Rewrite: Do you have a good recipe for banana bread?
+  [PASS] (rewrite) rewrite has 'banana'
+  [PASS] (rewrite) rewrite lacks 'CCC'
+  [PASS] (rewrite) rewrite lacks 'thermostat'
+  [PASS] (rewrite) rewrite lacks 'diagnostic'
+
+================================================================================
+RW12: Rewrite - does not invent a model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What temperature difference should I see between the return and discharge air?
+Rewrite: What temperature difference should I see between the return and discharge air of an RV air conditioner?
+  [PASS] (rewrite) rewrite has 'temperature'
+  [PASS] (rewrite) rewrite has 'return|discharge'
+  [PASS] (rewrite) rewrite lacks '457915'
+  [PASS] (rewrite) rewrite lacks 'blizzard'
+  [PASS] (rewrite) rewrite lacks 'penguin'
+  [PASS] (rewrite) rewrite lacks 'H540'
+  [PASS] (rewrite) rewrite lacks 'coleman'
+
+================================================================================
+RW13: Rewrite - detail past the history truncation
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What does the last command in that list show?
+Rewrite: What does CCC2 diagnostic command 20 show?
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (rewrite) rewrite has '\\b20\\b|ext'
+
+================================================================================
+C08: Clarify - not needed when the model is already established
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How do I reset the thermostat?
+Rewrite: How do I reset the CT thermostat?
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'reset|initiali[sz]'
+
+================================================================================
+C09: Clarify - answered by position
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: The second one.
+Rewrite: Blizzard H5403XX non-ducted maximum roof thickness for installation
+  [PASS] (rewrite) rewrite has 'non[\\s-]*ducted'
+  [PASS] (rewrite) rewrite has 'roof'
+
+================================================================================
+C10: Clarify - user doesn't know, so never ask twice
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: I'm not sure which one I have.
+Rewrite: maximum roof thickness for Blizzard air conditioner installation
+  [PASS] (rewrite) rewrite has 'blizzard'
+  [PASS] (rewrite) rewrite has 'roof|ducted'
+
+================================================================================
+M03: Memory - reference beyond the carried documents
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Back to the evaporator coil command I asked about first, what is displayed if that sensor is missing?
+Rewrite: What is displayed in CCC2 diagnostic mode if the evaporator coil temperature sensor is missing?
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite has 'evaporator|coil|\\b11\\b'

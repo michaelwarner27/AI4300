@@ -1,0 +1,157 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-25 14:01:30
+Model: Gemma-4-26B-A4B   Embeddings: Qwen3-Embedding-8B   Repeat: 1
+================================================================================
+
+PASS  RW09   1/1  Rewrite - reply to a clarifying question restores the question
+FAIL  C01    0/1  Clarify - which thermostat to reset, answered by name
+             x1 cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}]
+FAIL  C09    0/1  Clarify - answered by position
+             x1 cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]}
+             x1 says '3[\\s-]*(3/4|¾)|3\\.75'
+PASS  M04    1/1  Memory - reference older than the history window
+
+Runs passed: 2/4
+Failed checks by stage: answer 3
+
+
+================================================================================
+RW09: Rewrite - reply to a clarifying question restores the question
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: CT
+Rewrite: How to enter diagnostic mode on CT thermostat
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'diagnostic'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites CT Reset & Diag.pdf
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says '\\bup\\b'
+  [PASS] (answer) says '\\bdown\\b'
+  [PASS] (answer) does not say 'F\\s*/\\s*C'
+
+To enter Diagnostic Mode on the CT Thermostat, follow these steps to power down the system and press the required buttons:
+
+1. Power the system completely down.
+2. Press the **MODE** button (located on the left side of the thermostat) several times until the screen is blank.
+3. Press the **MODE**, **UP**, and **DOWN** buttons simultaneously (a simple press and release of all three at once is sufficient).
+
+Once successful, the display will show "00". You can then use the **UP** and **DOWN** arrows to cycle through the diagnostic commands.
+
+Steps:
+Preparation:
+1. Power the system completely down. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+2. Press the MODE Button located on the left hand side of the thermostat a few times until you are left with a blank screen. (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+
+Entering Diagnostic Mode:
+1. Press the MODE, UP, & DOWN buttons all at the same time (press and release all three buttons at the same time). (Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf, p.4, Diagnostic Mode)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, Diagnostic Mode): To prepare the thermostat for the system Diagnostic Mode; first power the system completely down (just like in preparation for a system initialization).
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 4, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p3_fig4.png
+
+================================================================================
+C01: Clarify - which thermostat to reset, answered by name
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How do I reset my thermostat?
+Kind: clarify   Status: clarification_requested   Extra searches: 0
+  [PASS] (decision) kind is clarify
+  [PASS] (answer) offers 'CCC|comfort control|\\bCT\\b|LCD|button|analog|coleman'
+
+Which thermostat model are you using? The reset procedure varies depending on the model.
+- CCC 2 thermostat (CCC2-Operating-Instructions.pdf)
+- CT thermostat (CT-SZLCD/CT Reset & Diag.pdf)
+- CCC II 10 Button thermostat (CCC II Operating Instructions.pdf)
+
+Turn 2: The 5 button Comfort Control Center.
+Rewrite: 5 button Comfort Control Center thermostat reset procedure
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'reset'
+  [PASS] (rewrite) rewrite has '(5|five)[\\s-]*button'
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites one of [{'file': '5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf', 'pages': [8]}, {'file': 'AC-HP Diag Service Manual.pdf', 'pages': [31]}, {'file': 'Service Manual AC_3311071.017.pdf', 'pages': [31]}] -- CCC2-Operating-Instructions.pdf p11
+  [PASS] (answer) says 'mode'
+  [PASS] (answer) says 'zone'
+
+To reset the CCC 2 (Comfort Control Center 2) thermostat, follow these steps:
+
+**Note:** A system reset is required whenever dip switch settings are changed so the thermostat can recognize the updated configuration.
+
+1. Ensure the CCC 2 thermostat is in **OFF** mode.
+2. Simultaneously press and hold the **MODE** and **ZONE** buttons. The LCD should display "IniT" and all available zones.
+3. Release the **MODE** and **ZONE** buttons.
+4. Press the **ON/OFF** button to exit system setup.
+
+Steps:
+1. Make sure the CCC 2 thermostat is in the OFF mode. (CCC2-Operating-Instructions.pdf, p.11, LCD Error Code > System Reset Procedure)
+2. Simultaneously press the MODE and ZONE buttons. (CCC2-Operating-Instructions.pdf, p.11, LCD Error Code > System Reset Procedure)
+3. Release the MODE and ZONE buttons. (CCC2-Operating-Instructions.pdf, p.11, LCD Error Code > System Reset Procedure)
+4. Press the ON/OFF button to exit system set up. (CCC2-Operating-Instructions.pdf, p.11, LCD Error Code > System Reset Procedure)
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 11, LCD Error Code > System Reset Procedure): To do a system reset: - Make sure the CCC 2 thermostat is in the OFF mode.
+
+================================================================================
+C09: Clarify - answered by position
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: The second one.
+Rewrite: Blizzard H5403XX non-ducted roof thickness for installation
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'non[\\s-]*ducted'
+  [PASS] (rewrite) rewrite has 'roof'
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Blizzard Installation H5403XX Non-Ducted.pdf', 'pages': [4]} -- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf p9
+  [FAIL] (answer) says '3[\\s-]*(3/4|¾)|3\\.75' -- not in the reply
+
+For the Blizzard H5403XX Non-Ducted model, if the ceiling thickness is greater than 6.25″, you will need to purchase a Duct Divider Kit (3315575.000) and a Bolt Kit (3100895.014) from Dometic.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): If ceiling thickness is greater than 6.25″, the application will require Duct Divider Kit 3315575.000 and Bolt Kit 3100895.014 which are available for purchase from Dometic.
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig1.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 9, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p8_fig3.png
+- Dometic/Guides/Air Conditioning/Blizzard/Blizzard Installation H5403XX Non-Ducted.pdf (page 10, vector_figure, INSTALLATION INSTRUCTIONS > I. Duct Divider Installation): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Blizzard Installation H5403XX Non-Ducted-38f297dc_p9_fig0.png
+
+================================================================================
+M04: Memory - reference older than the history window
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What was the answer to the very first thing I asked you?
+Rewrite: How does the MaxxFan rain sensor work?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (decision) kind is clarify or insufficient
+  [PASS] (answer) does not say 'water column'
+
+⚠️  Insufficient Information
+
+The earlier turns of this conversation are no longer visible, so I cannot retrieve the answer to the first question you asked.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf (page 6, KeyPad – Ceiling > - RAIN SENSOR – (Electric Lift Standard Models only))
+  Snippet: Figure on page 6 of MaxxFan Operation.pdf Context: Press this key to turn the Rain Sensor OFF. This will deactivate the Rain Sensor. The Red LED…
+
