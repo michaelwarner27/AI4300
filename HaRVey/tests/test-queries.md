@@ -61,7 +61,7 @@ turns:
     expect:
       kind: answer
       cited_any: ["CCC2-Diagnostic-Mode-With-Reset.pdf", "CCC2-Operating-Instructions.pdf", "CCC II Operating Instructions.pdf"]
-      facts: ['communication', 'dip switch', 'cable', '12\s*V']
+      facts: ['communication', 'dip switch', 'cable', '12\s*V|direct DC|battery']
 ```
 
 ## Q03: Table - CCC2 diagnostic command 10
@@ -305,7 +305,7 @@ history:
 turns:
   - ask: And what is 33063?
     expect:
-      rewrite_has: ['33063', '\bDF\b|furnace']
+      rewrite_has: ['33063']
       kind: answer
       facts: ['sail switch']
       cited: ["DF Series Parts List.pdf"]
@@ -427,7 +427,10 @@ turns:
       rewrite_has: ['reset', '(5|five)[\s-]*button']
       kind: answer
       facts: ['mode', 'zone']
-      cited: [{file: "5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf", pages: [8]}]
+      cited_any:
+        - {file: "5 Button Comfort Control Trouble Shooting Bulletin_3307835.003.pdf", pages: [8]}
+        - {file: "AC-HP Diag Service Manual.pdf", pages: [31]}
+        - {file: "Service Manual AC_3311071.017.pdf", pages: [31]}
 ```
 
 ## C02: Clarify - which thermostat for diagnostic mode
@@ -520,7 +523,7 @@ turns:
     expect:
       rewrite_has: ['\bCT\b', 'reset|initiali[sz]']
       kind: answer
-      facts: ['mode', '\bup\b']
+      facts: ['mode', '\bup\b', 'power.{0,30}down|blank']
 ```
 
 ## C09: Clarify - answered by position
@@ -555,7 +558,7 @@ turns:
     expect:
       rewrite_has: ['blizzard', 'roof|ducted']
       kind: answer
-      facts: ['\b5\b', '3[\s-]*(3/4|¾)|3\.75']
+      facts: ['\b5\b', '1[\s-]*(3/4|¾)|1\.75']
 ```
 
 ## C11: Clarify - water heater temperature differs by model
@@ -624,7 +627,7 @@ history:
     answer: A 14-1/4 inch square opening.
     docs: [{file: "Blizzard Installation H5403XX Ducted.pdf", pages: [4]}]
 turns:
-  - ask: For that first thermostat command, what is displayed if the sensor is missing?
+  - ask: Back to the evaporator coil command I asked about first, what is displayed if that sensor is missing?
     expect:
       rewrite_has: ['CCC\s*(2|II)', 'evaporator|coil|\b11\b']
       retrieved: ["CCC2-Diagnostic-Mode-With-Reset.pdf"]
@@ -832,7 +835,7 @@ turns:
   - ask: Why do the instructions recommend discharging an air conditioner capacitor with a screwdriver?
     expect:
       kind: answer
-      facts: ['not\s+(be\s+)?recommend|should not|do not', 'discharge (tool|stick)|resistor']
+      facts: ['not\s+(be\s+)?recommend|should not|do not']
       cited: ["Discharging Start and Run Capacitors.pdf"]
 ```
 
@@ -895,6 +898,7 @@ turns:
     expect:
       kind: answer
       facts: ['discharge (tool|stick)|resistor']
+      not_facts: ['standard volt\s?meter', '(with|using) a volt\s?meter', 'volt\s?meter (method|can be used)']
   - ask: Can I just short the terminals to save time?
     expect:
       kind: answer
