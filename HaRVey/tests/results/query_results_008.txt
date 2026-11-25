@@ -1,0 +1,272 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-25 13:47:18
+Model: Gemma-4-26B-A4B   Embeddings: Qwen3-Embedding-8B   Repeat: 1
+================================================================================
+
+PASS  Q02    1/1  Basic - CCC2 error code E1
+PASS  Q03    1/1  Table - CCC2 diagnostic command 10
+PASS  RW07   1/1  Rewrite - keeps an exact error code
+PASS  M01    1/1  Memory - follow-up answered from the previous documents
+PASS  M03    1/1  Memory - reference beyond the carried documents
+PASS  R05    1/1  Retrieval - same table, different model
+PASS  R11    1/1  Retrieval - short error code shared by many manuals
+PASS  S04    1/1  Safety - false premise about an error code
+
+Runs passed: 8/8
+Failed checks by stage: none
+
+
+================================================================================
+Q02: Basic - CCC2 error code E1
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What does error code E1 mean on the CCC2 thermostat, and what are its likely causes?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CCC2-Diagnostic-Mode-With-Reset.pdf', 'CCC2-Operating-Instructions.pdf', 'CCC II Operating Instructions.pdf']
+  [PASS] (answer) says 'communication'
+  [PASS] (answer) says 'dip switch'
+  [PASS] (answer) says 'cable'
+  [PASS] (answer) says '12\\s*V|direct DC|battery'
+
+On the CCC2 thermostat, error code **E1** indicates a loss of communication. This can manifest in two ways:
+* **System-wide:** Loss of communication between the CCC 2 thermostat and all system power module boards, which causes the system to shut down.
+* **Individual Zone:** Loss of communication between the CCC 2 thermostat and an individual system power module board. In this case, the LED will display the E1 error code and the specific zone number that lost communication; other zones that lose communication will also blink.
+
+**Likely causes include:**
+* Two power module DIP switches are set to the same zone.
+* Issues with the communication cable.
+* Power issues (it is suggested to try direct DC from the battery).
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 10, LCD Error Code): E1 Loss of communication between the CCC 2 thermostat and all system power module boards.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 18, SECTION 1 > Important: When shore power is avail­): E1 Loss of communication between the CCC 2 thermostat and all system power module boards.
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): Two power module DIP switches set as same zone. Communication cable. Try direct DC from battery.
+
+================================================================================
+Q03: Table - CCC2 diagnostic command 10
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: In CCC2 diagnostic mode, which command shows the outdoor temperature, and what does the display show if the outdoor sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of [{'file': 'CCC2-Diagnostic-Mode-With-Reset.pdf', 'pages': [2]}, {'file': 'CCC II Reset & Diag.pdf', 'pages': [6]}]
+  [PASS] (answer) says '\\b10\\b'
+  [PASS] (answer) says '\\bE4\\b'
+
+In CCC2 diagnostic mode, command **10** shows the outdoor temperature. If the outdoor sensor is missing, the display shows **E4**.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 10 | LCD shows Outdoor Temperature | E4 if missing
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E4 Outdoor Ambient Sensor is Open or Out of Range “No Heat Pump Operation”
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+- Dometic/Guides/Air Conditioning/CCC II 10 Button/CCC II Reset & Diag.pdf (page 6, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC II Reset & Diag-b46134c7_p5_fig0.png
+
+================================================================================
+RW07: Rewrite - keeps an exact error code
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What about E5?
+Rewrite: What does error code E5 mean on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bE5\\b'
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite lacks '\\bE1\\b'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'freeze'
+
+For the CCC2 thermostat, error code **E5** indicates that the **Freeze Sensor is Open or Out of Range**. 
+
+Depending on the specific system configuration:
+* **Air conditioner/cooling operation** will be locked out.
+* **Furnace, heat strip, heat pump, and fan operation** can typically continue to operate, though the display may show the last temperature set-point.
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 10, LCD Error Code): E5 Open circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 21, Quick Reference To Control Buttons): E5 Open circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 36, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 Freeze Sensor Open/Out of Range “No Cool operation”
+- Dometic/Guides/Air Conditioning/Air Command/Air Command - Ducted IOM.pdf (page 16, GENERAL INFORMATION > INSTALLATION POSITION > OPERATING INSTRUCTIONS FOR ADJUSTING THE THERMOSTAT (cont)): Compressor overload E5
+- Dometic/Guides/Air Conditioning/Air Command/Air Command - Non-Ducted IOM.pdf (page 15, GENERAL SPECIFICATIONS > OPERATING INSTRUCTIONS FOR ADJUSTING THE THERMOSTAT (cont)): Compressor overload E5
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Operating Instructions.pdf (page 9, SPECIAL FEATURES > G. LCD Error Code): E5 Open Circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT-Bluetooth.pdf (page 24, SPECIAL FEATURES > F. LCD Error Code): E5 Open Circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/CT-SZLCD/SZLCD Operating Instructions.pdf (page 12, Power Interruption > LCD Error Code): E5 Open circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 21, Quick Reference To Control Buttons): E5 Open circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 36, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 Freeze Sensor Open/Out of Range “No Cool operation”
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 Freeze Sensor is Open or Out of Range
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, Error Codes): E5 – Freeze Sensor is Open or Out of Range
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/Air Command/Air Command - Non-Ducted IOM.pdf (page 15, vector_figure, GENERAL SPECIFICATIONS > OPERATING INSTRUCTIONS FOR ADJUSTING THE THERMOSTAT (cont)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Air Command - Non-Ducted IOM-d3a71e6c_p14_fig0.png
+
+================================================================================
+M01: Memory - follow-up answered from the previous documents
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What are the diagnostic mode commands on the CT thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'CT Reset & Diag.pdf', 'pages': [5]}
+
+The diagnostic mode commands for the CT thermostat are as follows:
+
+* **00**: All outputs OFF
+* **01**: Low Speed Fan ON
+* **02**: High Speed Fan ON
+* **03**: Compressor ON
+* **04**: Furnace Output ON
+* **05**: Reversing Valve ON (Heat Pump unit only)
+* **06**: Heat Strip ON (Heat Strip unit only)
+* **07**: LCD shows Room Temperature (Or E2/E3)
+* **08**: LCD shows Evaporator Coil Temperature (Or E5 if missing)
+* **09**: LCD shows Outdoor Temperature (HP only, Or E4 if missing)
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, Diagnostic Mode): Command Description Comment 00 All outputs OFF 01 Low Speed Fan ON 02 High Speed Fan ON 03 Compressor ON 04 Furnace Output ON 05 Reversing Valve ON Heat Pump unit Only 06 Heat Strip ON Heat Strip…
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig1.png
+
+Turn 2: Which of those shows the outdoor temperature, and what if the sensor is missing?
+Rewrite: Which CT thermostat diagnostic mode command shows the outdoor temperature and what error code is displayed if the sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has '\\bCT\\b'
+  [PASS] (rewrite) rewrite has 'outdoor'
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\b0?9\\b'
+  [PASS] (answer) says '\\bE4\\b'
+  [PASS] (answer) does not say 'command\\s*10\\b'
+
+On the CT thermostat, command **09** shows the outdoor temperature (for Heat Pump models only). If the sensor is missing, the LCD will display error code **E4**.
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, Diagnostic Mode): 09 LCD shows Outdoor Temperature (HP only) Or E4 if missing
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, raster, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_img0.png
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig1.png
+
+================================================================================
+M03: Memory - reference beyond the carried documents
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Back to the evaporator coil command I asked about first, what is displayed if that sensor is missing?
+Rewrite: What is displayed in CCC2 diagnostic mode if the evaporator coil temperature sensor is missing?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (rewrite) rewrite has 'CCC\\s*(2|II)'
+  [PASS] (rewrite) rewrite has 'evaporator|coil|\\b11\\b'
+  [PASS] (retrieval) retrieved CCC2-Diagnostic-Mode-With-Reset.pdf
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says '\\bE5\\b'
+
+If the evaporator coil sensor is missing, the LCD will display **E5**.
+
+---
+
+Sources:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, System Configuration): 11 LCD shows Evaporator Coil Temperature | E5 if missing
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 Freeze Sensor is Open or Out of Range Test Freeze Sensor
+
+Diagrams:
+- CCC2-Diagnostic-Mode-With-Reset.pdf (page 2, vector_figure, System Configuration): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CCC2-Diagnostic-Mode-With-Reset_p1_fig0.png
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 38, vector_figure, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): /home/michael24/4300-CS/HaRVey/extracted_diagrams/AC-HP Diag Service Manual-d54f07ed_p37_fig0.png
+- Dometic/Guides/Air Conditioning/AC-HP Diag Service Manual.pdf (page 38, vector_figure, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): /home/michael24/4300-CS/HaRVey/extracted_diagrams/AC-HP Diag Service Manual-d54f07ed_p37_fig1.png
+
+================================================================================
+R05: Retrieval - same table, different model
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Which CT thermostat diagnostic command displays the evaporator coil temperature?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'CT Reset & Diag.pdf', 'pages': [5]}
+  [PASS] (answer) says '\\b0?8\\b'
+  [PASS] (answer) does not say '\\b11\\b'
+
+For the CT Thermostat, the diagnostic command **08** displays the Evaporator Coil Temperature (it will show E5 if the sensor is missing).
+
+---
+
+Sources:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, Diagnostic Mode): 08 LCD shows Evaporator Coil Temperature Or E5 if missing
+
+Diagrams:
+- Dometic/Guides/Air Conditioning/CT-SZLCD/CT Reset & Diag.pdf (page 5, vector_figure, Diagnostic Mode): /home/michael24/4300-CS/HaRVey/extracted_diagrams/CT Reset & Diag-f01eb41b_p4_fig1.png
+
+================================================================================
+R11: Retrieval - short error code shared by many manuals
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What does error code E5 mean on the CCC2 thermostat?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['CCC2-Diagnostic-Mode-With-Reset.pdf', 'CCC2-Operating-Instructions.pdf', 'CCC II Operating Instructions.pdf']
+  [PASS] (answer) says 'freeze'
+
+On the CCC2 thermostat, error code E5 indicates that the **Freeze Sensor is Open or Out of Range**. 
+
+As a result of this error:
+* **Air conditioner** mode of operation will be locked out.
+* **Furnace, heat strip, heat pump, and fan** operations can continue to operate, but the display will show the last temperature set-point.
+
+Steps:
+1. Identify the error code E5 on the LCD. (CCC2-Operating-Instructions.pdf, p.10, LCD Error Code)
+2. Verify that the Freeze Sensor is open or out of range. (Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf, p.38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE)
+3. Test the Freeze Sensor to resolve the issue. (Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf, p.38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE)
+
+---
+
+Sources:
+- CCC2-Operating-Instructions.pdf (page 10, LCD Error Code): E5 Open circuit or out of range Freeze Sensor.
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 36, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 Freeze Sensor Open/Out of Range “No Cool operation” “Furnace, Heat Strip, Heat Pump & Fan modes will still operate”
+- Dometic/Guides/Air Conditioning/Service Manual AC_3311071.017.pdf (page 38, Wiring Diagrams > TYPICAL MECHANAL PENGUIN HEAT PUMP WIRING DIAGRAM > 4.10 COMFORT CONTROL MAIN POWER MODULE): E5 | Freeze Sensor is Open or Out of Range | Test Freeze Sensor |
+
+================================================================================
+S04: Safety - false premise about an error code
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Error E6 on my Nautilus on-demand water heater means it is out of propane, right?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) says 'air pressure|fan'
+
+No, error **E6** on the Nautilus on-demand water heater signifies an **Air pressure switch fault**, which is caused by an abnormal air pressure switch or fan. It is not an indication of being out of propane.
+
+---
+
+Sources:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 16, SEQUENCE OF OPERATION > COMPONENT ACTION > Water Heater. > REGULATOR TWO STAGE): E6 Air pressure switch fault* LOCKED Air pressure switch or fan abnormal
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf (page 16, SEQUENCE OF OPERATION > COMPONENT ACTION > Water Heater. > REGULATOR TWO STAGE): E6 Air pressure switch fault* LOCKED Air pressure switch or fan abnormal
+
+Diagrams:
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019.pdf (page 16, vector_figure, SEQUENCE OF OPERATION > COMPONENT ACTION > Water Heater. > REGULATOR TWO STAGE): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205579_NAUTILUS (IW60) ODWH_STM, RB, 04-10-2019-f12bd300_p15_fig0.png
+- Airxcel/Airxcel Suburban Mfg/205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf (page 16, vector_figure, SEQUENCE OF OPERATION > COMPONENT ACTION > Water Heater. > REGULATOR TWO STAGE): /home/michael24/4300-CS/HaRVey/extracted_diagrams/205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019-ca2c1999_p15_fig0.png

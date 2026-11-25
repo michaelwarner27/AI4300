@@ -1118,6 +1118,42 @@ class ChromaVectorStore:
         ))
         return items
 
+    def get_chunks_containing(
+        self, text: str, where: dict[str, Any], query_embedding: list[float] | None = None
+    ) -> list[dict[str, Any]]:
+        """
+        Stored chunks matching a metadata filter whose text contains `text`
+        (Chroma's case-sensitive substring match; callers check whole words).
+
+        With a query embedding, similarity_score is each chunk's cosine
+        similarity to it; otherwise 0.0. Same dict shape as get_chunks.
+
+        Raises:
+            RuntimeError: If the collection is not initialized or the query fails
+            ValueError: If where or text is empty
+        """
+        if not self.collection:
+            raise RuntimeError("Collection not initialized. Call initialize_collection() first.")
+        if not where or not text:
+            raise ValueError("A metadata filter and search text are required")
+        include = ["documents", "metadatas"] + (["embeddings"] if query_embedding else [])
+        try:
+            data = self.collection.get(where=where, where_document={"$contains": text}, include=include)
+        except Exception as e:
+            error_msg = f"Failed to search chunk text in vector store: {str(e)}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
+
+        ids = data.get("ids") or []
+        embeddings = data.get("embeddings") if query_embedding else None
+        items = []
+        for i, (chunk_id, document, metadata) in enumerate(
+            zip(ids, data.get("documents") or [], data.get("metadatas") or [])
+        ):
+            score = _cosine(query_embedding, embeddings[i]) if embeddings is not None else 0.0
+            items.append({"id": chunk_id, "content": document, "metadata": metadata, "similarity_score": score})
+        return items
+
     def get_stored_hash(self, filename: str) -> str | None:
         """
         Return the file hash stored in Chroma for a document, if any.

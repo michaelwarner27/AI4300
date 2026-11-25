@@ -15,7 +15,7 @@ from src.query.tools import (
     EmbeddingService, ChromaVectorStore, LLMService, MalformedToolCallError, NoToolCallError,
 )
 from src.utils.logging import get_logger
-from src.utils.part_numbers import split_keys
+from src.utils.part_numbers import extract_part_numbers, normalize_part, split_keys
 
 logger = get_logger()
 
@@ -58,7 +58,13 @@ DEFAULT_MIN_SIMILARITY = 0.5
 HYBRID_ALPHA = 0.6  # weight of cosine vs saturated BM25 in the blended score
 HYBRID_CANDIDATES = 30  # dense and BM25 hits each considered before blending
 PART_BOOST = 0.3  # added for chunks containing a specific part number from the query
-AGENT_LOOP_TOOLS = {"search_documents", "read_page", "read_section"}  # non-terminal tools handled by search_more
+# Exact-code lookup for short codes (error codes such as E1) that many manuals share,
+# so hybrid search fills up with the code from the wrong manual. See _code_matches.
+SHORT_CODE_MAX_CHARS = 3  # codes this short (after removing separators) get the automatic lookup
+AUTO_CODE_MATCHES = 5  # passages the automatic lookup adds to the first retrieval
+FIND_CODE_MAX_RESULTS = 10  # passages one find_code call returns
+CODE_MATCH_TYPE = "exact_code"
+AGENT_LOOP_TOOLS = {"search_documents", "read_page", "read_section", "find_code"}  # non-terminal tools handled by search_more
 DIAGRAM_CHUNK_TYPE = "diagram_reference"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DIAGRAM_DIR_NAME = "extracted_diagrams"
@@ -81,10 +87,10 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 ## Output
 - Every reply is exactly one tool call. Never reply with plain text.
 - Final replies: respond_to_user (an answer), insufficient_evidence (the documents do not cover the question) or ask_clarifying_question (see Finishing).
-- Gathering context (you continue afterwards): search_documents, read_section, read_page.
+- Gathering context (you continue afterwards): search_documents, read_section, read_page, find_code.
 
 ## Documents
-- Each retrieved document has a numeric "ref", a filename, a page, a chunk_type and its full text, listed in reading order.
+- Each retrieved document has a numeric "ref", a filename, a page, a chunk_type and its full text, listed in reading order, except that passages containing an exact code from the question ("matched_part") come first.
 - "neighbor": true means it was not matched directly but sits next to a match, or is a diagram on the same page as a match.
 - "earlier_turn": true means it was retrieved for an earlier question in this conversation and is still available.
 - "matched_part" means the passage contains that exact model, part or error code from the search. When the question names a specific model or part number, answer from passages for that exact number and do not substitute specifications or parts for a different model.
@@ -120,6 +126,7 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 - Signs the documents are incomplete: missing steps, "see section X", missing prerequisites, warnings or specifications, a procedure that starts or stops abruptly, or a heading without its content.
   * Found the start of a section (e.g. "MAINTENANCE > A. Air Filter") but not all of its content: call read_section with that document's filename and "section" value instead of searching again. For "see section X", call read_section with X
   * A document has no "section": call read_page for its page and the next one
+  * The question names a code (e.g. error code E1, a fault or part code) and no passage for the model asked about contains it: call find_code with that code, and the filename of that model's manual if you know it
   * Otherwise call search_documents with a short, targeted query for what is missing, optionally restricted with filename and page_start/page_end
   * Do not repeat a search, section read or page read you already made
   * You have a limited number of searches and reads in total; when told to stop, answer with what you have
@@ -220,6 +227,22 @@ TOOLS = [
                 "page_end": {"type": "integer", "description": f"Optional: last page to read (default: same as page_start, max {READ_PAGE_MAX_PAGES} pages per call)"}
             },
             "required": ["filename", "page_start"]
+        }
+    },
+    {
+        "name": "find_code",
+        "description": (
+            "Find every passage containing an exact code (e.g. error code E1, a fault or part code) in the manuals "
+            "already in your context, or in one named manual. Use it when search results show the code for other "
+            "models but not the one asked about. Returns the matching passages; then continue with another tool call."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "The exact code as written in the manuals, e.g. 'E1'"},
+                "filename": {"type": "string", "description": "Optional: only look in this source filename"}
+            },
+            "required": ["code"]
         }
     },
     {
@@ -585,7 +608,12 @@ def vector_store_search(state: QueryState) -> dict[str, Any]:
             search_results = _add_neighbors(vector_store, hits)
             diagrams = _page_diagrams(vector_store, hits, {_chunk_key(r) for r in search_results})
             if diagrams:
-                search_results = sorted(search_results + diagrams, key=_reading_order_key)
+                search_results = search_results + diagrams
+            codes = _short_codes(state.retrieval_query or state.original_query)
+            if codes:
+                search_results = _add_code_matches(vector_store, search_results, hits, codes, state.query_embedding)
+            # Passages with an exact code / part number from the question first, then reading order
+            search_results = sorted(search_results, key=_context_order_key)
 
         if not search_results:
             logger.warning("No results returned from vector store search")
@@ -761,6 +789,82 @@ def _reading_order_key(result: QueryResult) -> tuple[str, int, int]:
     return (result.metadata.source_filename, result.metadata.page_number, result.metadata.chunk_sequence)
 
 
+def _context_order_key(result: QueryResult) -> tuple[bool, str, int, int]:
+    """
+    Order of the documents the LLM sees: this turn's passages containing an
+    exact code or part number from the question first, then reading order.
+    """
+    return (not (result.matched_parts and not result.from_history), *_reading_order_key(result))
+
+
+def _short_codes(text: str) -> list[str]:
+    """Codes in text short enough to be shared by many manuals (E1, E10), as written."""
+    return [c for c in extract_part_numbers(text or "") if len(normalize_part(c)) <= SHORT_CODE_MAX_CHARS]
+
+
+def _has_code(text: str, code: str) -> bool:
+    """text contains code as a whole token, any case ("E1" matches "e1", not "E10" or "E1A")."""
+    return re.search(rf"(?<![A-Za-z0-9]){re.escape(code)}(?![A-Za-z0-9])", text or "", re.IGNORECASE) is not None
+
+
+def _code_matches(vector_store: Any, code: str, filenames: list[str],
+                  embedding: list[float] | None = None) -> list[QueryResult]:
+    """
+    Every stored chunk of the given manuals that contains code as a whole token,
+    marked matched_parts=[code] and match_type "exact_code". Ranked by cosine
+    similarity to the question's embedding when given (so "E1 on the CCC2" puts
+    the CCC2 passages first), otherwise in reading order.
+    """
+    if not filenames:
+        return []
+    names = sorted(set(filenames))
+    where = {"source_filename": {"$eq": names[0]}} if len(names) == 1 else {"source_filename": {"$in": names}}
+    found: dict[tuple[str, int], QueryResult] = {}
+    for variant in dict.fromkeys([code, code.upper(), code.lower()]):  # Chroma's $contains is case-sensitive
+        for raw in vector_store.get_chunks_containing(variant, where, embedding):
+            try:
+                result = _build_query_result(raw)
+            except (KeyError, TypeError):
+                continue
+            if _chunk_key(result) in found or not _has_code(result.content, code):
+                continue
+            result.matched_parts = [code]
+            result.match_type = CODE_MATCH_TYPE
+            found[_chunk_key(result)] = result
+    return sorted(found.values(), key=lambda r: (-r.similarity_score, _reading_order_key(r)))
+
+
+def _add_code_matches(vector_store: Any, results: list[QueryResult], hits: list[QueryResult],
+                      codes: list[str], embedding: list[float] | None) -> list[QueryResult]:
+    """
+    Automatic exact-code lookup for the first retrieval. Retrieved passages that
+    contain a short code from the question are marked with it; then up to
+    AUTO_CODE_MATCHES more passages containing it are added from the manuals of
+    the direct hits (best match to the question first). Failures are logged and
+    the results are returned unchanged.
+    """
+    try:
+        filenames = [h.metadata.source_filename for h in hits]
+        have = {_chunk_key(r) for r in results}
+        added: list[QueryResult] = []
+        for code in codes:
+            for r in results:
+                if _has_code(r.content, code) and code not in r.matched_parts:
+                    r.matched_parts = [*r.matched_parts, code]
+            for match in _code_matches(vector_store, code, filenames, embedding):
+                if len(added) >= AUTO_CODE_MATCHES:
+                    break
+                if _chunk_key(match) not in have:
+                    have.add(_chunk_key(match))
+                    added.append(match)
+    except Exception as e:
+        logger.warning(f"Exact-code lookup failed, continuing without it: {str(e)}")
+        return results
+    if added:
+        logger.info(f"vector_store_search: added {len(added)} passage(s) containing {codes}")
+    return results + added
+
+
 def _add_neighbors(vector_store: Any, results: list[QueryResult]) -> list[QueryResult]:
     """
     Add the chunks next to each of the top NEIGHBOR_TOP_HITS text hits
@@ -847,7 +951,7 @@ def add_history_documents(state: QueryState) -> dict[str, Any]:
         return {}
 
     logger.info(f"add_history_documents: carried over {len(carried)} document(s) from earlier turns")
-    update: dict[str, Any] = {"search_results": sorted(results + carried, key=_reading_order_key)}
+    update: dict[str, Any] = {"search_results": sorted(results + carried, key=_context_order_key)}
     if not results:
         update["status"] = "history_documents_only"
     return update
@@ -1258,6 +1362,57 @@ def _run_read_page(config: Any, params: dict, existing: list[QueryResult]) -> tu
     return new_results, "\n".join(lines)
 
 
+def _run_find_code(config: Any, params: dict, existing: list[QueryResult],
+                   embedding: list[float] | None = None) -> tuple[list[QueryResult], str]:
+    """
+    Execute a find_code call: passages containing an exact code, from the
+    manuals already in context (or one named manual), best match to the
+    question first, at most FIND_CODE_MAX_RESULTS.
+
+    Returns (new_results, tool_message_text). Matches already in context are
+    listed by ref, not repeated.
+
+    Raises:
+        ValueError, ConnectionError, RuntimeError on bad input or service errors
+    """
+    code = params.get("code")
+    if not isinstance(code, str) or not code.strip() or len(code.strip()) > 24:
+        raise ValueError("find_code requires a 'code' of 1-24 characters, e.g. 'E1'")
+    code = code.strip()
+    if params.get("filename"):
+        filenames = [_resolve_filename(params.get("filename"), existing)]
+    else:
+        filenames = sorted({r.metadata.source_filename for r in existing})
+    if not filenames:
+        raise ValueError("find_code needs a 'filename' when no documents are in context")
+
+    vector_store = ChromaVectorStore(
+        persist_directory=config.chroma_persist_directory,
+        collection_name=config.chroma_collection_name,
+    )
+    vector_store.initialize_collection()
+    matches = _code_matches(vector_store, code, filenames, embedding)
+    where = filenames[0] if len(filenames) == 1 else f"{len(filenames)} manuals in your context"
+    if not matches:
+        return [], f"No passage containing {code!r} in {where}. Answer with what you have, or try search_documents."
+
+    refs_by_key = {_chunk_key(r): ref for ref, r in enumerate(existing)}
+    already = [refs_by_key[_chunk_key(m)] for m in matches if _chunk_key(m) in refs_by_key]
+    new_results = [m for m in matches if _chunk_key(m) not in refs_by_key][:FIND_CODE_MAX_RESULTS]
+    lines = [f"{len(matches)} passage(s) containing {code!r} in {where}."]
+    if already:
+        lines.append(f"Already in your context (not repeated): refs {sorted(already)}.")
+    if new_results:
+        if len(matches) - len(already) > len(new_results):
+            lines.append(f"Showing the {len(new_results)} that best match the question.")
+        first_ref = len(existing)
+        parts = [_format_result_for_llm(first_ref + i, r) for i, r in enumerate(new_results)]
+        lines.append(f"New passage(s):\n{_to_json(parts)}")
+    else:
+        lines.append("Nothing new: every matching passage is already in your context.")
+    return new_results, "\n".join(lines)
+
+
 _SECTION_LABEL = re.compile(r"^(?:[A-Z]|\d{1,2}(?:\.\d+)*|[IVX]{1,4})[.)]\s+")
 
 
@@ -1416,6 +1571,9 @@ def search_more(state: QueryState) -> dict[str, Any]:
             new_results, content = _run_read_page(state.config, tool_call.parameters, search_results)
         elif tool_call.tool_name == "read_section":
             new_results, content = _run_read_section(state.config, tool_call.parameters, search_results)
+        elif tool_call.tool_name == "find_code":
+            new_results, content = _run_find_code(state.config, tool_call.parameters, search_results,
+                                                  state.query_embedding)
         else:
             new_results, content = _run_search(state.config, tool_call.parameters, search_results)
         search_results.extend(new_results)

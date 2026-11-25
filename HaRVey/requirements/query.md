@@ -30,6 +30,7 @@ User Query (+ chat history)
 │  vector_store_search    │ Hybrid search: dense + BM25 +
 │                         │ exact part numbers (top 10)
 │                         │ + same-section neighbor chunks
+│                         │ + exact-code lookup (short codes)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
@@ -47,7 +48,7 @@ User Query (+ chat history)
 │(LLM + tools) │     ┌─────┴────────┐
 └──────┬───────┘     │ search_more  │ search_documents /
        │ non-final   │ (max 3 rounds│ read_section /
-       ├────────────►│  or 300 s)   │ read_page
+       ├────────────►│  or 300 s)   │ read_page / find_code
        │ final answer└──────────────┘
        ↓
 ┌──────────────┐
@@ -58,7 +59,7 @@ User Query (+ chat history)
   Final Response (Output)
 ```
 
-`generate_response` is one agent turn. If the LLM calls `search_documents`, `read_section` or `read_page`, `search_more` runs it, adds the results to the conversation and returns to `generate_response`. A final answer (`respond_to_user` / `insufficient_evidence`) goes to `process_tool_call`.
+`generate_response` is one agent turn. If the LLM calls `search_documents`, `read_section`, `read_page` or `find_code`, `search_more` runs it, adds the results to the conversation and returns to `generate_response`. A final answer (`respond_to_user` / `insufficient_evidence`) goes to `process_tool_call`.
 
 ---
 
@@ -149,10 +150,12 @@ User Query (+ chat history)
 - Cutoff `SEARCH_MIN_SIMILARITY` from `.env` (default `DEFAULT_MIN_SIMILARITY` = 0.5; the same cutoff is used by `search_documents`): a chunk is kept when its cosine **or** its blended score reaches it, so everything dense-only search returned is still returned. Relevant chunks score about 0.55 and up on cosine, off-topic queries about 0.4 at best
 - Read each result's metadata: filename, page, chunk sequence, character range, and (with defaults, so older records still load) `chunk_type`, `diagram_kind`, `diagram_path`, `section_path` and `part_numbers`. `section_path` (`"A > B"`) is split back into `ChunkMetadata.section_headings`; the hybrid breakdown goes to `QueryResult.dense_score`, `bm25_score`, `match_type` and `matched_parts`
 - Add neighbor chunks (see below)
+- **Exact-code lookup**: when the search query contains a short code (3 characters or fewer, e.g. `E1`), mark retrieved passages that contain it and add up to 5 more passages containing it from the manuals of the direct hits, best match to the question first (`match_type` `exact_code`; see [hybrid_search.md](hybrid_search.md#exact-code-lookup-short-codes)). A failure is logged and the results are used unchanged
+- Order the results: this turn's passages carrying `matched_part` (exact part-number hits and exact-code matches) first, then reading order
 - Handle the no-results case gracefully (status: `no_results_found`)
 - Handle database connection errors
 
-**Neighbor context**: each of the top 5 text hits (`NEIGHBOR_TOP_HITS`) also brings the chunks immediately before and after it (`chunk_sequence` ±1, `NEIGHBOR_RADIUS`), **only if they are in the same section as the hit**. A heading is often in a different chunk than the text it introduces, so a hit alone can be misleading. Hits from records without a section accept any neighbor. A retrieval returns at most 10 matches + 10 neighbors, in reading order, with neighbors flagged `"neighbor": true`.
+**Neighbor context**: each of the top 5 text hits (`NEIGHBOR_TOP_HITS`) also brings the chunks immediately before and after it (`chunk_sequence` ±1, `NEIGHBOR_RADIUS`), **only if they are in the same section as the hit**. A heading is often in a different chunk than the text it introduces, so a hit alone can be misleading. Hits from records without a section accept any neighbor. A retrieval returns at most 10 matches + 10 neighbors (plus page diagrams and up to 5 exact-code matches), with neighbors flagged `"neighbor": true`.
 
 **Configuration**:
 - Persist directory: `CHROMA_PERSIST_DIRECTORY`
@@ -173,7 +176,7 @@ User Query (+ chat history)
 **Responsibilities**:
 - Copy the documents each of the last `HISTORY_DOC_TURNS` (2) turns **cited** (`ChatTurn.documents`, see `process_tool_call`), at most `MAX_HISTORY_DOCS` (30), most recent first
 - Skip chunks this turn already retrieved; flag the rest `from_history` (shown to the LLM as `"earlier_turn": true`)
-- Put the combined list in reading order, so every document has one `ref`
+- Put the combined list in order (this turn's `matched_part` documents first, then reading order; carried-over documents are never moved first), so every document has one `ref`
 - If this turn's search found nothing, the carried-over documents alone still allow an answer (status `history_documents_only`)
 
 ---
@@ -208,7 +211,7 @@ User Query (+ chat history)
 - `section`: present when the chunk has one. The duplicate `Section: ...` line that ingestion puts in the chunk text is removed from `text`
 - `neighbor`: `true` for neighbor chunks and passages from `read_section` / `read_page`
 - `earlier_turn`: `true` for documents carried over from earlier turns
-- `matched_part`: present when the passage contains a specific model / part / error code from the search query (e.g. `"457915.70X"`)
+- `matched_part`: present when the passage contains a specific model / part number from the search query (e.g. `"457915.70X"`) or was found by the exact-code lookup (e.g. `"E1"`). These documents are listed first
 - `diagram_kind`: only on `diagram_reference` chunks (no `diagram_path`: the LLM picks diagrams by ref)
 - Scores are not sent to the LLM
 
@@ -220,6 +223,7 @@ User Query (+ chat history)
 - When the question names a specific model or part number, answer from passages for that exact number (`matched_part`) and don't substitute another model's specifications
 - Give procedures as `steps`, one action each, in order, with citations
 - When context is incomplete (missing steps, "see section X", a heading without its content): call `read_section` for a section whose start was found, `read_page` when a document has no section, otherwise `search_documents`; never repeat the same call
+- When the question names a code and no passage for the model asked about contains it: call `find_code`
 - Select diagrams by `ref` only; never invent refs or file paths
 
 **Configuration**:
@@ -233,7 +237,7 @@ User Query (+ chat history)
 
 **Tool Calls**:
 
-The LLM makes one tool call per turn. `search_documents`, `read_section` and `read_page` are non-final (the loop continues); `respond_to_user` and `insufficient_evidence` end the turn.
+The LLM makes one tool call per turn. `search_documents`, `read_section`, `read_page` and `find_code` are non-final (the loop continues); `respond_to_user` and `insufficient_evidence` end the turn.
 
 **Tool 1: respond_to_user** (final)
 ```json
@@ -290,7 +294,17 @@ Both fields are required. `section` can be a full section path, or just a headin
 ```
 `page_start` and `filename` are required; `page_end` defaults to `page_start` and is clamped to 3 pages. Pages are PDF page numbers (the `page` shown in documents).
 
-**Tool 5: insufficient_evidence** (final)
+**Tool 5: find_code** (non-final)
+```json
+{
+  "name": "find_code",
+  "code": "E1",
+  "filename": "CCC2-Operating-Instructions.pdf"
+}
+```
+Only `code` is required (1-24 characters). Finds passages containing the exact code as a whole token, any case (`E1` matches `e1`, not `E10`), in every manual already in context or only in `filename`. Returns up to 10 new passages, best match to the question first, marked `matched_part`. Meant for short codes such as error codes that many manuals share.
+
+**Tool 6: insufficient_evidence** (final)
 ```json
 {
   "name": "insufficient_evidence",
@@ -303,7 +317,7 @@ Both fields are required. `section` can be a full section path, or just a headin
 
 ### 6b. search_more (agent loop)
 
-**Purpose**: Execute the LLM's `search_documents`, `read_section` or `read_page` call and feed the new context back.
+**Purpose**: Execute the LLM's `search_documents`, `read_section`, `read_page` or `find_code` call and feed the new context back.
 
 **Inputs**: The non-final tool call
 
@@ -317,13 +331,14 @@ Both fields are required. `section` can be a full section path, or just a headin
   - Longer sections are cut at 25 passages and the reply names the sub-sections not shown
   - Documents ingested without sections: the reply says to use `read_page`
 - `read_page`: fetch every chunk on a page range (max 3 pages) by metadata only, in reading order
+- `find_code`: Chroma substring search (`ChromaVectorStore.get_chunks_containing`) over the manuals in context (or one named manual), kept only when the code is a whole token, ranked by similarity to the question's embedding, at most `FIND_CODE_MAX_RESULTS` (10); matches already in context are listed by ref
 - Filenames are matched leniently (exact, or a unique substring of a filename in context; omitted when only one document is in context)
 - Skip chunks already in context (key: filename + chunk sequence); `read_section` and `read_page` list their refs instead of repeating them
 - Append new chunks to `search_results`; existing `ref` numbers never shift, new chunks continue the numbering (so `diagram_refs` stay valid)
 - Add the result as a `tool` message (full chunk text, in the same JSON format)
 - Report failures, empty results and bad parameters to the LLM as the tool result instead of aborting
 
-**Limits**: at most `MAX_SEARCH_ROUNDS` (3) non-final calls in total (all three tools share the budget) and `AGENT_DEADLINE_SECONDS` (300 s) since the first LLM turn. After either limit the non-final tools are no longer offered and the LLM is told to answer.
+**Limits**: at most `MAX_SEARCH_ROUNDS` (3) non-final calls in total (all four tools share the budget) and `AGENT_DEADLINE_SECONDS` (300 s) since the first LLM turn. After either limit the non-final tools are no longer offered and the LLM is told to answer.
 
 ---
 
@@ -557,6 +572,7 @@ DOCUMENT_INPUT_DIR=./documents
 - `SEARCH_DEFAULT_K`, `SEARCH_MAX_K` - Results per `search_documents` call (default: 5, 10)
 - `READ_PAGE_MAX_PAGES` - Pages per `read_page` call (default: 3)
 - `READ_SECTION_MAX_CHUNKS`, `READ_SECTION_LIST_LIMIT` - Passages per `read_section` call, sections listed on no match (default: 25, 60)
+- `SHORT_CODE_MAX_CHARS`, `AUTO_CODE_MATCHES`, `FIND_CODE_MAX_RESULTS` - Exact-code lookup: longest code that triggers the automatic pass, passages it adds, passages per `find_code` call (default: 3, 5, 10)
 - `MAX_HISTORY_TURNS`, `HISTORY_DOC_TURNS`, `MAX_HISTORY_DOCS` - Conversation history (default: 5, 2, 30)
 - `REWRITE_MAX_TOKENS`, `REWRITE_ANSWER_CHARS`, `REWRITE_MAX_QUERY_CHARS` - Follow-up rewriting (default: 4096, 1500, 500)
 - `DEFAULT_MAX_TOKENS`, `DEFAULT_LLM_TEMPERATURE`, `RETRY_LLM_TEMPERATURE`, `MAX_TOOL_CALL_RETRIES` - LLM call (default: 50000, 0.7, 0.9, 2)
@@ -612,7 +628,7 @@ The web UI removes the `Diagrams:` block from the answer text and shows those im
 
 ✅ **Agent Loop** - The LLM can search, read sections and read pages (3 rounds / 300 s) before answering
 
-✅ **Hybrid Search** - Dense similarity blended with BM25 and exact part-number matching, so a query naming a model, part or error code retrieves passages containing it (see [hybrid_search.md](hybrid_search.md))
+✅ **Hybrid Search** - Dense similarity blended with BM25 and exact part-number matching, so a query naming a model or part number retrieves passages containing it; short error codes shared by many manuals get an exact-code lookup inside the retrieved manuals (see [hybrid_search.md](hybrid_search.md))
 
 ✅ **Section Awareness** - Passages carry their heading path; neighbors stay in the hit's section; `read_section` fetches whole sections; citations show sections confirmed from retrieved documents
 
@@ -645,7 +661,7 @@ response
 generate_response
     ↓
 [Tool call?]
-    ├─ search_documents / read_section / read_page → search_more → generate_response
+    ├─ search_documents / read_section / read_page / find_code → search_more → generate_response
     └─ respond_to_user / insufficient_evidence / none → process_tool_call → END
 ```
 
@@ -659,7 +675,7 @@ generate_response
 - `embed_query` - 30 seconds
 - `vector_store_search` - Chroma query + in-memory BM25 (local; the lexical index is built once per process, about 0.2 s)
 - `generate_response` - 120 seconds per LLM call
-- `search_more` - `search_documents`: embedding 30 seconds + Chroma search; `read_section` / `read_page`: Chroma only
+- `search_more` - `search_documents`: embedding 30 seconds + Chroma search; `read_section` / `read_page` / `find_code`: Chroma only
 
 **Agent loop**: searching stops after 3 rounds or 300 s, then the LLM must give a final answer. Worst case is 9 LLM calls: the rewrite plus 4 agent turns of up to 2 attempts each. The deadline is checked only before each agent turn, so one run can take roughly 11 minutes in the worst case.
 
@@ -680,7 +696,7 @@ generate_response
 | `src/data_models.py` | `QueryState`, `QueryResult`, `ChatTurn`, `ChunkMetadata` |
 | `query_main.py` | Command-line entry point (single query / interactive) |
 | `web_main.py`, `web/app.py` | Flask web UI with multi-turn chat and diagram display |
-| `tests/verify_query_loop.py` | Offline checks: part-number extraction, hybrid search, agent loop, read_page / read_section, neighbors, history, citations (scripted LLM, fake embeddings) |
+| `tests/verify_query_loop.py` | Offline checks: part-number extraction, hybrid search, exact-code lookup and `find_code`, agent loop, read_page / read_section, neighbors, history, citations (scripted LLM, fake embeddings) |
 | `requirements/hybrid_search.md` | Hybrid search specification |
 
 ---

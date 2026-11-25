@@ -78,6 +78,11 @@ class FakeStore:
         # Same queue and recorded kwargs (query_text included) as query_similarity,
         # so subclasses overriding query_similarity (e.g. BoomStore) still apply
         return self.query_similarity(**kwargs)
+    contains: list[dict] = []  # returned by every get_chunks_containing call (substring filter applied)
+    contains_calls: list[tuple] = []
+    def get_chunks_containing(self, text, where, query_embedding=None):
+        FakeStore.contains_calls.append((text, where))
+        return [dict(c) for c in FakeStore.contains if text in c["content"]]
 
 
 class ScriptedLLM:
@@ -122,6 +127,7 @@ def install_fakes(script: list, queue: list[list[dict]]) -> None:
     ScriptedLLM.rewrite_reply, ScriptedLLM.chat_seen = "", []
     FakeStore.queue, FakeStore.calls = [list(q) for q in queue], []
     FakeStore.chunk_queue, FakeStore.chunk_calls = [], []
+    FakeStore.contains, FakeStore.contains_calls = [], []
 
 
 def initial_state(**overrides) -> QueryState:
@@ -1220,6 +1226,130 @@ def test_hybrid_wiring() -> None:
     check("prompt explains matched_part", '"matched_part"' in nodes.SYSTEM_PROMPT)
 
 
+def code_hit(i: int, text: str, page: int = 1, filename: str = "manual.pdf", score: float = 0.0) -> dict:
+    raw = hit(i, page=page, filename=filename)
+    raw.update(content=text, similarity_score=score)
+    return raw
+
+
+def test_find_code() -> None:
+    section("Exact-code lookup: automatic pass and find_code tool")
+    check("short codes found, long part numbers and model names not",
+          nodes._short_codes("What does error code E1 mean on the CCC2?") == ["E1"]
+          and nodes._short_codes("Specs for the 457915.70X") == [], str(nodes._short_codes("E1 on the CCC2")))
+    check("whole-token, any-case match", nodes._has_code("Error e1: loss", "E1")
+          and not nodes._has_code("Code E10 reserved", "E1") and not nodes._has_code("E1A fault", "E1"))
+
+    # Real temporary database: Chroma's substring filter, then whole-token check and ranking
+    tmp = tempfile.mkdtemp()
+    try:
+        store = ChromaVectorStore(tmp, "code_coll")
+        store.initialize_collection()
+        docs = [  # (file, page, text, embedding)
+            ("ccc2.pdf", 2, "E1 Loss of communications. Two power module DIP switches set as same zone.", [1.0, 0.0, 0.0, 0.0]),
+            ("ccc2.pdf", 3, "Command 10 shows outdoor temperature; E10 is reserved.", [0.9, 0.1, 0.0, 0.0]),
+            ("service.pdf", 36, "e1 loss of communication causes the relay control module to shut down.", [0.2, 0.98, 0.0, 0.0]),
+            ("service.pdf", 40, "General wiring information.", [0.0, 1.0, 0.0, 0.0]),
+            ("other.pdf", 1, "E1 ignition fault on the water heater.", [0.0, 0.0, 1.0, 0.0]),
+        ]
+        store.store_chunks([
+            TextChunk(content=text, embedding=emb, metadata=ChunkMetadata(
+                source_filename=f, page_number=p, chunk_sequence=i, file_hash="h", ingested_at="t", total_chunks=1))
+            for i, (f, p, text, emb) in enumerate(docs)
+        ])
+        raw = store.get_chunks_containing("E1", {"source_filename": {"$in": ["ccc2.pdf", "service.pdf"]}})
+        check("store substring search obeys the filter and case",
+              sorted(r["metadata"]["page_number"] for r in raw) == [2, 3], str(raw))
+        ranked = store.get_chunks_containing("E1", {"source_filename": {"$eq": "ccc2.pdf"}}, [1.0, 0.0, 0.0, 0.0])
+        check("store scores matches against the question", ranked and ranked[0]["similarity_score"] > 0.9
+              if ranked[0]["metadata"]["page_number"] == 2 else ranked[1]["similarity_score"] > 0.9, str(ranked))
+
+        matches = nodes._code_matches(store, "E1", ["ccc2.pdf", "service.pdf"], [1.0, 0.0, 0.0, 0.0])
+        where = [(m.metadata.source_filename, m.metadata.page_number) for m in matches]
+        check("only whole-token matches in the given manuals, any case, best match first",
+              where == [("ccc2.pdf", 2), ("service.pdf", 36)], str(where))
+        check("matches marked with the code", all(m.matched_parts == ["E1"] and m.match_type == "exact_code"
+                                                  for m in matches))
+
+        # Automatic pass: retrieved passage with the code is marked, new ones added, both listed first
+        hits = [nodes._build_query_result(code_hit(3, "General wiring information.", 40, "service.pdf", 0.8)),
+                nodes._build_query_result(code_hit(1, "Command 10 shows outdoor temperature; E10 is reserved.", 3,
+                                                   "ccc2.pdf", 0.7)),
+                nodes._build_query_result(code_hit(2, "e1 loss of communication causes the relay control module "
+                                                   "to shut down.", 36, "service.pdf", 0.6))]
+        out = nodes._add_code_matches(store, list(hits), hits, ["E1"], [1.0, 0.0, 0.0, 0.0])
+        ordered = sorted(out, key=nodes._context_order_key)
+        firsts = [(r.metadata.source_filename, r.metadata.page_number) for r in ordered[:2]]
+        check("automatic pass adds the missing passage and puts code matches first",
+              len(out) == 4 and sorted(firsts) == [("ccc2.pdf", 2), ("service.pdf", 36)], str(firsts))
+        check("retrieved passage with the code is marked, not duplicated",
+              hits[2].matched_parts == ["E1"] and not hits[1].matched_parts)
+        check("lookup limited to the hits' manuals", not any(r.metadata.source_filename == "other.pdf" for r in out))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    class BrokenStore(FakeStore):
+        def get_chunks_containing(self, *a, **k): raise RuntimeError("down")
+    original = [nodes._build_query_result(hit(0))]
+    check("lookup failure keeps the results",
+          nodes._add_code_matches(BrokenStore(), list(original), original, ["E1"], None) == original)
+
+    # Wiring in vector_store_search: rewritten query used, matches ordered first
+    install_fakes(script=[], queue=[[hit(0, page=1), hit(1, page=5)]])
+    FakeStore.contains = [code_hit(9, "E5 freeze sensor open", 3)]
+    out = nodes.vector_store_search(QueryState(query_embedding=[0.1], config=config(), original_query="what about it?",
+                                               retrieval_query="What does error E5 mean on the CCC2?"))
+    first = out["search_results"][0]
+    check("first retrieval looks up the rewritten query's code and lists the match first",
+          first.metadata.chunk_sequence == 9 and first.matched_parts == ["E5"]
+          and FakeStore.contains_calls and FakeStore.contains_calls[0][1] == {"source_filename": {"$eq": "manual.pdf"}},
+          str([(r.metadata.chunk_sequence, r.matched_parts) for r in out["search_results"]]))
+    install_fakes(script=[], queue=[[hit(0)]])
+    nodes.vector_store_search(QueryState(query_embedding=[0.1], config=config(), original_query="How do I clean it?"))
+    check("no lookup without a short code", FakeStore.contains_calls == [])
+    check("LLM sees matched_part on code matches", nodes._format_result_for_llm(0, first).get("matched_part") == "E5")
+
+    # History ordering: this turn's code matches first, carried documents keep reading order
+    carried = replace(nodes._build_query_result(hit(4)), matched_parts=["E1"])
+    current = [nodes._build_query_result(hit(2)), replace(nodes._build_query_result(hit(8)), matched_parts=["E5"])]
+    turn = ChatTurn(question="q", answer="a", kind="answer", documents=[carried])
+    seqs = [r.metadata.chunk_sequence for r in nodes.add_history_documents(
+        QueryState(original_query="q", search_results=current, chat_history=[turn]))["search_results"]]
+    check("earlier-turn code matches are not moved first", seqs == [8, 2, 4], str(seqs))
+
+    # find_code tool through the agent loop
+    install_fakes(script=[("find_code", {"code": "E1"}),
+                          ("respond_to_user", {"answer": "Loss of communication", "diagram_refs": []})], queue=[])
+    FakeStore.contains = [code_hit(7, "E1 Loss of communications", 3), code_hit(0, "chunk 0 text E1", 1),
+                          code_hit(5, "Code E10 reserved", 4)]
+    state = run_graph(initial_state())["state"]
+    tool_msg = next(m["content"] for m in ScriptedLLM.seen[1]["messages"] if m["role"] == "tool")
+    check("find_code offered to the agent", "find_code" in ScriptedLLM.seen[0]["tools"])
+    check("find_code returns new matches, lists ones already in context",
+          "2 passage(s) containing 'E1'" in tool_msg and "refs [0]" in tool_msg and '"matched_part": "E1"' in tool_msg
+          and "E10" not in tool_msg, tool_msg[:300])
+    check("find_code results join the context and use a search round",
+          state.search_results[-1].metadata.chunk_sequence == 7 and state.search_round == 1)
+    check("find_code searches the manuals in context",
+          FakeStore.contains_calls[0][1] == {"source_filename": {"$eq": "manual.pdf"}})
+
+    existing = [nodes._build_query_result(hit(0))]
+    install_fakes(script=[], queue=[])
+    _, text = nodes._run_find_code(config(), {"code": "E9"}, existing)
+    check("find_code reports no match", text.startswith("No passage containing 'E9' in manual.pdf"), text)
+    try:
+        nodes._run_find_code(config(), {"code": " "}, existing)
+        check("find_code rejects an empty code", False)
+    except ValueError:
+        check("find_code rejects an empty code", True)
+    try:
+        nodes._run_find_code(config(), {"code": "E1", "filename": "nope.pdf"}, existing)
+        check("find_code rejects an unknown filename", False)
+    except ValueError:
+        check("find_code rejects an unknown filename", True)
+    check("prompt tells the agent when to use find_code", "call find_code" in nodes.SYSTEM_PROMPT)
+
+
 def test_nested_filenames() -> None:
     section("Citations of documents in subfolders")
     docs = [nodes._build_query_result(h) for h in (
@@ -1320,7 +1450,7 @@ def test_query_grader() -> None:
 
 
 if __name__ == "__main__":
-    for test in (test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
+    for test in (test_find_code, test_query_grader, test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
                  test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
                  test_failure_routes_to_fallback, test_read_page, test_neighbors, test_search_cutoff_env, test_steps_formatting, test_where_builder,
                  test_chroma_where, test_graph_wiring, test_conversation, test_sections, test_cited_documents,

@@ -809,6 +809,19 @@ turns:
       cited_any: ["205579_NAUTILUS (IW60) ODWH_STM, RC, 08-23-2019.pdf"]
 ```
 
+## R11: Retrieval - short error code shared by many manuals
+
+E5 appears in about 47 chunks across the corpus; the CCC2 meaning must win.
+
+```yaml
+turns:
+  - ask: What does error code E5 mean on the CCC2 thermostat?
+    expect:
+      kind: answer
+      facts: ['freeze']
+      cited_any: ["CCC2-Diagnostic-Mode-With-Reset.pdf", "CCC2-Operating-Instructions.pdf", "CCC II Operating Instructions.pdf"]
+```
+
 ## S01: Refusal - price not in any manual
 
 ```yaml

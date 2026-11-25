@@ -39,6 +39,8 @@ query text + query embedding (+ optional where filter)
 
 If the lexical index cannot be built, the search falls back to dense-only results (logged as a warning).
 
+Short codes such as fault codes (`E1`, `E5`) are shared by many manuals, so hybrid search alone tends to return the code from the wrong manual. They get an extra **exact-code lookup** inside the retrieved manuals, both automatically and as the agent's `find_code` tool (see [Exact-Code Lookup](#exact-code-lookup-short-codes)).
+
 ---
 
 ## Part-Number Extraction
@@ -148,14 +150,47 @@ The same dict format as `query_similarity` (`id`, `content`, `metadata`, `simila
 
 ---
 
+## Exact-Code Lookup (Short Codes)
+
+**Why**: a key is "specific" only while it appears in at most 20 chunks. With 49 manuals (5,822 chunks) the fault codes are far past that (`E1` 48 chunks, `E5` 47, `E6` 28), so they count as broad and get no boost. Asking for "E1 on the CCC2" returned ten passages that all contained `E1`, but mostly from a service manual covering many units. Long part numbers are unaffected (`33063`: rank 54 by meaning alone, rank 1 with hybrid search).
+
+**Functions** (`src/query/nodes.py`):
+
+| Function | Purpose |
+|---|---|
+| `_short_codes(text)` | Codes from `extract_part_numbers` with at most `SHORT_CODE_MAX_CHARS` (3) characters after removing separators: `E1`, `E10`. Not `CCC2` or `457915.70X` |
+| `_has_code(text, code)` | Whole-token, case-insensitive match: `E1` matches `e1`, not `E10` or `E1A` |
+| `_code_matches(store, code, filenames, embedding)` | Every chunk of the given manuals containing the code, marked `matched_parts=[code]` and `match_type="exact_code"`, best cosine match to the question first |
+| `_add_code_matches(...)` | The automatic pass in the first retrieval |
+| `_run_find_code(...)` | The `find_code` tool |
+
+**Store**: `ChromaVectorStore.get_chunks_containing(text, where, query_embedding=None)` (`src/ingestion/tools.py`) uses Chroma's `where_document={"$contains": text}`. That match is a case-sensitive substring, so the lookup tries the code as written, upper and lower case, then keeps only whole-token matches. With an embedding, each chunk's cosine similarity to the question is returned for ranking.
+
+### Automatic pass (first retrieval)
+When the search query (the rewritten follow-up, if there is one) contains a short code:
+1. Retrieved passages containing it are marked with the code (`matched_part` for the LLM).
+2. Up to `AUTO_CODE_MATCHES` (5) more passages containing it are added, taken from the manuals of the direct hits only (not neighbors or diagrams), best match to the question first.
+3. Failures are logged and the results are used unchanged.
+
+### `find_code` tool
+Parameters: `code` (required, 1-24 characters), `filename` (optional; otherwise every manual in context). It returns up to `FIND_CODE_MAX_RESULTS` (10) new passages, best match to the question first, and lists the refs of matches already in context. It is a non-final tool and counts toward the three search rounds. The system prompt tells the agent to call it when the question names a code and no passage for the model asked about contains it.
+
+### Ordering
+Documents carrying `matched_part` from this turn (hybrid `exact_part` hits and exact-code matches) are listed **first**, then everything else in reading order (`_context_order_key`). Documents carried over from earlier turns keep reading order. The order is fixed before the LLM sees the list, so refs stay stable.
+
+### Example
+"What does error code E5 mean on the CCC2 thermostat?" on the 49-manual corpus: the first passage listed is the CCC2 Operating Instructions error-code page (page 10, added as `exact_code`), and every passage listed before the rest contains `E5`.
+
+---
+
 ## Pipeline Integration
 
 **File**: `src/query/nodes.py`, via `_hybrid_search(vector_store, query_text, embedding, k, where)`
 
-- **`vector_store_search`** (first retrieval): query text is `retrieval_query or original_query`, the same text that was embedded (a rewritten follow-up when there is one). `k` = `DEFAULT_K` (10). Neighbor and page-diagram expansion run on the hybrid hits unchanged
+- **`vector_store_search`** (first retrieval): query text is `retrieval_query or original_query`, the same text that was embedded (a rewritten follow-up when there is one). `k` = `DEFAULT_K` (10). Neighbor and page-diagram expansion run on the hybrid hits unchanged, then the exact-code lookup for short codes, then documents with `matched_part` are moved first
 - **`search_documents`** (`_run_search`): query text is the LLM's `query`; `k` and the `where` filter (filename, page range) as before
 
-**What the LLM sees**: documents from exact hits carry `"matched_part": "457915.70X"`. The system prompt explains the field and tells the LLM to answer from passages for the exact model / part number asked about, without substituting another model's specifications. The `search_documents` tool description asks the LLM to include exact model, part or error codes in its search query.
+**What the LLM sees**: documents from exact hits and exact-code matches carry `"matched_part": "457915.70X"` (or `"E1"`) and are listed first. The system prompt explains the field and tells the LLM to answer from passages for the exact model / part number asked about, without substituting another model's specifications. The `search_documents` tool description asks the LLM to include exact model, part or error codes in its search query.
 
 **Verbose output** (`query_main.py -v`), per direct hit:
 ```
@@ -179,6 +214,7 @@ Invalid values fall back to the default with a warning.
 **Tunable Parameters**:
 - `HYBRID_ALPHA`, `HYBRID_CANDIDATES`, `PART_BOOST` - `src/query/nodes.py` (env-overridable)
 - `bm25_saturation` (10), `specific_part_max` (20) - `hybrid_search` keyword arguments
+- `SHORT_CODE_MAX_CHARS` (3), `AUTO_CODE_MATCHES` (5), `FIND_CODE_MAX_RESULTS` (10) - exact-code lookup, `src/query/nodes.py`
 - Extraction rules: `_UNIT`, `_WORD_SEGMENTS`, `_MAX_LETTER_RUN` (4), `_MIN_PURE_DIGITS` (5) - `src/utils/part_numbers.py`
 - `_STOPWORDS` - `src/query/lexical.py`
 
@@ -192,6 +228,7 @@ Invalid values fall back to the default with a warning.
 2. **Empty query text** → dense-only results
 3. **Chunks without `part_numbers`** (old ingestion) → no exact matches; BM25 and dense still work
 4. **Dense search fails** → raised as before (`RuntimeError`); the node reports it like any search failure
+5. **Exact-code lookup fails** → warning logged, first-retrieval results used unchanged; a failing `find_code` call is reported to the LLM as the tool result
 
 ---
 
@@ -218,8 +255,9 @@ Full run: `tests/results/query_results_003.txt` (12/12 completed) vs baseline `t
 - `test_hybrid_search` (real temporary Chroma database) - exact-part chunk below the cutoff ranks first, other model still returned, unrelated chunk dropped, off-topic query empty, `where` filter applies to lexical hits, broad keys give no bypass, guarantee beyond `k`, fallback when the index fails
 - `test_hybrid_wiring` - query text (and rewritten follow-up) passed, default and env-overridden settings, `QueryResult` breakdown, `matched_part` only on exact hits, prompt mentions it
 - `FakeStore.hybrid_search` delegates to `query_similarity`, so the agent-loop tests exercise the hybrid call path
+- `test_find_code` - short-code detection, whole-token matching, `get_chunks_containing` and `_code_matches` on a real temporary database (filter, case, ranking), the automatic pass (marking, adding, scope, ordering, failure), wiring with the rewritten query, history ordering, and the `find_code` tool through the agent loop (new vs already-in-context matches, no match, bad input)
 
-**End-to-end** (`python -m tests.test_queries`, live services): Q02 (E1), Q03 (command 10), Q04 (457915.70X), Q07 (457915) and Q11 (capacitor part numbers) depend on exact tokens; Q10 and Q12 must still decline.
+**End-to-end** (`python tests/test_queries.py`, live services): Q02 (E1), Q03 (command 10), Q04 (457915.70X), Q07 (457915) and Q11 (capacitor part numbers) depend on exact tokens; Q10 and Q12 must still decline. R11 (E5 on the CCC2), RW07, M03 and S04 cover short codes; all passed after the exact-code lookup was added (`tests/results/query_results_008.txt`).
 
 **Manual**: `python query_main.py "What is part 8330-733 used for?" -v` should show `exact_part` hits containing 8330-733.
 
@@ -228,7 +266,9 @@ Full run: `tests/results/query_results_003.txt` (12/12 completed) vs baseline `t
 ## Known Limitations
 
 - Some non-part tokens are extracted: phone numbers (`574-294-2511`), postal codes (`N3T`, `5L8`) and OCR fragments (`3OR4`, `7.E`). They only matter when a query contains the same token
-- `specific_part_max` is absolute (20 chunks). With a much larger corpus a common part number may become "broad"; consider a fraction of the corpus instead
+- `specific_part_max` is absolute (20 chunks). With a much larger corpus a common part number may become "broad"; consider a fraction of the corpus instead. Short codes are covered by the exact-code lookup
+- The exact-code lookup only searches manuals that hybrid search already returned (or one the agent names); if the right manual is not among them, it cannot help
+- Within the documents listed first, the order is reading order (by filename), not relevance
 - Hyphenated line breaks in the PDF text (`op-\neration`, TODO #5) also split words for BM25
 - The exact boost (0.3) cannot overcome a very large cosine gap (e.g. 0.3 vs 1.0); in practice gaps between same-topic chunks are small (0.52 vs 0.61 for 8330-733)
 - The index is in memory and rebuilt per process; fine for hundreds or thousands of chunks, not for millions
@@ -241,8 +281,8 @@ Full run: `tests/results/query_results_003.txt` (12/12 completed) vs baseline `t
 |------|---------|
 | `src/utils/part_numbers.py` | Part-number extraction, normalization, family, filename keys, storage format |
 | `src/query/lexical.py` | `tokenize`, `LexicalIndex` (BM25 + part index), cached `get_lexical_index` |
-| `src/ingestion/tools.py` | `TextChunker.chunk_all` (sets `part_numbers`), `store_chunks` (stores it), `ChromaVectorStore.hybrid_search`, `_cosine` |
+| `src/ingestion/tools.py` | `TextChunker.chunk_all` (sets `part_numbers`), `store_chunks` (stores it), `ChromaVectorStore.hybrid_search`, `get_chunks_containing`, `_cosine` |
 | `src/data_models.py` | `ChunkMetadata.part_numbers`; `QueryResult.dense_score`, `bm25_score`, `match_type`, `matched_parts` |
-| `src/query/nodes.py` | `HYBRID_*` / `PART_BOOST` settings, `_hybrid_search`, callers, `matched_part` for the LLM, prompt line |
+| `src/query/nodes.py` | `HYBRID_*` / `PART_BOOST` settings, `_hybrid_search`, callers, `matched_part` for the LLM, prompt lines; exact-code lookup (`_short_codes`, `_code_matches`, `_add_code_matches`, `_run_find_code`, `find_code` tool, `_context_order_key`) |
 | `query_main.py` | Verbose score breakdown |
 | `tests/verify_query_loop.py` | Offline tests (see Testing) |
