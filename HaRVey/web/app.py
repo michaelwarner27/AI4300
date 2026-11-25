@@ -104,8 +104,11 @@ def _source_with_url(source: dict, doc_dir: Path) -> dict:
     No url is added when the PDF is not in the documents folder, so the browser
     only gets links the server can serve.
     """
-    name = Path(source.get("filename") or "").name
-    if not name.lower().endswith(".pdf") or not (doc_dir / name).is_file():
+    name = source.get("filename") or ""  # may include subfolders: "folder/a.pdf"
+    if not name.lower().endswith(".pdf"):
+        return source
+    path = (doc_dir / name).resolve()
+    if not path.is_relative_to(doc_dir.resolve()) or not path.is_file():
         return source
     url = url_for("serve_manual", filename=name)
     if source.get("page"):

@@ -19,7 +19,9 @@ from typing import Optional
 
 from src.config import load_config
 from src.data_models import IngestionState
-from src.ingestion.nodes import list_documents, delete_document, update_document
+from src.ingestion.nodes import (
+    list_documents, delete_document, update_document, stored_document_name,
+)
 from src.utils.logging import get_logger
 
 logger = get_logger()
@@ -174,14 +176,15 @@ def cmd_update(document_path: str) -> int:
         # First, verify the document exists in database
         result = list_documents(state)
         documents = result.get("documents_in_store", [])
-        doc_exists = any(d["name"] == file_path.name for d in documents)
-        
+        name = stored_document_name(document_path, config.document_input_dir)
+        doc_exists = any(d["name"] == name for d in documents)
+
         if not doc_exists:
-            print(f"Warning: Document '{file_path.name}' not found in database.")
+            print(f"Warning: Document '{name}' not found in database.")
             print("This may be the first time ingesting this document.")
-        
+
         # Confirm update
-        print(f"\nPreparing to update document: {file_path.name}")
+        print(f"\nPreparing to update document: {name}")
         if doc_exists:
             response = input("Delete old vectors and prepare for re-ingestion? (y/n): ").strip().lower()
         else:
@@ -200,12 +203,12 @@ def cmd_update(document_path: str) -> int:
             logger.warning(f"Errors during update: {errors}")
         
         if deleted_count > 0:
-            print(f"\nSuccess! Deleted {deleted_count} old vectors for '{file_path.name}'")
+            print(f"\nSuccess! Deleted {deleted_count} old vectors for '{name}'")
         else:
             print(f"\nNo old vectors found. Document is ready for initial ingestion.")
         
         print("\nNext steps:")
-        print(f"  1. Modify {file_path.name} if needed")
+        print(f"  1. Modify {name} if needed")
         print(f"  2. Ensure the file is in {file_path.parent}/")
         print(f"  3. Run: python ingestion_main.py")
         print("\nThe document will be re-ingested with its latest version.")

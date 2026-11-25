@@ -97,12 +97,12 @@ def load_documents(state: IngestionState) -> dict[str, Any]:
             pdf_iter = pdf_files
         
         for pdf_path in pdf_iter:
+            # The path inside document_input_dir ("a.pdf" or "folder/a.pdf") is
+            # the document's identity: duplicate basenames stay separate
+            relative_path = pdf_path.relative_to(base_path).as_posix()
             try:
                 # Calculate file hash
                 file_hash = hasher.calculate_file_hash(pdf_path)
-
-                # Store relative path from document_input_dir
-                relative_path = str(pdf_path.relative_to(base_path))
 
                 # Check for changes if enabled
                 if hash_lookup is not None:
@@ -119,6 +119,7 @@ def load_documents(state: IngestionState) -> dict[str, Any]:
 
                 # Add new metadata fields - use full relative path
                 doc.filename = relative_path
+                doc.metadata.filename = relative_path
                 doc.metadata.file_hash = file_hash
                 doc.metadata.file_size_bytes = pdf_path.stat().st_size
                 doc.metadata.loaded_at = now
@@ -127,7 +128,6 @@ def load_documents(state: IngestionState) -> dict[str, Any]:
                 documents.append(doc)
 
             except Exception as e:
-                relative_path = str(pdf_path.relative_to(base_path)) if 'relative_path' in locals() else pdf_path.name
                 error_msg = f"Error loading {relative_path}: {str(e)}"
                 logger.error(error_msg)
                 errors.append({"stage": "load", "file": relative_path, "error": str(e)})
@@ -249,7 +249,7 @@ def parse_documents(state: IngestionState) -> dict[str, Any]:
             # Extract diagrams
             if diagram_extractor:
                 try:
-                    diagrams = diagram_extractor.extract_all_diagrams(doc_path)
+                    diagrams = diagram_extractor.extract_all_diagrams(doc_path, doc.metadata.filename)
                     doc.diagrams = diagrams
                     diagrams_found += len(diagrams)
                 except Exception as e:
@@ -960,6 +960,18 @@ def delete_document(state: IngestionState, document_name: str) -> dict[str, Any]
     }
 
 
+def stored_document_name(document_path: str, input_dir: str) -> str:
+    """
+    The name a PDF is stored under: its path inside input_dir ("folder/a.pdf"),
+    or just the filename for a file outside it.
+    """
+    path = Path(document_path).resolve()
+    try:
+        return path.relative_to(Path(input_dir).resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
 def update_document(state: IngestionState, document_path: str) -> dict[str, Any]:
     """
     Update a document by deleting old vectors and re-ingesting.
@@ -994,9 +1006,8 @@ def update_document(state: IngestionState, document_path: str) -> dict[str, Any]
         }
     
     try:
-        doc_path = Path(document_path)
-        document_name = doc_path.name
-        
+        document_name = stored_document_name(document_path, state.config.document_input_dir)
+
         # Initialize Chroma vector store
         vector_store = ChromaVectorStore(
             persist_directory=state.config.chroma_persist_directory,

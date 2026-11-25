@@ -1529,6 +1529,24 @@ def _same_file(given: Any, stored: str) -> bool:
     return given in stored or stored in given
 
 
+def _stored_filename(name: str, page: int | None, search_results: list[QueryResult]) -> str:
+    """
+    The full stored name for a cited file. The LLM may drop the folders
+    ("a.pdf" for "folder/a.pdf"); the name is completed when exactly one
+    retrieved document (on the cited page, if several share the name) fits.
+    Otherwise it is returned unchanged.
+    """
+    stored = {r.metadata.source_filename for r in search_results}
+    if name in stored:
+        return name
+    suffix = "/" + name.lower()
+    matches = [r for r in search_results if r.metadata.source_filename.lower().endswith(suffix)]
+    names = {r.metadata.source_filename for r in matches}
+    if len(names) > 1:
+        names = {r.metadata.source_filename for r in matches if r.metadata.page_number == page}
+    return names.pop() if len(names) == 1 else name
+
+
 def _as_page(value: Any) -> int | None:
     """A cited page number as int (accepts "3"), or None if it isn't one."""
     if isinstance(value, int) and not isinstance(value, bool):
@@ -1630,6 +1648,7 @@ def _build_sources(sources: Any, search_results: list[QueryResult]) -> list[dict
             continue
         filename = src.get("filename") if isinstance(src.get("filename"), str) and src.get("filename").strip() else "unknown"
         page = _as_page(src.get("page"))
+        filename = _stored_filename(filename.strip(), page, search_results)
         section = _cite_section(search_results, filename, page, src.get("section"), src.get("snippet"))
         key = (filename.strip().lower(), page, section)
         if key in seen:
@@ -1664,6 +1683,8 @@ def _build_steps(steps: Any, search_results: list[QueryResult] | None = None) ->
             filename = step.get("source_filename")
             page = step.get("page")
             page_ok = isinstance(page, int) and not isinstance(page, bool)
+            if isinstance(filename, str) and filename:
+                filename = _stored_filename(filename.strip(), page if page_ok else None, search_results or [])
             section = _cite_section(search_results or [], filename, page, step.get("section")) if page_ok else ""
             pieces = []
             if isinstance(filename, str) and filename:

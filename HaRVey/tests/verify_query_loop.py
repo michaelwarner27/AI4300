@@ -1220,8 +1220,30 @@ def test_hybrid_wiring() -> None:
     check("prompt explains matched_part", '"matched_part"' in nodes.SYSTEM_PROMPT)
 
 
+def test_nested_filenames() -> None:
+    section("Citations of documents in subfolders")
+    docs = [nodes._build_query_result(h) for h in (
+        hit(0, page=1, filename="brand_a/manual.pdf"),
+        hit(1, page=2, filename="brand_b/manual.pdf"),
+        hit(2, page=3, filename="brand_b/other.pdf"),
+    )]
+    check("basename completed to the stored path",
+          nodes._stored_filename("other.pdf", 3, docs) == "brand_b/other.pdf")
+    check("shared basename resolved by the cited page",
+          nodes._stored_filename("manual.pdf", 2, docs) == "brand_b/manual.pdf")
+    check("ambiguous name left unchanged", nodes._stored_filename("manual.pdf", None, docs) == "manual.pdf")
+    check("full path and unknown names unchanged",
+          nodes._stored_filename("brand_a/manual.pdf", 2, docs) == "brand_a/manual.pdf"
+          and nodes._stored_filename("nope.pdf", 1, docs) == "nope.pdf")
+    check("sources show the stored path",
+          nodes._build_sources([{"filename": "other.pdf", "page": 3}], docs)[0]["filename"] == "brand_b/other.pdf")
+    check("steps cite the stored path", nodes._build_steps(
+        [{"instruction": "x", "source_filename": "other.pdf", "page": 3}], docs)[0]["citation"]
+        .startswith("brand_b/other.pdf, p.3"))
+
+
 if __name__ == "__main__":
-    for test in (test_part_numbers, test_hybrid_search, test_hybrid_wiring,
+    for test in (test_nested_filenames, test_part_numbers, test_hybrid_search, test_hybrid_wiring,
                  test_loop_with_search, test_cap, test_deadline, test_search_failure_and_empty,
                  test_failure_routes_to_fallback, test_read_page, test_neighbors, test_search_cutoff_env, test_steps_formatting, test_where_builder,
                  test_chroma_where, test_graph_wiring, test_conversation, test_sections, test_cited_documents,

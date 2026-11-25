@@ -371,7 +371,7 @@ class TextChunker:
             path = self.section_path(table.heading_path, filename)
             chunks.append(TextChunk(
                 content=(
-                    f"Table from {filename}, page {page_number}:\n"
+                    f"Table from {Path(filename).name}, page {page_number}:\n"
                     f"{self.section_line(path)}\n{table.content}"
                 ),
                 metadata=ChunkMetadata(
@@ -397,7 +397,7 @@ class TextChunker:
         Searchable text for a diagram: where it is, the section it belongs to,
         its figure label, the text inside it and the text leading up to it.
         """
-        lines = [f"Figure on page {diagram.page + 1} of {filename}"]
+        lines = [f"Figure on page {diagram.page + 1} of {Path(filename).name}"]
         lines.append(TextChunker.section_line(TextChunker.section_path(diagram.heading_path, filename)))
         if diagram.label.strip():
             lines.append("Label: " + diagram.label.strip())
@@ -458,7 +458,8 @@ class TextChunker:
 
         # Codes in the filename (e.g. "457915", "CCC2") tag every chunk of the
         # manual, so an exact part-number search can always find the right one
-        doc_keys = filename_part_keys(document.metadata.filename)
+        # (the basename only: folder names are not model numbers)
+        doc_keys = filename_part_keys(Path(document.metadata.filename).name)
         for chunk in chunks:
             chunk.metadata.total_chunks = len(chunks)
             keys = part_keys(chunk.content)
@@ -1297,7 +1298,19 @@ class DiagramExtractor:
         self.output_dir = output_dir
         self.output_dir.mkdir(exist_ok=True, parents=True)
     
-    def clear_document_diagrams(self, file_path: Path) -> int:
+    @staticmethod
+    def image_prefix(file_path: Path, document_name: str | None = None) -> str:
+        """
+        Start of a document's image filenames. All images share one folder, so a
+        document in a subfolder ("folder/a.pdf") gets a short hash of that path
+        to keep it apart from other files named "a.pdf".
+        """
+        if document_name and "/" in document_name:
+            digest = hashlib.sha1(document_name.encode("utf-8")).hexdigest()[:8]
+            return f"{file_path.stem}-{digest}"
+        return file_path.stem
+
+    def clear_document_diagrams(self, file_path: Path, document_name: str | None = None) -> int:
         """
         Delete previously extracted diagram files for a document.
         
@@ -1307,7 +1320,8 @@ class DiagramExtractor:
         Returns:
             Number of files removed
         """
-        pattern = re.compile(rf"^{re.escape(file_path.stem)}_p\d+_(img|fig)\d+\.\w+$")
+        prefix = self.image_prefix(file_path, document_name)
+        pattern = re.compile(rf"^{re.escape(prefix)}_p\d+_(img|fig)\d+\.\w+$")
         removed = 0
         for existing in self.output_dir.iterdir():
             if existing.is_file() and pattern.match(existing.name):
@@ -1315,17 +1329,20 @@ class DiagramExtractor:
                 removed += 1
         return removed
     
-    def extract_all_diagrams(self, file_path: Path) -> list[DiagramMetadata]:
+    def extract_all_diagrams(self, file_path: Path, document_name: str | None = None) -> list[DiagramMetadata]:
         """
         Extract every diagram (embedded raster images and vector figures).
-        
+
         Args:
             file_path: Path to PDF file
-        
+            document_name: Stored name ("folder/a.pdf"); keeps image names
+                unique when the file is in a subfolder
+
         Returns:
             List of DiagramMetadata objects ordered by page then position
         """
-        removed = self.clear_document_diagrams(file_path)
+        prefix = self.image_prefix(file_path, document_name)
+        removed = self.clear_document_diagrams(file_path, document_name)
         if removed:
             logger.debug(f"Removed {removed} stale diagram files for {file_path.name}")
         
@@ -1354,12 +1371,12 @@ class DiagramExtractor:
         try:
             for page_num in range(len(reader.pages)):
                 if mu_doc is not None:
-                    page_diagrams = self._extract_raster_positioned(mu_doc, file_path, page_num)
+                    page_diagrams = self._extract_raster_positioned(mu_doc, file_path, page_num, prefix)
                     page_diagrams.extend(
-                        self._extract_vector_figures(mu_doc, file_path, page_num, repair)
+                        self._extract_vector_figures(mu_doc, file_path, page_num, prefix, repair)
                     )
                 else:
-                    page_diagrams = self._extract_raster(reader, file_path, page_num)
+                    page_diagrams = self._extract_raster(reader, file_path, page_num, prefix)
                 for position, diagram in enumerate(page_diagrams):
                     diagram.position_index = position
                 diagrams.extend(page_diagrams)
@@ -1370,7 +1387,7 @@ class DiagramExtractor:
         return diagrams
     
     def _extract_raster(
-        self, reader: PdfReader, file_path: Path, page_number: int
+        self, reader: PdfReader, file_path: Path, page_number: int, prefix: str
     ) -> list[DiagramMetadata]:
         """Extract embedded raster images from one page using pypdf."""
         diagrams: list[DiagramMetadata] = []
@@ -1393,7 +1410,7 @@ class DiagramExtractor:
                     )
                     continue
                 
-                name = f"{file_path.stem}_p{page_number}_img{len(diagrams)}{ext}"
+                name = f"{prefix}_p{page_number}_img{len(diagrams)}{ext}"
                 image_path = self.output_dir / name
                 image_path.write_bytes(image.data)
                 
@@ -1411,7 +1428,7 @@ class DiagramExtractor:
         return diagrams
     
     def _extract_raster_positioned(
-        self, mu_doc: Any, file_path: Path, page_number: int
+        self, mu_doc: Any, file_path: Path, page_number: int, prefix: str
     ) -> list[DiagramMetadata]:
         """
         Extract embedded raster images from one page using PyMuPDF.
@@ -1447,7 +1464,7 @@ class DiagramExtractor:
                 bbox = tuple(float(v) for v in rects[0]) if rects else None
 
                 ext = "." + {"jpeg": "jpg"}.get(info["ext"], info["ext"])
-                name = f"{file_path.stem}_p{page_number}_img{len(diagrams)}{ext}"
+                name = f"{prefix}_p{page_number}_img{len(diagrams)}{ext}"
                 image_path = self.output_dir / name
                 image_path.write_bytes(info["image"])
 
@@ -1466,7 +1483,8 @@ class DiagramExtractor:
         return diagrams
 
     def _extract_vector_figures(
-        self, mu_doc: Any, file_path: Path, page_number: int, repair: "TextRepair | None" = None
+        self, mu_doc: Any, file_path: Path, page_number: int, prefix: str,
+        repair: "TextRepair | None" = None,
     ) -> list[DiagramMetadata]:
         """Render each vector-drawing region on one page to a cropped PNG."""
         import pymupdf
@@ -1494,7 +1512,7 @@ class DiagramExtractor:
                 ) & page.rect
                 
                 pixmap = page.get_pixmap(clip=clip, dpi=self.RENDER_DPI)
-                name = f"{file_path.stem}_p{page_number}_fig{len(diagrams)}.png"
+                name = f"{prefix}_p{page_number}_fig{len(diagrams)}.png"
                 image_path = self.output_dir / name
                 pixmap.save(str(image_path))
                 

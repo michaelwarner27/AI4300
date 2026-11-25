@@ -1031,6 +1031,48 @@ def test_live_database() -> None:
         print(f"    {d['id']}  {d['name']}  ({d['chunk_count']} chunks)")
 
 
+def test_nested_folders(pdf: Path) -> None:
+    section("10. Subfolders and duplicate filenames")
+    ws = Workspace()  # own database, so earlier documents don't interfere
+    try:
+        names = ["manual.pdf", "brand_a/manual.pdf", "brand_b/models/manual.pdf"]
+        for name in names:
+            (ws.docs / name).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(pdf, ws.docs / name)
+
+        state = ws.run_pipeline()
+        check("PDFs in subfolders load and parse", state.documents_loaded == 3 and not state.errors,
+              str(state.errors))
+        listed = {d["name"]: d["chunk_count"] for d in ws.listing()}
+        check("each is stored under its relative path", sorted(listed) == sorted(names), str(listed))
+        check("same-named files do not collide", len(set(listed.values())) == 1
+              and ws.store().collection.count() == sum(listed.values()), str(listed))
+
+        images = {}
+        for name in names:
+            metas = ws.store().collection.get(
+                where={"$and": [{"source_filename": name}, {"chunk_type": "diagram_reference"}]},
+                include=["metadatas"])["metadatas"]
+            images[name] = {m["diagram_path"] for m in metas}
+        check("each document keeps its own diagram files",
+              all(images.values()) and all(Path(p).exists() for s in images.values() for p in s)
+              and len(set().union(*images.values())) == sum(len(s) for s in images.values()), str(images))
+
+        state = ws.run_pipeline()
+        check("unchanged nested documents are skipped",
+              state.documents_loaded == 0 and state.documents_skipped_duplicate == 3)
+
+        nested = str(ws.docs / "brand_a" / "manual.pdf")
+        check("a file path maps to its stored name",
+              nodes.stored_document_name(nested, ws.config.document_input_dir) == "brand_a/manual.pdf")
+        result = nodes.update_document(IngestionState(config=ws.config), nested)
+        check("updating one file removes only its chunks",
+              result["deleted_vectors"] == listed["brand_a/manual.pdf"]
+              and sorted(d["name"] for d in ws.listing()) == sorted(n for n in names if n != "brand_a/manual.pdf"))
+    finally:
+        ws.close()
+
+
 # --------------------------------------------------------------------------
 def main() -> int:
     print("=" * 70)
@@ -1053,6 +1095,7 @@ def main() -> int:
         test_retry(ws)
         test_storage_and_change_detection(ws, pdf)
         test_document_management(ws)
+        test_nested_folders(pdf)
         if "--live" in sys.argv:
             test_live_database()
     finally:
