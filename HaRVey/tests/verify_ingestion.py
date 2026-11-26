@@ -1073,6 +1073,81 @@ def test_nested_folders(pdf: Path) -> None:
         ws.close()
 
 
+def test_media_files(pdf: Path) -> None:
+    section("11. Standalone images and videos")
+    ws = Workspace()  # own database and diagram folder
+    try:
+        png = ws.root / "photo.png"
+        pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 80, 60), False).save(png)
+        image_name = "Dometic/Fridges/Americana measure for squareness.PNG"
+        video_name = "Airxcel/Zone Control/Testing Non Zone Thermostat.mp4"
+        for name, data in [(image_name, png.read_bytes()), (video_name, b"not really a video"),
+                           ("Airxcel/old video.wmv", b"skipped"), ("manual.png", png.read_bytes())]:
+            (ws.docs / name).parent.mkdir(parents=True, exist_ok=True)
+            (ws.docs / name).write_bytes(data)
+        shutil.copy(pdf, ws.docs / "manual.pdf")  # same stem as manual.png
+
+        state = ws.run_pipeline()
+        listed = {d["name"] for d in ws.listing()}
+        check("images and mp4 load, .wmv is ignored",
+              listed == {image_name, video_name, "manual.png", "manual.pdf"} and not state.errors,
+              f"{sorted(listed)} {state.errors}")
+
+        def chunks_of(name: str) -> list[tuple[str, dict]]:
+            got = ws.store().collection.get(where={"source_filename": name}, include=["documents", "metadatas"])
+            return list(zip(got["documents"], got["metadatas"]))
+
+        image = chunks_of(image_name)
+        text, meta = image[0] if image else ("", {})
+        check("an image is one diagram_reference chunk of kind image_file",
+              len(image) == 1 and meta.get("chunk_type") == "diagram_reference"
+              and meta.get("diagram_kind") == "image_file" and meta.get("page_number") == 1, str(image))
+        check("the image chunk names the file and its folder",
+              text.startswith("Image: Americana measure for squareness.PNG")
+              and "Dometic > Fridges" in text, text)
+        stored = Path(meta.get("diagram_path", ""))
+        check("the image is copied unchanged into the diagram folder",
+              stored.parent == ws.diagrams and stored.is_file() and stored.read_bytes() == png.read_bytes()
+              and stored.suffix == ".png", str(stored))
+
+        video = chunks_of(video_name)
+        text, meta = video[0] if video else ("", {})
+        check("a video is one text chunk naming it and its folder",
+              len(video) == 1 and meta.get("chunk_type") == "text" and meta.get("page_number") == 1
+              and "Video: Testing Non Zone Thermostat" in text and "Folder: Airxcel > Zone Control" in text,
+              str(video))
+
+        pdf_diagrams = {m["diagram_path"] for _, m in chunks_of("manual.pdf") if m["chunk_type"] == "diagram_reference"}
+        check("manual.png does not remove manual.pdf's diagrams",
+              pdf_diagrams and all(Path(p).is_file() for p in pdf_diagrams), str(pdf_diagrams))
+
+        before = sorted(p.name for p in ws.diagrams.iterdir())
+        nodes.parse_documents(IngestionState(config=ws.config, documents=state.documents))
+        check("parsing an image again replaces its file instead of adding one",
+              sorted(p.name for p in ws.diagrams.iterdir()) == before)
+
+        state = ws.run_pipeline()
+        check("unchanged images and videos are skipped",
+              state.documents_loaded == 0 and state.documents_skipped_duplicate == 4)
+
+        # Web links: only PDFs open at a page; other types are not linked or served
+        from flask import Flask
+        from web.app import _source_with_url
+        app = Flask(__name__)
+        app.add_url_rule("/manuals/<path:filename>", "serve_manual", lambda filename: "")
+        with app.test_request_context():
+            v = _source_with_url({"filename": video_name, "page": 1}, ws.docs)
+            p = _source_with_url({"filename": "manual.pdf", "page": 2}, ws.docs)
+            w = _source_with_url({"filename": "Airxcel/old video.wmv", "page": 1}, ws.docs)
+        check("a video source links to the file with no page",
+              v.get("media") == "video" and v.get("url", "").endswith(".mp4"), str(v))
+        check("a PDF source still opens at its page",
+              p.get("media") == "pdf" and p.get("url", "").endswith("#page=2"), str(p))
+        check("a .wmv source gets no link", "url" not in w, str(w))
+    finally:
+        ws.close()
+
+
 # --------------------------------------------------------------------------
 def main() -> int:
     print("=" * 70)
@@ -1096,6 +1171,7 @@ def main() -> int:
         test_storage_and_change_detection(ws, pdf)
         test_document_management(ws)
         test_nested_folders(pdf)
+        test_media_files(pdf)
         if "--live" in sys.argv:
             test_live_database()
     finally:
