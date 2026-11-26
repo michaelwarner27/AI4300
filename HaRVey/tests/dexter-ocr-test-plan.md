@@ -167,7 +167,13 @@ Values I have already read from the page images. These are drafts and still need
 ## Implementation steps (check in after each)
 
 1. **Ground-truth drafts.** *(drafted 2026-11-26, waiting for your check)* The drafts in `tests/dexter-ground-truth/` are `tables.yaml` (11 tables), `retrieval.yaml` (40 queries), `probes.yaml` (32 probes, all checked against the live database) and `dx-cases.md` (16 cases). The reference pages are rendered in `scratch/dexter-pages/`.
-2. **Snapshot script.** Write `dexter_snapshot.py` and record the baseline snapshot.
+2. **Snapshot script.** *(done 2026-11-26)* `tests/dexter_snapshot.py` wrote `tests/results/dexter/baseline/snapshot.json`. Baseline results:
+   - **Chunks:** 920 in total: 232 text, 41 table, 647 diagram.
+   - **Tables:** 460 extracted, 41 kept by the filter, 41 stored. **40 of the 41 stored tables are header-only**, so only one stored table chunk has values (the p12 hub-face table).
+   - **Page tags:** 69% of text chunks sit on their tagged page, and 79% of text content is on its tagged page. 45 chunks belong mainly to the next page.
+   - **Section paths:** 36% are current. 365 chunks share one stale path from page 39.
+   - **Noise:** the footer appears in 525 chunks, and 14% of text chunks are near-duplicates.
+   - **Probes:** 30 pass, 2 known page-tag failures.
 3. **Table fidelity script.** Write `dexter_tables.py` and record the baseline.
 4. **Retrieval script.** Write `dexter_retrieval.py` and record the baseline.
 5. **End-to-end cases.** Add `xfail` support to `test_queries.py`, add the DX cases, update `corpus.md`, and run with `--repeat 3`.

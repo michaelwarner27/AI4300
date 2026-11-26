@@ -1,0 +1,1323 @@
+{
+  "label": "baseline",
+  "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+  "created": "2026-11-26T11:37:17",
+  "file_hash": "131c7438816a99a57976884114973a5566f11e33b9bf5c17aa00070c40225f96",
+  "ingested_at": "2026-11-26T11:10:59.619660",
+  "settings": {
+    "chunk_size": 1000,
+    "chunk_overlap": 100,
+    "embedding_model": "Qwen3-Embedding-8B"
+  },
+  "totals": {
+    "pages": 100,
+    "chunks": 920,
+    "by_type": {
+      "text": 232,
+      "table": 41,
+      "diagram": 647
+    },
+    "diagram_files": 647,
+    "diagram_files_on_disk": 647,
+    "part_numbers": 472
+  },
+  "tables": {
+    "extracted": 460,
+    "kept_by_filter": 41,
+    "dropped_by_filter": 419,
+    "stored": 41,
+    "header_only_stored": 40,
+    "header_only_pages": [
+      43,
+      45,
+      47,
+      49,
+      51,
+      53,
+      55,
+      57,
+      59,
+      61,
+      63,
+      65,
+      67,
+      69,
+      75,
+      77,
+      79,
+      81,
+      83,
+      85
+    ],
+    "largest_chunk_chars": 1208,
+    "largest_chunk_page": 12,
+    "extracted_per_page": {
+      "2": 1,
+      "7": 3,
+      "10": 1,
+      "12": 2,
+      "13": 4,
+      "14": 7,
+      "16": 1,
+      "17": 1,
+      "18": 3,
+      "19": 3,
+      "20": 5,
+      "22": 3,
+      "23": 3,
+      "24": 1,
+      "26": 1,
+      "28": 4,
+      "30": 7,
+      "32": 6,
+      "33": 6,
+      "34": 6,
+      "37": 4,
+      "38": 1,
+      "40": 2,
+      "41": 2,
+      "42": 3,
+      "43": 12,
+      "44": 3,
+      "45": 16,
+      "46": 2,
+      "47": 15,
+      "48": 4,
+      "49": 16,
+      "50": 4,
+      "51": 15,
+      "52": 3,
+      "53": 15,
+      "54": 1,
+      "55": 15,
+      "56": 1,
+      "57": 16,
+      "58": 2,
+      "59": 16,
+      "60": 2,
+      "61": 16,
+      "62": 2,
+      "63": 13,
+      "64": 2,
+      "65": 13,
+      "66": 2,
+      "67": 12,
+      "68": 2,
+      "69": 12,
+      "70": 3,
+      "71": 1,
+      "72": 1,
+      "73": 1,
+      "74": 3,
+      "75": 16,
+      "76": 2,
+      "77": 15,
+      "78": 4,
+      "79": 16,
+      "80": 3,
+      "81": 15,
+      "82": 1,
+      "83": 16,
+      "84": 2,
+      "85": 16,
+      "86": 1,
+      "87": 1,
+      "88": 3,
+      "89": 3,
+      "90": 3,
+      "91": 3,
+      "92": 3,
+      "93": 3,
+      "94": 3,
+      "95": 3,
+      "99": 3,
+      "100": 4
+    },
+    "kept_per_page": {
+      "12": 1,
+      "43": 2,
+      "45": 2,
+      "47": 2,
+      "49": 2,
+      "51": 2,
+      "53": 2,
+      "55": 2,
+      "57": 2,
+      "59": 2,
+      "61": 2,
+      "63": 2,
+      "65": 2,
+      "67": 2,
+      "69": 2,
+      "75": 2,
+      "77": 2,
+      "79": 2,
+      "81": 2,
+      "83": 2,
+      "85": 2
+    },
+    "stored_per_page": {
+      "12": 1,
+      "43": 2,
+      "45": 2,
+      "47": 2,
+      "49": 2,
+      "51": 2,
+      "53": 2,
+      "55": 2,
+      "57": 2,
+      "59": 2,
+      "61": 2,
+      "63": 2,
+      "65": 2,
+      "67": 2,
+      "69": 2,
+      "75": 2,
+      "77": 2,
+      "79": 2,
+      "81": 2,
+      "83": 2,
+      "85": 2
+    }
+  },
+  "page_tags": {
+    "text_chunks": 232,
+    "located": 223,
+    "on_page": 154,
+    "straddles": 28,
+    "wrong_page": 41,
+    "on_page_share": 0.691,
+    "content_on_tagged_page_share": 0.79,
+    "main_page_offsets": {
+      "-1": 2,
+      "0": 170,
+      "1": 45,
+      "2": 4,
+      "3": 2
+    },
+    "unlocated": 9,
+    "pages_with_mis_tagged_chunks": [
+      1,
+      3,
+      4,
+      9,
+      12,
+      13,
+      14,
+      16,
+      19,
+      20,
+      21,
+      22,
+      25,
+      27,
+      28,
+      29,
+      31,
+      33,
+      36,
+      39,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      66,
+      67,
+      68,
+      69,
+      70,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      82,
+      83,
+      85,
+      86,
+      87,
+      90,
+      91,
+      92,
+      93,
+      95,
+      97,
+      98
+    ]
+  },
+  "sections": {
+    "chunks_with_section": 920,
+    "current": 334,
+    "current_share": 0.363,
+    "distinct_paths": 97,
+    "most_common_paths": [
+      {
+        "path": "INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging",
+        "chunks": 365
+      },
+      {
+        "path": "INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging > SPINDLE HUB TYPE MINIMUM NO BRACKET ZONE MAXIMUM",
+        "chunks": 112
+      },
+      {
+        "path": "PREMIUM BRAKING PERFORMANCE > » Maintains optimum",
+        "chunks": 42
+      },
+      {
+        "path": "WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM",
+        "chunks": 41
+      },
+      {
+        "path": "MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4\" X 3 3/8\" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS",
+        "chunks": 32
+      }
+    ],
+    "worst_pages": [
+      {
+        "page": 79,
+        "stale_chunks": 16
+      },
+      {
+        "page": 45,
+        "stale_chunks": 15
+      },
+      {
+        "page": 47,
+        "stale_chunks": 15
+      },
+      {
+        "page": 49,
+        "stale_chunks": 15
+      },
+      {
+        "page": 61,
+        "stale_chunks": 15
+      },
+      {
+        "page": 83,
+        "stale_chunks": 15
+      },
+      {
+        "page": 43,
+        "stale_chunks": 14
+      },
+      {
+        "page": 51,
+        "stale_chunks": 14
+      },
+      {
+        "page": 53,
+        "stale_chunks": 14
+      },
+      {
+        "page": 55,
+        "stale_chunks": 14
+      }
+    ]
+  },
+  "noise": {
+    "chunks_with_footer": 525,
+    "near_duplicate_text_chunks": 33,
+    "near_duplicate_share": 0.142
+  },
+  "probes": {
+    "summary": {
+      "pass": 30,
+      "known_fail": 2
+    },
+    "results": [
+      {
+        "page": 45,
+        "text": "Arm Length",
+        "expect": "missing",
+        "why": "Articulation diagram label, only in image",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "text": "Center of Spindle",
+        "expect": "missing",
+        "why": "Articulation diagram label, only in image",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "text": "Center of Axle",
+        "expect": "missing",
+        "why": "Articulation diagram label, only in image",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "text": "Top of Frame",
+        "expect": "missing",
+        "why": "Articulation diagram label, only in image",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "text": "Axle Location",
+        "expect": "missing",
+        "why": "Articulation diagram label, only in image (it is in page 7's text layer)",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 7,
+        "text": "Axle Label",
+        "expect": "missing",
+        "why": "Callout on the axle drawing, only in image",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 15,
+        "text": "Made in America",
+        "expect": "missing",
+        "why": "Logo image",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 7,
+        "text": "Shackle Link",
+        "expect": "present",
+        "why": "Vector diagram label in the text layer",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 7,
+        "text": "Free Arch Height",
+        "expect": "present",
+        "why": "Vector diagram label in the text layer",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 7,
+        "text": "Equalizer",
+        "expect": "present",
+        "why": "Vector diagram label in the text layer",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 7,
+        "text": "Track Width",
+        "expect": "present",
+        "why": "Vector diagram label in the text layer",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 7,
+        "text": "Stack Height",
+        "expect": "present",
+        "why": "Label split over two lines in the text layer. A whitespace-sensitive check misses it",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 7,
+        "text": "Loaded Arch Height",
+        "expect": "present",
+        "why": "Label split over two lines in the text layer",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "text": "For Wiring Access",
+        "expect": "present",
+        "why": "Bracket diagram label in the text layer",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 15,
+        "text": "23-312",
+        "expect": "present",
+        "why": "Photo caption part number",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 14,
+        "text": "L68149 INNER/L44649 OUTER",
+        "expect": "present",
+        "baseline_fail": "page-tag",
+        "why": "D35 bearings. Stored under page 13 at baseline",
+        "found": false,
+        "status": "known_fail"
+      },
+      {
+        "page": 15,
+        "text": "K23-026-00",
+        "expect": "present",
+        "baseline_fail": "page-tag",
+        "why": "Part number in parts list. Stored under page 14 at baseline",
+        "found": false,
+        "status": "known_fail"
+      },
+      {
+        "page": 6,
+        "text": "What is Torsion?",
+        "expect": "present",
+        "why": "Explainer heading",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 9,
+        "text": "Shock Load",
+        "expect": "present",
+        "why": "Articulation explainer",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 32,
+        "text": "395S INNER/387A OUTER",
+        "expect": "present",
+        "why": "D100 bearings",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 100,
+        "text": "ROCKWELL AXLE OPTIONS",
+        "expect": "present",
+        "why": "Different brand",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "chunk_type": "table",
+        "text": "ST175/80R13",
+        "expect": "missing",
+        "why": "Row dropped by pdfplumber (shaded row)",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "chunk_type": "table",
+        "text": "4.80-12",
+        "expect": "missing",
+        "why": "Row dropped by pdfplumber (shaded row)",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "chunk_type": "table",
+        "text": "20.5X8.0-10",
+        "expect": "missing",
+        "why": "One-row piece dropped by the junk filter",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "chunk_type": "table",
+        "text": "3.75",
+        "expect": "missing",
+        "why": "Mounting bracket F (high), split into one-row pieces",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "chunk_type": "table",
+        "text": "5.46",
+        "expect": "missing",
+        "why": "Articulation 45° DOWN LOW no-load H. Only the header piece is stored",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 15,
+        "chunk_type": "table",
+        "text": "182753",
+        "expect": "missing",
+        "why": "Parts list not detected as a table",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 96,
+        "chunk_type": "table",
+        "text": "223710",
+        "expect": "missing",
+        "why": "Parts list not detected as a table",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 14,
+        "chunk_type": "table",
+        "text": "15.75",
+        "expect": "missing",
+        "why": "D35 overhang table, 6\" drop minimum. No table chunk holds it at baseline",
+        "found": false,
+        "status": "pass"
+      },
+      {
+        "page": 12,
+        "chunk_type": "table",
+        "text": "+ 9.09",
+        "expect": "present",
+        "why": "Hub face equation for 8K",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "text": "ST175/80R13",
+        "expect": "present",
+        "why": "Row is in the text layer even though the table chunk loses it",
+        "found": true,
+        "status": "pass"
+      },
+      {
+        "page": 45,
+        "text": "4.80-12",
+        "expect": "present",
+        "why": "Row is in the text layer even though the table chunk loses it",
+        "found": true,
+        "status": "pass"
+      }
+    ]
+  },
+  "pages": {
+    "1": {
+      "chunks": 4,
+      "text": 1,
+      "table": 0,
+      "diagram": 3,
+      "text_chars": 99
+    },
+    "2": {
+      "chunks": 2,
+      "text": 0,
+      "table": 0,
+      "diagram": 2,
+      "text_chars": 0
+    },
+    "3": {
+      "chunks": 8,
+      "text": 6,
+      "table": 0,
+      "diagram": 2,
+      "text_chars": 1274
+    },
+    "4": {
+      "chunks": 5,
+      "text": 1,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 866
+    },
+    "5": {
+      "chunks": 4,
+      "text": 3,
+      "table": 0,
+      "diagram": 1,
+      "text_chars": 1258
+    },
+    "6": {
+      "chunks": 7,
+      "text": 5,
+      "table": 0,
+      "diagram": 2,
+      "text_chars": 2479
+    },
+    "7": {
+      "chunks": 19,
+      "text": 2,
+      "table": 0,
+      "diagram": 17,
+      "text_chars": 1599
+    },
+    "8": {
+      "chunks": 10,
+      "text": 10,
+      "table": 0,
+      "diagram": 0,
+      "text_chars": 3235
+    },
+    "9": {
+      "chunks": 6,
+      "text": 5,
+      "table": 0,
+      "diagram": 1,
+      "text_chars": 2035
+    },
+    "10": {
+      "chunks": 6,
+      "text": 1,
+      "table": 0,
+      "diagram": 5,
+      "text_chars": 287
+    },
+    "11": {
+      "chunks": 6,
+      "text": 6,
+      "table": 0,
+      "diagram": 0,
+      "text_chars": 3988
+    },
+    "12": {
+      "chunks": 7,
+      "text": 3,
+      "table": 1,
+      "diagram": 3,
+      "text_chars": 1898
+    },
+    "13": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 836
+    },
+    "14": {
+      "chunks": 10,
+      "text": 2,
+      "table": 0,
+      "diagram": 8,
+      "text_chars": 1395
+    },
+    "15": {
+      "chunks": 12,
+      "text": 3,
+      "table": 0,
+      "diagram": 9,
+      "text_chars": 2142
+    },
+    "16": {
+      "chunks": 9,
+      "text": 1,
+      "table": 0,
+      "diagram": 8,
+      "text_chars": 897
+    },
+    "17": {
+      "chunks": 7,
+      "text": 0,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 0
+    },
+    "18": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 887
+    },
+    "19": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 912
+    },
+    "20": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 856
+    },
+    "21": {
+      "chunks": 17,
+      "text": 6,
+      "table": 0,
+      "diagram": 11,
+      "text_chars": 3296
+    },
+    "22": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 862
+    },
+    "23": {
+      "chunks": 7,
+      "text": 0,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 0
+    },
+    "24": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 613
+    },
+    "25": {
+      "chunks": 9,
+      "text": 5,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 1202
+    },
+    "26": {
+      "chunks": 7,
+      "text": 0,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 0
+    },
+    "27": {
+      "chunks": 9,
+      "text": 2,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 1651
+    },
+    "28": {
+      "chunks": 9,
+      "text": 2,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 1149
+    },
+    "29": {
+      "chunks": 6,
+      "text": 1,
+      "table": 0,
+      "diagram": 5,
+      "text_chars": 942
+    },
+    "30": {
+      "chunks": 9,
+      "text": 1,
+      "table": 0,
+      "diagram": 8,
+      "text_chars": 356
+    },
+    "31": {
+      "chunks": 11,
+      "text": 5,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 2068
+    },
+    "32": {
+      "chunks": 9,
+      "text": 1,
+      "table": 0,
+      "diagram": 8,
+      "text_chars": 858
+    },
+    "33": {
+      "chunks": 10,
+      "text": 2,
+      "table": 0,
+      "diagram": 8,
+      "text_chars": 1716
+    },
+    "34": {
+      "chunks": 9,
+      "text": 1,
+      "table": 0,
+      "diagram": 8,
+      "text_chars": 765
+    },
+    "35": {
+      "chunks": 9,
+      "text": 6,
+      "table": 0,
+      "diagram": 3,
+      "text_chars": 474
+    },
+    "36": {
+      "chunks": 9,
+      "text": 4,
+      "table": 0,
+      "diagram": 5,
+      "text_chars": 847
+    },
+    "37": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 211
+    },
+    "38": {
+      "chunks": 9,
+      "text": 2,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 1070
+    },
+    "39": {
+      "chunks": 7,
+      "text": 3,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 1179
+    },
+    "40": {
+      "chunks": 6,
+      "text": 0,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 0
+    },
+    "41": {
+      "chunks": 7,
+      "text": 1,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 894
+    },
+    "42": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 591
+    },
+    "43": {
+      "chunks": 14,
+      "text": 2,
+      "table": 2,
+      "diagram": 10,
+      "text_chars": 1805
+    },
+    "44": {
+      "chunks": 9,
+      "text": 2,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 1077
+    },
+    "45": {
+      "chunks": 15,
+      "text": 3,
+      "table": 2,
+      "diagram": 10,
+      "text_chars": 2679
+    },
+    "46": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 467
+    },
+    "47": {
+      "chunks": 15,
+      "text": 3,
+      "table": 2,
+      "diagram": 10,
+      "text_chars": 2515
+    },
+    "48": {
+      "chunks": 9,
+      "text": 1,
+      "table": 0,
+      "diagram": 8,
+      "text_chars": 750
+    },
+    "49": {
+      "chunks": 15,
+      "text": 4,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2783
+    },
+    "50": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 685
+    },
+    "51": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2700
+    },
+    "52": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 799
+    },
+    "53": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2659
+    },
+    "54": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 334
+    },
+    "55": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2660
+    },
+    "56": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 334
+    },
+    "57": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2602
+    },
+    "58": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 575
+    },
+    "59": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2563
+    },
+    "60": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 814
+    },
+    "61": {
+      "chunks": 15,
+      "text": 4,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2912
+    },
+    "62": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 444
+    },
+    "63": {
+      "chunks": 13,
+      "text": 2,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 1796
+    },
+    "64": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 865
+    },
+    "65": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 1855
+    },
+    "66": {
+      "chunks": 9,
+      "text": 2,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 1363
+    },
+    "67": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2098
+    },
+    "68": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 898
+    },
+    "69": {
+      "chunks": 13,
+      "text": 3,
+      "table": 2,
+      "diagram": 8,
+      "text_chars": 2060
+    },
+    "70": {
+      "chunks": 9,
+      "text": 2,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 1536
+    },
+    "71": {
+      "chunks": 7,
+      "text": 0,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 0
+    },
+    "72": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 899
+    },
+    "73": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 897
+    },
+    "74": {
+      "chunks": 8,
+      "text": 2,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 706
+    },
+    "75": {
+      "chunks": 15,
+      "text": 4,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2523
+    },
+    "76": {
+      "chunks": 7,
+      "text": 1,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 543
+    },
+    "77": {
+      "chunks": 14,
+      "text": 3,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2433
+    },
+    "78": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 839
+    },
+    "79": {
+      "chunks": 16,
+      "text": 5,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2718
+    },
+    "80": {
+      "chunks": 7,
+      "text": 1,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 820
+    },
+    "81": {
+      "chunks": 13,
+      "text": 2,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 1709
+    },
+    "82": {
+      "chunks": 8,
+      "text": 2,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 1284
+    },
+    "83": {
+      "chunks": 15,
+      "text": 4,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2607
+    },
+    "84": {
+      "chunks": 7,
+      "text": 1,
+      "table": 0,
+      "diagram": 6,
+      "text_chars": 352
+    },
+    "85": {
+      "chunks": 18,
+      "text": 7,
+      "table": 2,
+      "diagram": 9,
+      "text_chars": 2443
+    },
+    "86": {
+      "chunks": 8,
+      "text": 1,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 658
+    },
+    "87": {
+      "chunks": 7,
+      "text": 3,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 1021
+    },
+    "88": {
+      "chunks": 5,
+      "text": 2,
+      "table": 0,
+      "diagram": 3,
+      "text_chars": 1748
+    },
+    "89": {
+      "chunks": 4,
+      "text": 1,
+      "table": 0,
+      "diagram": 3,
+      "text_chars": 730
+    },
+    "90": {
+      "chunks": 6,
+      "text": 2,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 1671
+    },
+    "91": {
+      "chunks": 5,
+      "text": 1,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 688
+    },
+    "92": {
+      "chunks": 6,
+      "text": 2,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 1637
+    },
+    "93": {
+      "chunks": 5,
+      "text": 1,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 665
+    },
+    "94": {
+      "chunks": 5,
+      "text": 1,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 728
+    },
+    "95": {
+      "chunks": 7,
+      "text": 3,
+      "table": 0,
+      "diagram": 4,
+      "text_chars": 1510
+    },
+    "96": {
+      "chunks": 9,
+      "text": 4,
+      "table": 0,
+      "diagram": 5,
+      "text_chars": 1982
+    },
+    "97": {
+      "chunks": 19,
+      "text": 12,
+      "table": 0,
+      "diagram": 7,
+      "text_chars": 2469
+    },
+    "98": {
+      "chunks": 6,
+      "text": 4,
+      "table": 0,
+      "diagram": 2,
+      "text_chars": 902
+    },
+    "99": {
+      "chunks": 3,
+      "text": 0,
+      "table": 0,
+      "diagram": 3,
+      "text_chars": 0
+    },
+    "100": {
+      "chunks": 7,
+      "text": 2,
+      "table": 0,
+      "diagram": 5,
+      "text_chars": 628
+    }
+  }
+}
