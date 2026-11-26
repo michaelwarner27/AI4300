@@ -10,6 +10,9 @@ Usage:
     python manage_documents.py --delete report.pdf      # or by filename
     python manage_documents.py --update ./documents/report.pdf
     python manage_documents.py --help
+
+Works for every ingested file type (PDF, jpg/jpeg/png, mp4). Delete and update
+also remove the document's files in extracted_diagrams/.
 """
 
 import argparse
@@ -21,7 +24,7 @@ from src.config import load_config
 from src.data_models import IngestionState
 from src.ingestion.tools import media_kind
 from src.ingestion.nodes import (
-    list_documents, delete_document, update_document, stored_document_name,
+    list_documents, delete_document, update_document, stored_document_name, document_diagram_files,
 )
 from src.utils.logging import get_logger
 
@@ -118,7 +121,9 @@ def cmd_delete(identifier: str) -> int:
         print(f"\nDocument: {doc['name']}")
         print(f"ID:       {doc['id']}")
         print(f"Chunks:   {doc['chunk_count']}")
-        response = input("Delete this document and all its vectors? This cannot be undone. (y/n): ").strip().lower()
+        print(f"Diagram files: {len(document_diagram_files(state, doc['name']))}")
+        response = input("Delete this document, its vectors and its diagram files? "
+                         "This cannot be undone. (y/n): ").strip().lower()
         
         if response != 'y':
             print("Delete cancelled.")
@@ -132,7 +137,8 @@ def cmd_delete(identifier: str) -> int:
             print(f"Error deleting document: {errors[-1].get('error', errors[-1])}")
             return 1
         
-        print(f"\nSuccess! Deleted {result.get('deleted_vectors', 0)} vectors for '{doc['name']}'")
+        print(f"\nSuccess! Deleted {result.get('deleted_vectors', 0)} vectors and "
+              f"{result.get('deleted_diagrams', 0)} diagram files for '{doc['name']}'")
         return 0
     
     except FileNotFoundError as e:
@@ -150,11 +156,11 @@ def cmd_update(document_path: str) -> int:
     """
     Delete old vectors for a document and prepare it for re-ingestion.
     
-    After running this command, modify the PDF file and run:
+    After running this command, modify the file and run:
         python ingestion_main.py
-    
+
     Args:
-        document_path: Path to the PDF file
+        document_path: Path to the file (PDF, image or video)
     
     Returns:
         Exit code (0 for success, 1 for error)
@@ -187,7 +193,9 @@ def cmd_update(document_path: str) -> int:
         # Confirm update
         print(f"\nPreparing to update document: {name}")
         if doc_exists:
-            response = input("Delete old vectors and prepare for re-ingestion? (y/n): ").strip().lower()
+            chunks = next(d["chunk_count"] for d in documents if d["name"] == name)
+            print(f"Chunks: {chunks}, diagram files: {len(document_diagram_files(state, name))}")
+            response = input("Delete old vectors and diagram files and prepare for re-ingestion? (y/n): ").strip().lower()
         else:
             response = input("Proceed with preparation? (y/n): ").strip().lower()
         
@@ -204,7 +212,8 @@ def cmd_update(document_path: str) -> int:
             logger.warning(f"Errors during update: {errors}")
         
         if deleted_count > 0:
-            print(f"\nSuccess! Deleted {deleted_count} old vectors for '{name}'")
+            print(f"\nSuccess! Deleted {deleted_count} old vectors and "
+                  f"{result.get('deleted_diagrams', 0)} diagram files for '{name}'")
         else:
             print(f"\nNo old vectors found. Document is ready for initial ingestion.")
         

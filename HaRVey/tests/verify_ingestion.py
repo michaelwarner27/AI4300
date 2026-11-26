@@ -1144,6 +1144,41 @@ def test_media_files(pdf: Path) -> None:
         check("a PDF source still opens at its page",
               p.get("media") == "pdf" and p.get("url", "").endswith("#page=2"), str(p))
         check("a .wmv source gets no link", "url" not in w, str(w))
+
+        # Delete and update remove vectors and diagram files for every file type
+        extractor = DiagramExtractor()
+        check("the diagram folder only owns its own files",
+              extractor.owns(stored) and not extractor.owns(ws.docs / image_name)
+              and not extractor.owns(ws.diagrams / "missing.png"))
+        orphan = ws.diagrams / f"{DiagramExtractor.image_prefix(Path('manual.pdf'), 'manual.pdf')}_p9_fig9.png"
+        orphan.write_bytes(b"left over from an older extraction")
+        pdf_files = nodes.document_diagram_files(IngestionState(config=ws.config), "manual.pdf")
+        check("a document's diagram files include its chunks' images and leftover files",
+              orphan.resolve() in pdf_files and {Path(p).resolve() for p in pdf_diagrams} <= set(pdf_files),
+              str(pdf_files))
+
+        other_files = set(nodes.document_diagram_files(IngestionState(config=ws.config), "manual.png"))
+        for name, kind in [("manual.pdf", "a PDF"), (image_name, "an image"), (video_name, "a video")]:
+            expected = nodes.document_diagram_files(IngestionState(config=ws.config), name)
+            result = nodes.delete_document(IngestionState(config=ws.config), name)
+            check(f"deleting {kind} removes its vectors and diagram files",
+                  result["deleted_vectors"] >= 1 and result["deleted_diagrams"] == len(expected)
+                  and not result["errors"] and not chunks_of(name) and not any(p.exists() for p in expected),
+                  str(result))
+            check(f"deleting {kind} leaves the source file in place", (ws.docs / name).is_file())
+        check("deleting other documents leaves manual.png's image alone",
+              other_files and all(p.exists() for p in other_files), str(other_files))
+
+        result = nodes.update_document(IngestionState(config=ws.config), str(ws.docs / "manual.png"))
+        check("updating an image removes its vectors and diagram file",
+              result["deleted_vectors"] == 1 and result["deleted_diagrams"] == 1
+              and not any(p.exists() for p in other_files) and not result["errors"], str(result))
+        check("nothing is left in the diagram folder", not any(ws.diagrams.iterdir()),
+              str(list(ws.diagrams.iterdir())))
+
+        state = ws.run_pipeline()
+        check("deleted documents of every type are re-ingested on the next run",
+              state.documents_loaded == 4 and len(ws.listing()) == 4, str(state.errors))
     finally:
         ws.close()
 

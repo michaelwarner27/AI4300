@@ -602,7 +602,7 @@ Delete with: python manage_documents.py --delete <ID or filename>
 
 ### 8. delete_document - Remove a Document
 
-**Purpose**: Remove a document and all associated vectors from Chroma.
+**Purpose**: Remove a document's vectors from Chroma and its extracted diagram files. Works for every ingested type (PDF, image, video).
 
 **Command** (by document ID from `--list`, or by filename):
 ```bash
@@ -615,16 +615,21 @@ python manage_documents.py --delete report.pdf
 Document: report.pdf
 ID:       a1b2c3d4
 Chunks:   245
-Delete this document and all its vectors? This cannot be undone. (y/n): y
+Diagram files: 37
+Delete this document, its vectors and its diagram files? This cannot be undone. (y/n): y
 
-Success! Deleted 245 vectors for 'report.pdf'
+Success! Deleted 245 vectors and 37 diagram files for 'report.pdf'
 ```
 
 **Behavior**:
-- Resolves the argument as a filename first, then as a document ID (case-insensitive)
+- Resolves the argument as a filename first, then as a document ID (case-insensitive). Images and videos are deleted by their stored name too, e.g. `"Dometic/Guides/Awnings/Power Awning Proper Extension.PNG"`
 - Exits with an error if nothing matches
-- Shows the document name, ID and chunk count, then asks for confirmation
-- Deletes all chunks for that document from Chroma
+- Shows the document name, ID, chunk count and diagram file count, then asks for confirmation
+- Deletes the document's diagram files, then all its chunks from Chroma
+- The diagram files come from `document_diagram_files` (`src/ingestion/nodes.py`), which combines two sources:
+  - the `diagram_path` of each of its `diagram_reference` chunks,
+  - any file in `extracted_diagrams/` named with its image prefix, which catches files left over from an older extraction.
+- Only files directly inside `extracted_diagrams/` are ever deleted (`DiagramExtractor.owns`). Another document's images, including a `manual.png` next to `manual.pdf`, are not touched
 
 **Use Cases**:
 - Remove outdated or incorrect documents
@@ -633,9 +638,8 @@ Success! Deleted 245 vectors for 'report.pdf'
 - Manage document versions
 
 **Important Notes**:
-- Only removes vectors from the database
-- The file in `./documents/` is NOT affected
-- The document's images in `extracted_diagrams/` are not deleted yet (TODO item 10). They are replaced if the document is ingested again
+- Removes vectors from the database and the document's images in `extracted_diagrams/`
+- The file in `./documents/` is NOT affected, so the next ingestion run adds the document back unless the file is removed too
 - This action cannot be undone (deleted vectors are permanently removed)
 - Confirmation is required before deletion
 
@@ -643,7 +647,7 @@ Success! Deleted 245 vectors for 'report.pdf'
 
 ### 9. update_document - Prepare for Re-ingestion
 
-**Purpose**: Delete old vectors and prepare a document for re-ingestion.
+**Purpose**: Delete old vectors and diagram files and prepare a document for re-ingestion. Uses `delete_document`, so it works for every ingested type.
 
 **Command**:
 ```bash
@@ -653,9 +657,10 @@ python manage_documents.py --update ./documents/report.pdf
 **Interaction Flow**:
 ```
 Preparing to update document: report.pdf
-Delete old vectors and prepare for re-ingestion? (y/n): y
+Chunks: 245, diagram files: 37
+Delete old vectors and diagram files and prepare for re-ingestion? (y/n): y
 
-Success! Deleted 245 old vectors for 'report.pdf'
+Success! Deleted 245 old vectors and 37 diagram files for 'report.pdf'
 
 Next steps:
   1. Modify report.pdf if needed
@@ -686,9 +691,9 @@ The document will be re-ingested with its latest version.
 **Behavior**:
 - Validates that the file exists and is a type the pipeline reads (PDF, jpg/jpeg/png or mp4)
 - Checks if document exists in database
-- Asks for confirmation before deletion
-- Deletes all existing vectors for the document
-- Returns count of deleted vectors
+- Shows the chunk and diagram file counts and asks for confirmation before deletion
+- Deletes all existing vectors and diagram files for the document (through `delete_document`)
+- Returns the counts of deleted vectors and diagram files
 - Does NOT automatically re-ingest (by design)
 - Provides clear next steps
 
@@ -713,8 +718,8 @@ This is the recommended approach for most document updates.
 | Operation | Command | Use Case |
 |-----------|---------|----------|
 | **List** | `python manage_documents.py --list` | View all documents, verify ingestion status |
-| **Delete** | `python manage_documents.py --delete <ID or filename>` | Remove outdated/incorrect documents |
-| **Update** | `python manage_documents.py --update <path>` | Delete old vectors, prepare for re-ingestion |
+| **Delete** | `python manage_documents.py --delete <ID or filename>` | Remove outdated/incorrect documents (vectors and diagram files) |
+| **Update** | `python manage_documents.py --update <path>` | Delete old vectors and diagram files, prepare for re-ingestion |
 
 ---
 

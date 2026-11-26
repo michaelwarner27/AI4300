@@ -936,36 +936,84 @@ def list_documents(state: IngestionState) -> dict[str, Any]:
     }
 
 
+def document_diagram_files(state: IngestionState, document_name: str) -> list[Path]:
+    """
+    Files in extracted_diagrams/ that belong to a stored document (any file type).
+
+    Two sources, so nothing is missed:
+    - the diagram_path of each of its diagram_reference chunks in Chroma
+    - files named with the document's image prefix (catches files left by an
+      earlier extraction that no chunk points to any more)
+
+    Only files directly inside the diagram folder are returned, so a bad
+    diagram_path can never point the delete somewhere else.
+    """
+    extractor = DiagramExtractor()
+    files = set(extractor.document_diagram_files(Path(document_name), document_name))
+    vector_store = ChromaVectorStore(
+        persist_directory=state.config.chroma_persist_directory,
+        collection_name=state.config.chroma_collection_name,
+    )
+    vector_store.initialize_collection()
+    stored = vector_store.collection.get(
+        where={"$and": [{"source_filename": {"$eq": document_name}},
+                        {"chunk_type": {"$eq": "diagram_reference"}}]},
+        include=["metadatas"],
+    )
+    for meta in stored.get("metadatas") or []:
+        path = (meta or {}).get("diagram_path")
+        if path and extractor.owns(path):
+            files.add(Path(path).resolve())
+    return sorted({p.resolve() for p in files})
+
+
 def delete_document(state: IngestionState, document_name: str) -> dict[str, Any]:
     """
-    Delete a document and all its associated vectors from Chroma.
-    
-    Removes all chunks belonging to the specified document from the
-    vector database.
-    
+    Delete a document: all its vectors in Chroma and its extracted diagram files.
+
+    Works for every ingested type (PDF, image, video): documents are stored
+    under their relative path, whatever the extension. The source file in the
+    documents folder is not touched.
+
     Args:
         state: Current pipeline state
-        document_name: Name of document to delete (e.g., "example.pdf")
-    
+        document_name: Name of document to delete (e.g., "example.pdf" or
+            "folder/photo.png")
+
     Returns:
         Dictionary with:
         - deleted_vectors: Number of vectors removed
+        - deleted_diagrams: Number of diagram files removed
         - errors: Accumulated error messages
     """
     logger.info(f"Starting delete_document operation for: {document_name}")
     
     errors: list[dict] = list(state.errors)
     deleted_count = 0
-    
+    deleted_diagrams = 0
+
     if not state.config:
         error_msg = "Configuration not available"
         logger.error(error_msg)
         errors.append({"operation": "delete_document", "error": error_msg})
         return {
             "deleted_vectors": 0,
+            "deleted_diagrams": 0,
             "errors": errors,
         }
-    
+
+    # Diagram files first: their paths are read from the chunks about to be deleted
+    try:
+        for path in document_diagram_files(state, document_name):
+            path.unlink(missing_ok=True)
+            deleted_diagrams += 1
+        if deleted_diagrams:
+            logger.info(f"delete_document: Deleted {deleted_diagrams} diagram files for {document_name}")
+    except Exception as e:
+        error_msg = f"Failed to delete diagram files for {document_name}: {str(e)}"
+        logger.error(error_msg)
+        errors.append({"operation": "delete_document", "document": document_name, "error": error_msg})
+
     try:
         # Initialize Chroma vector store
         vector_store = ChromaVectorStore(
@@ -997,9 +1045,10 @@ def delete_document(state: IngestionState, document_name: str) -> dict[str, Any]
         error_msg = f"Failed to delete document {document_name}: {str(e)}"
         logger.error(error_msg)
         errors.append({"operation": "delete_document", "document": document_name, "error": error_msg})
-    
+
     return {
         "deleted_vectors": deleted_count,
+        "deleted_diagrams": deleted_diagrams,
         "errors": errors,
     }
 
@@ -1018,77 +1067,54 @@ def stored_document_name(document_path: str, input_dir: str) -> str:
 
 def update_document(state: IngestionState, document_path: str) -> dict[str, Any]:
     """
-    Update a document by deleting old vectors and re-ingesting.
-    
-    First deletes all vectors associated with the document, then
-    re-processes it through the pipeline.
-    
+    Prepare a document for re-ingestion: delete its old vectors and diagram files.
+
+    Uses delete_document, so it works for every ingested type. It does not
+    re-ingest; the next ingestion run picks the file up again.
+
     Args:
         state: Current pipeline state
-        document_path: Path to updated PDF file
-    
+        document_path: Path to the updated file (PDF, image or video)
+
     Returns:
         Dictionary with:
         - deleted_vectors: Number of old vectors removed
-        - newly_ingested: Number of new vectors created
+        - deleted_diagrams: Number of old diagram files removed
+        - newly_ingested: Always 0 (the caller re-runs the pipeline)
         - errors: Accumulated error messages
     """
     logger.info(f"Starting update_document operation for: {document_path}")
-    
+
     errors: list[dict] = list(state.errors)
-    deleted_vectors = 0
-    newly_ingested = 0
-    
+
     if not state.config:
         error_msg = "Configuration not available"
         logger.error(error_msg)
         errors.append({"operation": "update_document", "error": error_msg})
         return {
             "deleted_vectors": 0,
+            "deleted_diagrams": 0,
             "newly_ingested": 0,
             "errors": errors,
         }
-    
+
     try:
         document_name = stored_document_name(document_path, state.config.document_input_dir)
-
-        # Initialize Chroma vector store
-        vector_store = ChromaVectorStore(
-            persist_directory=state.config.chroma_persist_directory,
-            collection_name=state.config.chroma_collection_name,
-        )
-        
-        # Initialize the connection to Chroma
-        vector_store.initialize_collection()
-        
-        # Get collection
-        collection = vector_store.client.get_collection(state.config.chroma_collection_name)
-        
-        # Delete old vectors
-        where_filter = {"source_filename": {"$eq": document_name}}
-        results = collection.get(where=where_filter)
-        deleted_vectors = len(results["ids"]) if results and "ids" in results else 0
-        
-        if deleted_vectors > 0:
-            collection.delete(where=where_filter)
-            logger.info(f"update_document: Deleted {deleted_vectors} old vectors for {document_name}")
-        
-        # Note: To actually re-ingest, the document needs to be re-added to the documents
-        # list and run through the pipeline again. This function removes the old vectors.
-        # The caller should handle re-loading the document into the pipeline.
-        
-        logger.info(
-            f"update_document: Deleted {deleted_vectors} vectors. "
-            f"Document is ready for re-ingestion (add to documents folder and run pipeline)."
-        )
-    
     except Exception as e:
         error_msg = f"Failed to update document {document_path}: {str(e)}"
         logger.error(error_msg)
-        errors.append({"operation": "update_document", "document": document_name, "error": error_msg})
-    
+        errors.append({"operation": "update_document", "document": document_path, "error": error_msg})
+        return {"deleted_vectors": 0, "deleted_diagrams": 0, "newly_ingested": 0, "errors": errors}
+
+    result = delete_document(state, document_name)
+    logger.info(
+        f"update_document: Deleted {result['deleted_vectors']} vectors and "
+        f"{result['deleted_diagrams']} diagram files for {document_name}. "
+        f"Document is ready for re-ingestion (run the pipeline)."
+    )
     return {
-        "deleted_vectors": deleted_vectors,
+        "deleted_vectors": result["deleted_vectors"],
+        "deleted_diagrams": result["deleted_diagrams"],
         "newly_ingested": 0,  # Caller must re-run pipeline to ingest
-        "errors": errors,
+        "errors": result["errors"],
     }

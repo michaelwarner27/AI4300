@@ -1400,14 +1400,24 @@ class DiagramExtractor:
         Returns:
             Number of files removed
         """
+        files = self.document_diagram_files(file_path, document_name)
+        for existing in files:
+            existing.unlink()
+        return len(files)
+
+    def document_diagram_files(self, file_path: Path, document_name: str | None = None) -> list[Path]:
+        """Diagram files in output_dir named for this document ({prefix}_p{N}_img|fig{N}.{ext})."""
         prefix = self.image_prefix(file_path, document_name)
         pattern = re.compile(rf"^{re.escape(prefix)}_p\d+_(img|fig)\d+\.\w+$")
-        removed = 0
-        for existing in self.output_dir.iterdir():
-            if existing.is_file() and pattern.match(existing.name):
-                existing.unlink()
-                removed += 1
-        return removed
+        return sorted(p for p in self.output_dir.iterdir() if p.is_file() and pattern.match(p.name))
+
+    def owns(self, path: str | Path) -> bool:
+        """True when path is a file directly inside output_dir (safe to delete)."""
+        try:
+            resolved = Path(path).resolve()
+        except (OSError, ValueError):
+            return False
+        return resolved.parent == self.output_dir.resolve() and resolved.is_file()
     
     def store_image_file(self, file_path: Path, document_name: str | None = None) -> list[DiagramMetadata]:
         """
