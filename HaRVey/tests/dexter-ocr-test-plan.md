@@ -1,0 +1,163 @@
+# Dexter Catalog Baseline: OCR Test Plan
+
+## Purpose
+
+Record how well the current pipeline (PyMuPDF text, pdfplumber tables, image and vector-figure extraction) handles a large, table-heavy catalog **before** OCR / Docling is added. After OCR is added, the same tests are run again and the results are compared.
+
+**Document:** `documents/Dexter Trailer Catalog V1-24 p1-100.pdf`. These are PDF pages 1–100 of `scratch/Dexter Trailer Parts & Accessories Catalog V1-24.pdf` (516 pages in total).
+
+- All 100 pages are catalog section A, *Axle Assemblies*. Catalog page `A<n>` is usually PDF page `n + 2`, so A43 is PDF page 45. Tests always use **PDF page numbers**.
+- Every page has a text layer. OCR will make little difference to body text. It should matter for:
+  1. text that exists only inside images, such as diagram labels and product photo callouts
+  2. table structure, which pdfplumber currently breaks up (see below)
+- Pages 1–100 contain about 2,600 embedded images. Many are tiny vector fragments on the Torflex dimension pages, which have around 98 images each.
+
+**Baseline ingestion (2026-11-26):** 920 chunks. Log: `scratch/ingest-dexter-baseline.log`. Database snapshot taken before the Dexter document was added: `scratch/chroma_db.bak-pre-dexter`.
+
+## What the survey found
+
+| Observation | Example | Why it matters |
+|---|---|---|
+| pdfplumber breaks tables into pieces | Page 45 (#9 Torflex) *Full Load Dimensions* comes out as 3 separate tables: the header, row 4.80-8 and row 20.5X8.0-10. **Rows ST175/80R13 and 4.80-12 are lost**, probably because of the alternating row shading. *Mounting Bracket Dimensions* has the same problem. | This is the main thing table fidelity should measure. Docling's table model should fix it. |
+| Some diagram labels exist only in images | Page 45: "Arm Length", "Center of Spindle". Page 7: "Stack Height". | Questions about these labels should fail now and pass after OCR. |
+| Most callouts *are* in the text layer | Page 7: "Equalizer", "Shackle Link", "Free Arch Height". Page 15: part captions "23-26", "84545". | These are regression guards. OCR must not make them worse, for example by duplicating text. |
+| Repetitive page templates | 40+ "DEXTER AXLE OPTIONS" pages that differ only in model and values (D35, D44, …, M12E) | Retrieval has to tell near-identical pages apart. This is a hard test for both BM25 and vectors. |
+| Page footer and header repeat on every page | "Browse inventory … DEXTERINDEX.COM", "1-877-973-3632" | Noise in chunks. Track whether OCR adds more of it. |
+
+## Representative page set
+
+Most detailed checks focus on these pages. Each one stands for a type of page.
+
+| Type | PDF pages | Notes |
+|---|---|---|
+| Section index / contents | 3, 5 | Short lines, no tables |
+| Explainer text plus labelled diagrams | 6, 7, 9, 12 | Page 7 has 86 images and many callouts |
+| Leaf-spring "Axle Options" plus overhang table | 14 (D35), 20 (D70), 32 (D100) | Key/value options and an overhang min/max table |
+| Replacement-parts guide | 15, 21, 27, 31, 96, 97 | Part number, Dexter number and description rows. pdfplumber finds **0 tables** on these pages |
+| Torflex model page | 44, 58 | Options and bullet points |
+| Torflex dimension page | 45, 59, 75 | Wide multi-header tables, articulation table, image-only labels |
+| Versa-Flex / Eliminator marine | 88, 92 | Similar layout, different product families |
+| Rockwell (another brand) | 99, 100 | "ROCKWELL AXLE OPTIONS" instead of Dexter |
+| Marketing / mostly image | 2, 10, 16, 25, 98 | Very little text. OCR may add text from the artwork |
+
+## Test layers
+
+Each layer writes results to `tests/results/dexter/<label>/`. The label is `baseline` now and `ocr-<n>` later, so results can be compared directly.
+
+### 1. Ingestion snapshot: `tests/dexter_snapshot.py` (new)
+
+Reads the live Chroma collection, filtered to the Dexter file. No LLM or embedding calls. Writes `snapshot.json` containing:
+
+- **Totals:** chunk count by type (text / table / diagram), diagram files on disk, part numbers found
+- **Per page:** text characters, chunk count, table chunks, diagram chunks, `Section:` heading path
+- **Probe strings.** For each string in a probe list, record whether it appears in any chunk on its expected page. The list includes:
+  - image-only labels (expected missing now)
+  - text-layer labels (expected present)
+  - table values that pdfplumber drops (e.g. `ST175/80R13` in a *table* chunk on page 45)
+- **Noise:** how many chunks have a repeated footer, and the share of near-duplicate chunks
+
+A `--compare baseline ocr-1` option prints a per-page diff and highlights changes of more than 20%.
+
+### 2. Table fidelity: `tests/dexter_tables.py` (new)
+
+**Ground truth:** `tests/dexter-ground-truth/tables/*.json`, one file per table. Each file holds the page, a title, header rows and cell values, plus `verified: true/false`.
+
+**Starting set (about 10 tables):**
+
+- p14 D35 overhang restrictions
+- p15 boxed brake assemblies (parts list)
+- p15 hubs (parts list)
+- p45 Full Load Dimensions
+- p45 Mounting Bracket Dimensions
+- p45 Articulation Dimensions
+- p59 Full Load Dimensions
+- p96 replacement guide (one section)
+- p100 RT35 options
+- p32 D100 overhang
+
+**Metrics per table:**
+
+- **Found:** does a table chunk on that page contain the table's title or header?
+- **Fragments:** how many table chunks the table was split into. 1 is ideal.
+- **Row recall:** share of ground-truth rows whose cells all appear, in order, in one table chunk
+- **Cell accuracy:** share of ground-truth cells present in the right row
+- **Header kept:** whether the column headers appear in the same chunk as the data rows
+
+Run the script directly against the PDF with the pipeline's table extractor (`src/ingestion/tools.py`). Also check the stored table chunks, so that extraction quality and chunking effects can be told apart.
+
+### 3. Retrieval only: `tests/dexter_retrieval.py` (new)
+
+Calls the hybrid search function used by `vector_store_search` (vectors, BM25 and exact part numbers). It needs the embedding server but **no LLM**, so it is cheap and repeatable.
+
+**Cases:** `tests/dexter-ground-truth/retrieval.yaml`, about 40 queries. Each has the expected PDF page(s), a category and an optional `xfail` flag.
+
+| Category | Count | Example |
+|---|---|---|
+| Exact part number | 8 | "K23-026-00" → p15 |
+| Spec lookup (text layer) | 8 | "bearings for a D35 3,500 lb axle" → p14 |
+| Table cell | 10 | "#9 Torflex 4.80-12 tire full load 0° B dimension" → p45 |
+| Telling near-identical pages apart | 6 | "M11V Versa-Flex capacity" → p90, not p88/p89 |
+| Diagram label (image only) | 5, `xfail` | "what is arm length on a Torflex axle" → p45 |
+| Concept / explainer | 3 | "what is torsion" → p6 |
+
+**Metrics:** recall@5, recall@10 and MRR for each category. Also record whether the top hit was a text, table or diagram chunk. Cases are run against the whole corpus, so the RV manuals compete as they would in real use.
+
+### 4. End to end: `DX` cases in `tests/test-queries.md`
+
+**Cases:** about 15 cases in a new `DX` group, run with `python tests/test_queries.py --only DX --repeat 3`. They use the existing `retrieved`, `cited`, `facts` and `diagrams` checks.
+
+- 4 part-number lookups. Example: "What is the Dexter number for K23-026-00?" expects the facts `182753`, `10\s*x\s*2.25`, `LH`.
+- 4 table questions. Example: "Max hub-face overhang for a D35 with 4-inch drop 3.00 tubing and disc brakes?" expects `23"` and min `15"`, citing p14.
+- 2 multi-row or comparison questions. Example: "Which Torflex axles cover 7,000 lb?" expects #12, #13N and #13.
+- 2 diagram questions with `diagrams: true`. Example: "Show me the Torflex start angle diagram" (p7 / p45).
+- 3 image-only questions, marked `xfail`.
+- 1 cross-document question. Example: a question that names an RV manual and Dexter together, to check the catalog doesn't drown out other sources.
+
+**Changes needed:**
+
+- Add the Dexter file to `tests/corpus.md`.
+- Add an `xfail: true` key to the case format. `test_queries.py` would then report such cases as `XFAIL` or `XPASS` instead of counting them as failures. This is a small runner change: `_check_case` accepts the key and `summarize` reports it separately.
+
+## Expected-fail convention
+
+- A case or probe gets `xfail: true` only if the answer exists **only in pixels**, meaning the text layer doesn't contain it. Check this with `page.get_text()` before tagging.
+- **XPASS after OCR** is the success signal. Remove the tag once it passes reliably (3 out of 3 runs).
+- **A non-xfail case that fails after OCR** is a regression and must be investigated before OCR is merged.
+
+## Ground-truth workflow (I draft, you verify)
+
+1. I pull candidate facts from the page text and from rendered page images, and write them with `verified: false`.
+2. You check each item against the catalog. Rendered pages will be put in `scratch/dexter-pages/` for convenience.
+3. Only `verified: true` items count toward pass rates. The scripts report unverified items as `UNVERIFIED`.
+
+Values I have already read from the page images. These are drafts and still need your check:
+
+- **p14 (D35):** bearings are L68149 inner / L44649 outer. Overhang for 4" DROP—3.00" DISC: minimum 15", maximum 23".
+- **p15:** K23-026-00 → 182753, "ELECTRIC BRAKE, DEXTER, 10 X 2.25, LH, 3.5K/PR". Hub 84545 → 106800, 1750 lb capacity.
+- **p45 (#9 Torflex):** row 4.80-12 at 0°: H -1.1", B 8.4", C 11.9". Bolt size 5/8". Tube size 2.17".
+
+## Comparing before and after OCR
+
+1. Commit the baseline results in `tests/results/dexter/baseline/`.
+2. Add OCR / Docling behind a config flag, so the old path still exists.
+3. Re-ingest only the Dexter file: `manage_documents.py --update` and then `ingestion_main.py`. Record the ingestion time, which OCR may increase a lot.
+4. Run all four layers with the label `ocr-1`.
+5. `dexter_snapshot.py --compare` plus a short summary table (by layer and metric: baseline → OCR, with the change) goes into a HW report.
+6. Run the existing suites (`verify_ingestion.py`, `test_queries.py`) as well, to confirm the RV manuals didn't get worse.
+
+## Implementation steps (check in after each)
+
+1. **Ground-truth drafts.** Write the table JSONs, `retrieval.yaml` and the DX cases with `verified: false`, and render the reference pages. Hand over for your verification.
+2. **Snapshot script.** Write `dexter_snapshot.py` and record the baseline snapshot.
+3. **Table fidelity script.** Write `dexter_tables.py` and record the baseline.
+4. **Retrieval script.** Write `dexter_retrieval.py` and record the baseline.
+5. **End-to-end cases.** Add `xfail` support to `test_queries.py`, add the DX cases, update `corpus.md`, and run with `--repeat 3`.
+6. **Baseline report and commit.** Summarise the results in `tests/results/dexter/baseline/README.md` and commit.
+
+## Risks and notes
+
+- **Answers vary between runs.** End-to-end results vary from run to run, so use `--repeat 3` and pass rates. Retrieval and table metrics are fully repeatable and are the main comparison.
+- **Chunk counts will change with OCR.** Docling will change chunk boundaries, so per-chunk diffs will be noisy. Compare by page and by probe instead.
+- **Part numbers may clash** between Dexter part numbers and the RV manuals, for example 5-digit hub numbers. Watch for this in exact-match search.
+- **Only 100 of 516 pages are used.** Results don't cover sections B onward (brakes, fenders, tires, …). Add more pages later if needed.
+- **The live database now includes Dexter.** The existing query suite results may shift slightly as a result. Re-run it once to set a new baseline, or restore `scratch/chroma_db.bak-pre-dexter` when you need the old corpus only.
