@@ -1,0 +1,1155 @@
+================================================================================
+QUERY TEST RESULTS
+================================================================================
+Generated: 2026-11-26 12:03:59
+Model: Gemma-4-26B-A4B   Embeddings: Qwen3-Embedding-8B   Repeat: 3
+================================================================================
+
+KFAIL  DX01   0/3  Part number - boxed brake K23-026-00  [known: page-tag, unverified]
+              x3 cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]}
+PASS   DX02   3/3  Part number - hub 84545 bearings and capacity  [unverified]
+KFAIL  DX03   0/3  Part number - EB01-130 fitment  [known: page-tag, unverified]
+              x3 cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [96]}
+              x2 says '12\\s*1/4|12\\.25'
+PASS   DX04   3/3  Part number - hanger kit by axle spacing  [unverified]
+PASS   DX05   3/3  Table - D35 overhang limits  [unverified]
+FAIL   DX06   0/3  Table - #9 Torflex full load dimension (row dropped from table chunks)  [unverified]
+              x3 cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]}
+              x3 says '8\\.4'
+PASS   DX07   3/3  Table - hub face equation  [unverified]
+FAIL   DX08   0/3  Table - #9 Torflex mounting bracket F  [unverified]
+              x3 cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]}
+              x3 says '3\\.75'
+              x3 says '2\\.88'
+PASS   DX09   3/3  Comparison - Versa-Flex capacities  [unverified]
+KFAIL  DX10   0/3  Comparison - D35 vs D70 bearings  [known: page-tag, unverified]
+              x3 kind is answer
+              x3 cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [14]}
+              x3 cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [20]}
+              x3 says 'L68149'
+              x3 says 'L44649'
+              x3 says '25580'
+              x3 says '14125A'
+PASS   DX11   3/3  Diagram - Torflex brackets and start angles  [unverified]
+PASS   DX12   3/3  Diagram - reading torsion articulation dimensions  [unverified]
+XFAIL  DX13   0/3  Image only - Torflex arm length  [xfail, unverified]
+              x3 says 'center of (the )?axle'
+XFAIL  DX14   0/3  Image only - axle label location  [xfail, unverified]
+              x3 kind is answer
+              x3 says 'tube|beam'
+XFAIL  DX15   0/3  Image only - made in America  [xfail, unverified]
+              x3 kind is answer
+              x3 cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]}
+              x3 says 'made in america|made in the (usa|u\\.s)'
+PASS   DX16   3/3  No such model - must not make up specs  [unverified]
+
+Runs passed: 24/30 (excluding expected failures)
+Failed checks by stage: answer 15
+Expected failures: KFAIL 3, XFAIL 3
+
+
+================================================================================
+DX01: Part number - boxed brake K23-026-00  [known: page-tag, unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: What is Dexter part K23-026-00?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p14
+  [PASS] (answer) says '182753'
+  [PASS] (answer) says '10\\s*x\\s*2\\.25'
+  [PASS] (answer) says '\\bLH\\b|left'
+
+Dexter part K23-026-00 is an 182753 ELECTRIC BRAKE, DEXTER, 10 X 2.25, LH, 3.5K/PR, which is a genuine Dexter boxed brake assembly.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): K23-026-00 182753 ELECTRIC BRAKE, DEXTER, 10 X 2.25, LH, 3.5K/PR
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img3.jpg
+
+--- Run 2: FAIL
+
+Turn 1: What is Dexter part K23-026-00?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p14
+  [PASS] (answer) says '182753'
+  [PASS] (answer) says '10\\s*x\\s*2\\.25'
+  [PASS] (answer) says '\\bLH\\b|left'
+
+Dexter part K23-026-00 is a genuine Dexter boxed electric brake assembly, specifically a 10 x 2.25, LH, 3.5K/PR model (Ref # 182753).
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): K23-026-00 182753 ELECTRIC BRAKE, DEXTER, 10 X 2.25, LH, 3.5K/PR
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img3.jpg
+
+--- Run 3: FAIL
+
+Turn 1: What is Dexter part K23-026-00?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p14
+  [PASS] (answer) says '182753'
+  [PASS] (answer) says '10\\s*x\\s*2\\.25'
+  [PASS] (answer) says '\\bLH\\b|left'
+
+Dexter part K23-026-00 (ref # 182753) is a Genuine Dexter Boxed Brake Assembly, specifically an electric brake measuring 10 x 2.25, LH, 3.5K/PR.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): K23-026-00 182753 ELECTRIC BRAKE, DEXTER, 10 X 2.25, LH, 3.5K/PR
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img3.jpg
+
+================================================================================
+DX02: Part number - hub 84545 bearings and capacity  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What bearings does the Dexter 84545 hub use and what is its capacity?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]}
+  [PASS] (answer) says 'L68149'
+  [PASS] (answer) says 'L44649'
+  [PASS] (answer) says '1,?750'
+
+The Dexter 84545 hub uses L68149/L44649 bearings and has a 1750 lb capacity.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): 84545 106800 HUB ONLY, 545 USES L68149/L44649, 1750 LB CAPACITY
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img3.jpg
+
+--- Run 2: PASS
+
+Turn 1: What bearings does the Dexter 84545 hub use and what is its capacity?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]}
+  [PASS] (answer) says 'L68149'
+  [PASS] (answer) says 'L44649'
+  [PASS] (answer) says '1,?750'
+
+The Dexter 84545 hub uses L68149/L44649 bearings and has a capacity of 1750 LB.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): 84545 106800 HUB ONLY, 545 USES L68149/L44649, 1750 LB CAPACITY
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img3.jpg
+
+--- Run 3: PASS
+
+Turn 1: What bearings does the Dexter 84545 hub use and what is its capacity?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]}
+  [PASS] (answer) says 'L68149'
+  [PASS] (answer) says 'L44649'
+  [PASS] (answer) says '1,?750'
+
+The Dexter 84545 hub uses L68149/L44649 bearings and has a 1750 lb capacity.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): 84545 106800 HUB ONLY, 545 USES L68149/L44649, 1750 LB CAPACITY
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 15, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p14_img3.jpg
+
+================================================================================
+DX03: Part number - EB01-130 fitment  [known: page-tag, unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: Will the EB01-130 electric brake fit a Rockwell axle?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [96]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p95
+  [PASS] (answer) says '\\bnot?\\b|do not|does not|won.t'
+  [PASS] (answer) says 'rockwell'
+  [PASS] (answer) says '12\\s*1/4|12\\.25'
+
+No, the EB01-130 electric brake (188900, Left Hand, 12 1/4" x 3 3/8") does not fit Rockwell axles.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OVERHANG RESTRICTIONS): EB01-130 188900 LEFT HAND, 12 1/4\" X 3 3/8\" ELECTRIC BRAKES, DO NOT FIT ROCKWELL AXLES
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OPTIONS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p94_img0.jpg
+
+--- Run 2: FAIL
+
+Turn 1: Will the EB01-130 electric brake fit a Rockwell axle?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [96]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p95
+  [PASS] (answer) says '\\bnot?\\b|do not|does not|won.t'
+  [PASS] (answer) says 'rockwell'
+  [FAIL] (answer) says '12\\s*1/4|12\\.25' -- not in the reply
+
+No, the EB01-130 electric brake does not fit Rockwell axles.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OVERHANG RESTRICTIONS): EB01-130 188900 LEFT HAND, 12 1/4\" X 3 3/8\" ELECTRIC BRAKES, DO NOT FIT ROCKWELL AXLES
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OVERHANG RESTRICTIONS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p94_fig2.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OPTIONS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p94_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p94_fig0.png
+
+--- Run 3: FAIL
+
+Turn 1: Will the EB01-130 electric brake fit a Rockwell axle?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [96]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p95
+  [PASS] (answer) says '\\bnot?\\b|do not|does not|won.t'
+  [PASS] (answer) says 'rockwell'
+  [FAIL] (answer) says '12\\s*1/4|12\\.25' -- not in the reply
+
+No, the EB01-130 electric brake does not fit Rockwell axles.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OVERHANG RESTRICTIONS): EB01-130 188900 LEFT HAND, 12 1/4\" X 3 3/8\" ELECTRIC BRAKES, DO NOT FIT ROCKWELL AXLES
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OVERHANG RESTRICTIONS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p94_fig2.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS) > DEXTER AXLE OPTIONS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p94_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 95, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES > M12E ELIMINATOR TORSION AXLES (7,000 LBS)): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p94_fig0.png
+
+================================================================================
+DX04: Part number - hanger kit by axle spacing  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Which Dexter hanger kit part number do I need for 42 1/4 inch axle spacing on a 10K axle with 3 inch slipper springs?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) says 'HAP-203-02'
+
+For a 10K axle with 3" slipper springs and 42 1/4" axle spacing, you need the Dexter Multi-Axle Conversion Kit part number **HAP-203-02** or **HAP-203-02X**.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): HAP-203-02 041660 DEXTER MULTI-AXLE CONVERSION KIT 42 1/4\"
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img3.jpg
+
+--- Run 2: PASS
+
+Turn 1: Which Dexter hanger kit part number do I need for 42 1/4 inch axle spacing on a 10K axle with 3 inch slipper springs?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) says 'HAP-203-02'
+
+For a 10K axle with 3" slipper springs and 42 1/4" axle spacing, you need the Dexter Multi-Axle Conversion Kit part number **HAP-203-02** (Ref # 041660) or **HAP-203-02X** (Ref # 041665).
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): HAP-203-02 041660 DEXTER MULTI-AXLE CONVERSION KIT 42 1/4\"
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img3.jpg
+
+--- Run 3: PASS
+
+Turn 1: Which Dexter hanger kit part number do I need for 42 1/4 inch axle spacing on a 10K axle with 3 inch slipper springs?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) says 'HAP-203-02'
+
+For a 10K axle with 3 inch slipper springs and 42 1/4 inch axle spacing, you need the Dexter Multi-Axle Conversion Kit part number **HAP-203-02** (Ref # 041660) or **HAP-203-02X** (Ref # 041665).
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): HAP-203-02 041660 DEXTER MULTI-AXLE CONVERSION KIT 42 1/4"
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 32, raster, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE DEXTER HANGER KITS): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p31_img3.jpg
+
+================================================================================
+DX05: Table - D35 overhang limits  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: For a Dexter D35 axle with a 4 inch drop spindle, 3.00 inch tube and disc brakes, what are the minimum and maximum overhang?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [14]}
+  [PASS] (answer) says '\\b15(\\.0+)?"?'
+  [PASS] (answer) says '\\b23(\\.0+)?"?'
+
+For a Dexter D35 axle with a 4" drop spindle, 3.00" tube, and disc brakes, the minimum overhang is 15" and the maximum overhang is 23".
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): 4" DROP—3.00" DISC 15" 23"
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img0.jpg
+
+--- Run 2: PASS
+
+Turn 1: For a Dexter D35 axle with a 4 inch drop spindle, 3.00 inch tube and disc brakes, what are the minimum and maximum overhang?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [14]}
+  [PASS] (answer) says '\\b15(\\.0+)?"?'
+  [PASS] (answer) says '\\b23(\\.0+)?"?'
+
+For a Dexter D35 axle with a 4" drop spindle, 3.00" tube, and disc brakes, the minimum overhang is 15" and the maximum overhang is 23".
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): 4\" DROP—3.00\" DISC 15\" 23\"
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img0.jpg
+
+--- Run 3: PASS
+
+Turn 1: For a Dexter D35 axle with a 4 inch drop spindle, 3.00 inch tube and disc brakes, what are the minimum and maximum overhang?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [14]}
+  [PASS] (answer) says '\\b15(\\.0+)?"?'
+  [PASS] (answer) says '\\b23(\\.0+)?"?'
+
+For a Dexter D35 axle with a 4" drop spindle, 3.00" tube, and disc brakes, the minimum overhang is 15" and the maximum overhang is 23".
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): 4" DROP—3.00" DISC 15" 23"
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 14, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p13_img0.jpg
+
+================================================================================
+DX06: Table - #9 Torflex full load dimension (row dropped from table chunks)  [unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: On a #9 Torflex axle with 4.80-12 tires and a 0 degree start angle, what is the full load B dimension (top of bracket to ground)?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p43
+  [FAIL] (answer) says '8\\.4' -- not in the reply
+
+For a #9 Torflex axle with 4.80-12 tires and a 0 degree start angle, the full load B dimension (top of bracket to ground) is 10.5".
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): 4.80-12 2.5" 12" 8.3" 1" 10.5" 9.8" .1" 9.6" 10.7" -0.5" 9.0" 11.3" -1.1" 8.4" 11.9" -1.8" 7.7" 12.6" 9.5" 10.8"
+
+--- Run 2: FAIL
+
+Turn 1: On a #9 Torflex axle with 4.80-12 tires and a 0 degree start angle, what is the full load B dimension (top of bracket to ground)?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p43, Dexter Trailer Catalog V1-24 p1-100.pdf p44
+  [FAIL] (answer) says '8\\.4' -- not in the reply
+
+On a #9 Torflex axle with 4.80-12 tires and a 0 degree start angle, the full load B dimension (top of bracket to ground) is 10.5".
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): 4.80-12 2.5" 12" 8.3" 1" 10.5" 9.8" .1" 9.6" 10.7" -0.5" 9.0" 11.3" -1.1" 8.4" 11.9" -1.8" 7.7" 12.6" 9.5" 10.8"
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 44, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): B = TOP OF BRACKET TO GROUND
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 44, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p43_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 44, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p43_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 44, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p43_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 44, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p43_img3.jpg
+
+--- Run 3: FAIL
+
+Turn 1: On a #9 Torflex axle with 4.80-12 tires and a 0 degree start angle, what is the full load B dimension (top of bracket to ground)?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p43
+  [FAIL] (answer) says '8\\.4' -- not in the reply
+
+On a #9 Torflex axle with 4.80-12 tires and a 0 degree start angle, the full load B dimension (top of bracket to ground) is 10.5".
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): 4.80-12 2.5" 12" 8.3" 1" 10.5" 9.8" .1" 9.6" 10.7" -0.5" 9.0" 11.3" -1.1" 8.4" 11.9" -1.8" 7.7" 12.6" 9.5" 10.8"
+
+================================================================================
+DX07: Table - hub face equation  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: I only have a bare beam. How do I work out the hub face for a 3,500 lb Dexter axle?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [12]}
+  [PASS] (answer) says '6\\.34'
+  [PASS] (answer) says 'flange'
+
+To work out the hub face for a 3,500 lb Dexter axle using a bare beam, use the following equation:
+
+**HUB FACE = OUTSIDE OF FLANGES + 6.34**
+
+This calculation applies regardless of whether the axle is a straight, drop, or TORFLEX model, provided the same hub is used.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM): 3.5K | HUB FACE = OUTSIDE OF FLANGES + 6.34 |
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): any hub that goes on a 3,500 LB axle has a total flange-to-hub face difference of 6.34" regardless of whether it is a straight, drop or TORFLEX.
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, vector_figure, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p11_fig0.png
+
+--- Run 2: PASS
+
+Turn 1: I only have a bare beam. How do I work out the hub face for a 3,500 lb Dexter axle?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [12]}
+  [PASS] (answer) says '6\\.34'
+  [PASS] (answer) says 'flange'
+
+To work out the hub face for a 3,500 lb Dexter axle when you only have a bare beam, use the following equation:
+
+**HUB FACE = OUTSIDE OF FLANGES + 6.34**
+
+This calculation remains valid for any axle using the same hub (such as straight, drop, or TORFLEX) as long as the hub is the same.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM): 3.5K | HUB FACE = OUTSIDE OF FLANGES + 6.34 |
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): any hub that goes on a 3,500 LB axle has a total flange-to-hub face difference of 6.34\" regardless of whether it is a straight, drop or TORFLEX.
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, vector_figure, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p11_fig0.png
+
+--- Run 3: PASS
+
+Turn 1: I only have a bare beam. How do I work out the hub face for a 3,500 lb Dexter axle?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [12]}
+  [PASS] (answer) says '6\\.34'
+  [PASS] (answer) says 'flange'
+
+To work out the hub face for a 3,500 lb Dexter axle when you only have a bare beam, use the following equation:
+
+**HUB FACE = OUTSIDE OF FLANGES + 6.34**
+
+This calculation applies regardless of whether the axle is a straight, drop, or TORFLEX model, provided the same hub is used.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM): 3.5K | HUB FACE = OUTSIDE OF FLANGES + 6.34 |
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): any hub that goes on a 3,500 LB axle has a total flange-to-hub face difference of 6.34" regardless of whether it is a straight, drop or TORFLEX.
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p11_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p11_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 12, vector_figure, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p11_fig0.png
+
+================================================================================
+DX08: Table - #9 Torflex mounting bracket F  [unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: What is mounting bracket dimension F on a #9 Torflex axle for high and low profile brackets?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p43
+  [FAIL] (answer) says '3\\.75' -- not in the reply
+  [FAIL] (answer) says '2\\.88' -- not in the reply
+
+For a #9 Torflex axle, the mounting bracket dimension F is:
+* **Low Profile:** 5.12"
+* **High Profile:** 5.12" (Note: The table for #9 Torflex axles lists 5.12 for the Low profile, but for the High profile, it provides a single dimension of 5.12 in the "F" column, though it is listed under the "HIGH" profile section in the articulation dimensions table).
+
+*Correction based on the table for #9 Torflex Axles:*
+* **Low Profile:** 5.12"
+* **High Profile:** 5.12" (The dimension F is consistent across both profiles in the provided table).
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): F 5.12 4.37
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img3.jpg
+
+--- Run 2: FAIL
+
+Turn 1: What is mounting bracket dimension F on a #9 Torflex axle for high and low profile brackets?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p43, Dexter Trailer Catalog V1-24 p1-100.pdf p51, Dexter Trailer Catalog V1-24 p1-100.pdf p63
+  [FAIL] (answer) says '3\\.75' -- not in the reply
+  [FAIL] (answer) says '2\\.88' -- not in the reply
+
+For a #9 Torflex axle, the mounting bracket dimension F is 5.12" for the low profile bracket and 5.50" for the high profile bracket.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): F 5.12 4.37
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 51, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): F 5.12 4.37
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 63, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): F 5.50
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img3.jpg
+
+--- Run 3: FAIL
+
+Turn 1: What is mounting bracket dimension F on a #9 Torflex axle for high and low profile brackets?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [45]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p43
+  [FAIL] (answer) says '3\\.75' -- not in the reply
+  [FAIL] (answer) says '2\\.88' -- not in the reply
+
+For a #9 Torflex axle, the mounting bracket dimension F is:
+* **Low Profile:** 5.12"
+* **High Profile:** 5.12"
+
+Note: The dimension F remains the same (5.12") for both profiles on this specific axle model.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): F 5.12 4.37
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 43, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p42_img3.jpg
+
+================================================================================
+DX09: Comparison - Versa-Flex capacities  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What capacities do Dexter Versa-Flex torsion axles come in?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) says '3,?700'
+  [PASS] (answer) says '4,?200'
+  [PASS] (answer) says '6,?000'
+  [PASS] (answer) says '7,?000'
+  [PASS] (answer) does not say '4,?250'
+
+Dexter Versa~Flex torsion axles are available in the following capacities:
+* **M10V Versa~Flex:** 3,700 LBS
+* **M10FV Versa~Flex:** 4,200 LBS
+* **M11V Versa~Flex:** 6,000 LBS
+* **M12V Versa~Flex:** 7,000 LBS
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M10V VERSA~FLEX TORSION AXLES (3,700 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M10FV VERSA~FLEX TORSION AXLES (4,200 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 89, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M11V VERSA~FLEX TORSION AXLES (6,000 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 90, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M12V VERSA~FLEX TORSION AXLES (7,000 LBS)
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p87_fig0.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p87_fig1.png
+
+--- Run 2: PASS
+
+Turn 1: What capacities do Dexter Versa-Flex torsion axles come in?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) says '3,?700'
+  [PASS] (answer) says '4,?200'
+  [PASS] (answer) says '6,?000'
+  [PASS] (answer) says '7,?000'
+  [PASS] (answer) does not say '4,?250'
+
+Dexter Versa-Flex torsion axles are available in the following capacities:
+* **M10V Versa-Flex:** 3,700 LBS
+* **M10FV Versa-Flex:** 4,200 LBS
+* **M11V Versa-Flex:** 6,000 LBS
+* **M12V Versa-Flex:** 7,000 LBS
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M10V VERSA~FLEX TORSION AXLES (3,700 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M10FV VERSA~FLEX TORSION AXLES (4,200 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 89, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M11V VERSA~FLEX TORSION AXLES (6,000 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 90, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M12V VERSA~FLEX TORSION AXLES (7,000 LBS)
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p87_fig0.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p87_fig1.png
+
+--- Run 3: PASS
+
+Turn 1: What capacities do Dexter Versa-Flex torsion axles come in?
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) says '3,?700'
+  [PASS] (answer) says '4,?200'
+  [PASS] (answer) says '6,?000'
+  [PASS] (answer) says '7,?000'
+  [PASS] (answer) does not say '4,?250'
+
+Dexter Versa-Flex torsion axles are available in the following capacities:
+* **M10V:** 3,700 lbs
+* **M10FV:** 4,200 lbs
+* **M11V:** 6,000 lbs
+* **M12V:** 7,000 lbs
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M10V VERSA~FLEX TORSION AXLES (3,700 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M10FV VERSA~FLEX TORSION AXLES (4,200 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 89, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M11V VERSA~FLEX TORSION AXLES (6,000 LBS)
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 90, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): AXLE ASSEMBLIES M12V VERSA~FLEX TORSION AXLES (7,000 LBS)
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img1.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img2.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p87_fig0.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 88, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » SPRUNG AXLES): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p87_fig1.png
+
+================================================================================
+DX10: Comparison - D35 vs D70 bearings  [known: page-tag, unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: How do the bearings differ between a Dexter D35 and a D70 axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [14]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p13
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [20]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p13
+  [FAIL] (answer) says 'L68149' -- not in the reply
+  [FAIL] (answer) says 'L44649' -- not in the reply
+  [FAIL] (answer) says '25580' -- not in the reply
+  [FAIL] (answer) says '14125A' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents do not contain information regarding the specific types or differences in bearings between the Dexter D35 and D70 axles. While the documents list axle options and hub/drum kits for various models, they do not specify the bearing configurations for the D35 and D70 models.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 13, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM)
+  Snippet: 7" X 1 3/4" HYDRAULIC DRUM L44649 INNER/L44649 OUTER PAINT, GALVANIZED, POWDER COAT UNDERSLUNG (STANDARD), OVERSLUNG DEXTER AXLE OVERHANG…
+
+
+--- Run 2: FAIL
+
+Turn 1: How do the bearings differ between a Dexter D35 and a D70 axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [14]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p13
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [20]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p13
+  [FAIL] (answer) says 'L68149' -- not in the reply
+  [FAIL] (answer) says 'L44649' -- not in the reply
+  [FAIL] (answer) says '25580' -- not in the reply
+  [FAIL] (answer) says '14125A' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents contain information about the D35 (3,500 LB LEAF SPRING AXLES) and D70 (7,000 LB LEAF SPRING AXLES) models, including their axle options and hub/drum configurations, but they do not specify the type or details of the bearings used in these axles to allow for a comparison.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 13, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM)
+  Snippet: 7" X 1 3/4" HYDRAULIC DRUM L44649 INNER/L44649 OUTER PAINT, GALVANIZED, POWDER COAT UNDERSLUNG (STANDARD), OVERSLUNG DEXTER AXLE OVERHANG…
+
+
+--- Run 3: FAIL
+
+Turn 1: How do the bearings differ between a Dexter D35 and a D70 axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [14]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p13
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [20]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p13
+  [FAIL] (answer) says 'L68149' -- not in the reply
+  [FAIL] (answer) says 'L44649' -- not in the reply
+  [FAIL] (answer) says '25580' -- not in the reply
+  [FAIL] (answer) says '14125A' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents do not contain information regarding the specific types or differences of bearings used in the Dexter D35 and D70 axles. While the documents list hub and drum kit options for various axles, they do not explicitly state the bearing specifications for the D35 and D70 models.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 13, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO MEASURE A BEAM > HOW TO MEASURE A BEAM)
+  Snippet: 7" X 1 3/4" HYDRAULIC DRUM L44649 INNER/L44649 OUTER PAINT, GALVANIZED, POWDER COAT UNDERSLUNG (STANDARD), OVERSLUNG DEXTER AXLE OVERHANG…
+
+
+================================================================================
+DX11: Diagram - Torflex brackets and start angles  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: Show me the diagram of Torflex bracket mounting and start angles.
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) shows a diagram
+
+The diagrams for Torflex bracket mounting (O. D. Bracket) and start angles (spindle arm positioning) can be found in the Dexter Trailer Catalog. Specifically, diagrams on page 7 illustrate these measurements under the "Understanding Axle Measurements" section, and page 87 contains a diagram showing 8 start angles for varying ride heights.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): O. D. Bracket = mounting bracket dimension on Torflex axles Starting Angle = spindle arm positioning on Torflex axles
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 85, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging > M13 TORFLEX AXLES (7,000–8,000 LBS) > ARTICULATION DIMENSIONS > DIAGRAM # HIGH LOW): NO LOAD FULL LOAD START ANGLE BRACKET PROFILE H L H L
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES > 8 start angles for varying ride heights): 8 start angles for varying ride heights
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p6_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, vector_figure, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p6_fig8.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 85, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging > M13 TORFLEX AXLES (7,000–8,000 LBS) > ARTICULATION DIMENSIONS > DIAGRAM # HIGH LOW): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p84_fig2.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES > 8 start angles for varying ride heights): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img0.jpg
+
+--- Run 2: PASS
+
+Turn 1: Show me the diagram of Torflex bracket mounting and start angles.
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) shows a diagram
+
+The diagrams illustrating Torflex bracket mounting (O. D. Bracket) and start angles (spindle arm positioning) can be found in the Dexter Trailer Catalog V1-24 p1-100.pdf.
+
+*   **Torflex Mounting Bracket and Start Angles:** Refer to the diagrams on page 7 regarding axle measurements.
+*   **Articulation Dimensions for M13 Torflex Axles:** Refer to the diagrams on page 85.
+*   **Start Angles for Varying Ride Heights:** Refer to the diagram on page 87.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): O. D. Bracket = mounting bracket dimension on Torflex axles Starting Angle = spindle arm positioning on Torflex axles
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 85, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging > M13 TORFLEX AXLES (7,000–8,000 LBS) > ARTICULATION DIMENSIONS > DIAGRAM # HIGH LOW): Label: DIAGRAM # HIGH LOW Text in figure: A 1.22 1.22 B 3.63 3.63 C 10.56 10.56 D 10.56 10.56 E 13.00 13.00 F 5.50 4.81 G 2.50 2.50 J 2.25 2.25 BOLT SIZE: 5/8"
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES > 8 start angles for varying ride heights): Figure on page 87 of Dexter Trailer Catalog V1-24 p1-100.pdf
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p6_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, vector_figure, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p6_fig8.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 85, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging > M13 TORFLEX AXLES (7,000–8,000 LBS) > ARTICULATION DIMENSIONS > DIAGRAM # HIGH LOW): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p84_fig2.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES > 8 start angles for varying ride heights): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img0.jpg
+
+--- Run 3: PASS
+
+Turn 1: Show me the diagram of Torflex bracket mounting and start angles.
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [PASS] (answer) shows a diagram
+
+The diagrams illustrating Torflex mounting bracket dimensions (O.D. Bracket) and spindle arm positioning (Starting Angle) can be found in the Dexter Trailer Catalog.
+
+Relevant diagrams include:
+*   **Understanding Axle Measurements**: This section contains various diagrams showing the relationship between mounting bracket dimensions and starting angles for Torflex axles.
+*   **M13 Torflex Axles Articulation Dimensions**: Specifically provides articulation dimensions and bracket profiles for M13 Torflex axles.
+*   **8 start angles for varying ride heights**: A diagram showing the various start angles available.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): O. D. Bracket = mounting bracket dimension on Torflex axles Starting Angle = spindle arm positioning on Torflex axles
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 85, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging > M13 TORFLEX AXLES (7,000–8,000 LBS) > ARTICULATION DIMENSIONS > DIAGRAM # HIGH LOW): NO LOAD FULL LOAD START ANGLE BRACKET PROFILE H L H L
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES > 8 start angles for varying ride heights): 8 start angles for varying ride heights
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p6_img0.jpg
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, vector_figure, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p6_fig8.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 85, vector_figure, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging > M13 TORFLEX AXLES (7,000–8,000 LBS) > ARTICULATION DIMENSIONS > DIAGRAM # HIGH LOW): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p84_fig2.png
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 87, raster, INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » TORSION AXLES > 8 start angles for varying ride heights): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p86_img0.jpg
+
+================================================================================
+DX12: Diagram - reading torsion articulation dimensions  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: How high should fenders be set above the tires on a torsion axle? Show the diagram.
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [9]}
+  [PASS] (answer) says '5\\.3'
+  [PASS] (answer) says '3(\\.00)?"?\\s*(inch)?.*(recommend|clearance)|recommend'
+  [PASS] (answer) shows a diagram
+
+When there is no load, fenders should be located 5.3" above the tires (calculated as 2.3" travel + 3.00" Dexter recommended).
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 1. How high do I set the fenders?): Fenders should be located 5.3\" above tires when No Load (2.3\" + 3.00\" Dexter recommended).
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p8_img0.jpg
+
+--- Run 2: PASS
+
+Turn 1: How high should fenders be set above the tires on a torsion axle? Show the diagram.
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [9]}
+  [PASS] (answer) says '5\\.3'
+  [PASS] (answer) says '3(\\.00)?"?\\s*(inch)?.*(recommend|clearance)|recommend'
+  [PASS] (answer) shows a diagram
+
+When using a torsion axle at No Load, fenders should be located 5.3" above the tires (calculated as 2.3" travel + 3.00" Dexter recommended).
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 1. How high do I set the fenders?): Fenders should be located 5.3" above tires when No Load (2.3" + 3.00" Dexter recommended).
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p8_img0.jpg
+
+--- Run 3: PASS
+
+Turn 1: How high should fenders be set above the tires on a torsion axle? Show the diagram.
+Kind: answer   Status: response_generated   Extra searches: 0
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [9]}
+  [PASS] (answer) says '5\\.3'
+  [PASS] (answer) says '3(\\.00)?"?\\s*(inch)?.*(recommend|clearance)|recommend'
+  [PASS] (answer) shows a diagram
+
+When there is No Load on a torsion axle, fenders should be located 5.3" above the tires (this is calculated as the 2.3" travel from No Load to Full Load plus the Dexter recommended 3.00").
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 1. How high do I set the fenders?): Fenders should be located 5.3" above tires when No Load (2.3" + 3.00" Dexter recommended).
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p8_img0.jpg
+
+================================================================================
+DX13: Image only - Torflex arm length  [xfail, unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: On the Dexter Torflex articulation diagram, what two points is the arm length measured between?
+Kind: answer   Status: response_generated   Extra searches: 1
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [FAIL] (answer) says 'center of (the )?axle' -- not in the reply
+  [PASS] (answer) says 'center of (the )?spindle'
+
+On the Dexter Torflex articulation diagram, the arm length is measured between the center of the spindle and the center of the inner bar.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): Notice the 6.0" distance from center of spindle to center of inner bar.
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p8_img0.jpg
+
+--- Run 2: FAIL
+
+Turn 1: On the Dexter Torflex articulation diagram, what two points is the arm length measured between?
+Kind: answer   Status: response_generated   Extra searches: 1
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [FAIL] (answer) says 'center of (the )?axle' -- not in the reply
+  [PASS] (answer) says 'center of (the )?spindle'
+
+On the Dexter Torflex articulation diagram, the arm length is measured between the center of the spindle and the center of the inner bar.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): Notice the 6.0" distance from center of spindle to center of inner bar.
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p8_img0.jpg
+
+--- Run 3: FAIL
+
+Turn 1: On the Dexter Torflex articulation diagram, what two points is the arm length measured between?
+Kind: answer   Status: response_generated   Extra searches: 2
+  [PASS] (decision) kind is answer
+  [PASS] (answer) cites one of ['Dexter Trailer Catalog V1-24 p1-100.pdf']
+  [FAIL] (answer) says 'center of (the )?axle' -- not in the reply
+  [PASS] (answer) says 'center of (the )?spindle'
+
+On the Dexter Torflex articulation diagram, the arm length (referenced in the text as the distance from the center of the spindle to the center of the inner bar) is measured between the center of the spindle and the center of the inner bar.
+
+---
+
+Sources:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): Notice the 6.0" distance from center of spindle to center of inner bar.
+
+Diagrams:
+- Dexter Trailer Catalog V1-24 p1-100.pdf (page 9, raster, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > HOW TO READ TORSION ARTICULATION DIMENSIONS > 3. What do the + marks on the curved broken line represent?): /home/michael24/4300-CS/HaRVey/extracted_diagrams/Dexter Trailer Catalog V1-24 p1-100_p8_img0.jpg
+
+================================================================================
+DX14: Image only - axle label location  [xfail, unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: Where is the axle label on a Dexter leaf spring axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [7]}
+  [FAIL] (answer) says 'tube|beam' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents from the Dexter Trailer Catalog do not contain information regarding the location of the axle label on a Dexter leaf spring axle. The documents focus on axle measurements, component traceability, and product specifications, but do not mention label placement.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements)
+  Snippet: Figure on page 7 of Dexter Trailer Catalog V1-24 p1-100.pdf Text in figure: FRONT AXLE LOCATION AXLE SPACING AXLE SPACING FRONT HANGER SPACING CENTER…
+
+
+--- Run 2: FAIL
+
+Turn 1: Where is the axle label on a Dexter leaf spring axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [7]}
+  [FAIL] (answer) says 'tube|beam' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents do not contain information regarding the location of the axle label on a Dexter leaf spring axle. The documents focus on axle measurements, types, and braking performance.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements)
+  Snippet: Figure on page 7 of Dexter Trailer Catalog V1-24 p1-100.pdf Text in figure: FRONT AXLE LOCATION AXLE SPACING AXLE SPACING FRONT HANGER SPACING CENTER…
+
+
+--- Run 3: FAIL
+
+Turn 1: Where is the axle label on a Dexter leaf spring axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [PASS] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [7]}
+  [FAIL] (answer) says 'tube|beam' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents do not contain information regarding the physical location of the axle label on a Dexter leaf spring axle. The documents focus on axle measurements, component traceability, and various axle specifications.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 7, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > AXLE MEASURMENTS > Understanding Axle Measurements)
+  Snippet: Figure on page 7 of Dexter Trailer Catalog V1-24 p1-100.pdf Text in figure: FRONT AXLE LOCATION AXLE SPACING AXLE SPACING FRONT HANGER SPACING CENTER…
+
+
+================================================================================
+DX15: Image only - made in America  [xfail, unverified]
+================================================================================
+
+--- Run 1: FAIL
+
+Turn 1: Are Dexter's genuine replacement brake parts made in America?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p31
+  [FAIL] (answer) says 'made in america|made in the (usa|u\\.s)' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents state that genuine Dexter replacement parts are stocked and available across the U.S. and Canada, and that they adhere to rigorous quality standards, but they do not specify whether the parts are manufactured in America.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 31, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE REPLACEMENT PARTS FOR YOUR OEM DEXTER AXLES)
+  Snippet: GENUINE REPLACEMENT PARTS FOR YOUR OEM DEXTER AXLES - All genuine Dexter replacement parts are covered by Dexter’s 5-year warranty - Genuine Dexter…
+
+
+--- Run 2: FAIL
+
+Turn 1: Are Dexter's genuine replacement brake parts made in America?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p31
+  [FAIL] (answer) says 'made in america|made in the (usa|u\\.s)' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents state that genuine Dexter replacement parts are stocked and available across the U.S. and Canada, but they do not specify where the parts are manufactured.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 31, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE REPLACEMENT PARTS FOR YOUR OEM DEXTER AXLES)
+  Snippet: GENUINE REPLACEMENT PARTS FOR YOUR OEM DEXTER AXLES - All genuine Dexter replacement parts are covered by Dexter’s 5-year warranty - Genuine Dexter…
+
+
+--- Run 3: FAIL
+
+Turn 1: Are Dexter's genuine replacement brake parts made in America?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [FAIL] (decision) kind is answer -- got insufficient
+  [FAIL] (answer) cites {'file': 'Dexter Trailer Catalog V1-24 p1-100.pdf', 'pages': [15]} -- Dexter Trailer Catalog V1-24 p1-100.pdf p31
+  [FAIL] (answer) says 'made in america|made in the (usa|u\\.s)' -- not in the reply
+
+⚠️  Insufficient Information
+
+The provided documents state that genuine Dexter replacement parts are stocked and available across the U.S. and Canada, and that they adhere to rigorous quality standards, but they do not specify the country of manufacture for these brake parts.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 31, MORE > REPLACEMENT GUIDE FOR 10,000 LB AXLE WITH 12 1/4" X 3 3/8" ELECTRIC BRAKES > GENUINE REPLACEMENT PARTS FOR YOUR OEM DEXTER AXLES)
+  Snippet: GENUINE REPLACEMENT PARTS FOR YOUR OEM DEXTER AXLES - All genuine Dexter replacement parts are covered by Dexter’s 5-year warranty - Genuine Dexter…
+
+
+================================================================================
+DX16: No such model - must not make up specs  [unverified]
+================================================================================
+
+--- Run 1: PASS
+
+Turn 1: What is the capacity and bearing set of the Dexter D500 leaf spring axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (decision) kind is insufficient or clarify
+  [PASS] (answer) does not say 'D500.{0,40}\\d{1,2},\\d{3}\\s*lb'
+
+⚠️  Insufficient Information
+
+The provided documents do not contain information for a "D500" leaf spring axle. The documents list several other models, such as D44 (4,400 LB), D52 (5,200 LB), D75 (7,500 LB), D80 (8,000 LB), D80N (8,000 LB), D100G (10,000 LB), and D200 (22,500-27,500 LB), but none for a D500 model.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 6, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > UNDERSTANDING AXLES > What is Leaf Spring?)
+  Snippet: - 2,000–27,500 LB spring axle capacities - CSA certification on all 2,000–7,000 LB axles - Complete axle assembly and component traceability and…
+
+
+--- Run 2: PASS
+
+Turn 1: What is the capacity and bearing set of the Dexter D500 leaf spring axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (decision) kind is insufficient or clarify
+  [PASS] (answer) does not say 'D500.{0,40}\\d{1,2},\\d{3}\\s*lb'
+
+⚠️  Insufficient Information
+
+The provided documents do not contain information regarding a "D500" leaf spring axle. The documents list several other axle models, such as the D44 (4,400 LB), D52 (5,200 LB), D75 (7,500 LB), D80N (8,000 LB narrow), D80 (8,000 LB), D100G (10,000 LB), and D200 (22,500-27,500 LB), but none for a D500 model.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 6, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > UNDERSTANDING AXLES > What is Leaf Spring?)
+  Snippet: - 2,000–27,500 LB spring axle capacities - CSA certification on all 2,000–7,000 LB axles - Complete axle assembly and component traceability and…
+
+
+--- Run 3: PASS
+
+Turn 1: What is the capacity and bearing set of the Dexter D500 leaf spring axle?
+Kind: insufficient   Status: insufficient_evidence_returned   Extra searches: 0
+  [PASS] (decision) kind is insufficient or clarify
+  [PASS] (answer) does not say 'D500.{0,40}\\d{1,2},\\d{3}\\s*lb'
+
+⚠️  Insufficient Information
+
+The provided documents do not contain information regarding a "D500" leaf spring axle. The documents list several other axle models (such as D44, D52, D75, D80, D80N, D100G, and D200), but none match the D500 model specified in the question.
+
+However, here is the most relevant document that was retrieved:
+
+  Source: Dexter Trailer Catalog V1-24 p1-100.pdf (page 6, WE KNOW AXLES. DEXTER® HAS THE BEST SELECTION OF AXLES AND COMPONENTS IN THE INDUSTRY. > UNDERSTANDING AXLES > What is Leaf Spring?)
+  Snippet: - 2,000–27,500 LB spring axle capacities - CSA certification on all 2,000–7,000 LB axles - Complete axle assembly and component traceability and…
+

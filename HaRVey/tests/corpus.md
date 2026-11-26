@@ -104,6 +104,20 @@ Files that are not PDFs. With no text to read, each is found only by its folder 
 - **No OCR.** The Heat-Cool wiring sheet and some pages (9 of 13 in MaxxFan Troubleshooting) have little or no text.
 - **The "specific part number" limit is 20 chunks** (`requirements/hybrid_search.md`). It was set for 607 chunks; the corpus is now almost ten times larger.
 
+## Dexter catalog (DX cases)
+
+`documents/Dexter Trailer Catalog V1-24 p1-100.pdf` holds PDF pages 1–100 (catalog section A, *Axle Assemblies*) of `scratch/Dexter Trailer Parts & Accessories Catalog V1-24.pdf`. It is the OCR baseline document (`tests/dexter-ocr-test-plan.md`). It isn't in `Harvey-Manuals-All/`, so `build_corpus.py` doesn't copy it.
+
+- **Ingested 2026-11-26 with no errors:** 920 chunks (232 text, 41 table, 647 diagram reference).
+- **Database before the catalog was added:** saved in `scratch/chroma_db.bak-pre-dexter`.
+- **Recreate it:**
+
+  ```bash
+  python -c "import pymupdf; s=pymupdf.open('scratch/Dexter Trailer Parts & Accessories Catalog V1-24.pdf'); o=pymupdf.open(); o.insert_pdf(s, from_page=0, to_page=99); o.save('documents/Dexter Trailer Catalog V1-24 p1-100.pdf', garbage=3, deflate=True)"
+  ```
+
+- **Effect on other cases:** it adds many part numbers and table-like chunks to the corpus, so results for the other groups may shift slightly.
+
 ## Removing the test document
 
 ```bash

@@ -203,7 +203,22 @@ Values I have already read from the page images. These are drafts and still need
    - **Page-tag bug:** this is the biggest gap between strict and lenient (spec: 38% → 88%).
    - **DXR-X03:** moved out of xfail. Page 7 ranks first without OCR, so the case can't show a gain.
    - **Image-only cases are a weak OCR signal** at page level. The probes and DX facts are the stronger checks.
-5. **End-to-end cases.** Add `xfail` support to `test_queries.py`, add the DX cases, update `corpus.md`, and run with `--repeat 3`.
+5. **End-to-end cases.** *(done 2026-11-26)* What changed:
+   - `test_queries.py` accepts `xfail`, `baseline_fail` and `verified` case keys. It reports XFAIL/XPASS and KFAIL, and none of these count toward the exit code.
+   - The 16 DX cases are in `tests/test-queries.md`.
+   - The catalog is documented in `tests/corpus.md`.
+
+   The baseline run is `tests/results/query_results_018.txt` (3 runs per case, and every case gave the same result on all 3):
+
+   | Result | Cases |
+   |---|---|
+   | PASS 3/3 | DX02, DX04, DX05, DX07, DX09, DX11, DX12, DX16. That is 8 of the 10 ordinary cases (24/30 runs). |
+   | **FAIL 0/3** | **DX06, DX08: wrong numbers stated with confidence.** The agent answered from p43 (#8 Torflex) instead of p45 (#9). The chunk's section path is stale, so nothing in it names the model, and both pages share one table layout. B was given as 10.5" instead of 8.4", and F as 5.12" instead of 3.75" / 2.88". |
+   | KFAIL (page-tag) | DX01 and DX03 give correct answers but cite page N−1. DX10 retrieves the D20 page (p13) filed under the wrong heading and says the documents don't cover D35 or D70. |
+   | XFAIL | DX13, DX14, DX15 (image-only facts) |
+
+   - **Root causes:** DX06, DX08 and DX10 fail because of stale headings and page tags, not missing OCR. Docling's layout analysis may fix headings as a side effect, so these cases show both effects.
+   - **Mistake found in my cases:** the first run used unquoted YAML questions containing `#9`, which YAML treated as a comment, so the questions were cut off. They are quoted now. A scan of all 81 cases found no other cut-off values.
 6. **Baseline report and commit.** Summarise the results in `tests/results/dexter/baseline/README.md` and commit.
 
 ## Risks and notes

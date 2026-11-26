@@ -9,7 +9,8 @@ pipeline and grade each turn against its expectations.
     python tests/test_queries.py --validate           check the cases, run nothing
 
 Each run writes a new report, tests/results/query_results_001.txt, _002.txt, ...
-(earlier runs are kept). The exit code is 1 when any check fails.
+(earlier runs are kept). The exit code is 1 when any check fails, except in
+cases marked xfail or baseline_fail (reported as XFAIL/XPASS and KFAIL).
 
 The case format is described at the top of tests/test-queries.md. Checks are
 grouped by the stage that failed: rewrite, retrieval, decision (the kind of
@@ -104,9 +105,17 @@ def _check_expect(expect: dict) -> None:
             raise ValueError(f"{key} must be a whole number")
 
 
+CASE_KEYS = {"history", "turns", "xfail", "baseline_fail", "verified"}
+
+
 def _check_case(body) -> None:
-    if not isinstance(body, dict) or set(body) - {"history", "turns"}:
-        raise ValueError("a case holds only 'turns' and an optional 'history'")
+    if not isinstance(body, dict) or set(body) - CASE_KEYS:
+        raise ValueError("a case holds 'turns' and optional 'history', 'xfail', 'baseline_fail' and 'verified'")
+    for key in ("xfail", "verified"):
+        if key in body and not isinstance(body[key], bool):
+            raise ValueError(f"'{key}' must be true or false")
+    if "baseline_fail" in body and (not isinstance(body["baseline_fail"], str) or not body["baseline_fail"].strip()):
+        raise ValueError("'baseline_fail' must name the known reason, e.g. page-tag")
     turns = body.get("turns")
     if not isinstance(turns, list) or not turns:
         raise ValueError("'turns' must be a non-empty list")
@@ -148,7 +157,10 @@ def parse_cases(text: str) -> list[dict]:
             raise ValueError(f"{case_id}: {e}") from e
         seen.add(case_id)
         cases.append({"id": case_id, "title": title, "turns": body["turns"],
-                      "history": _as_list(body.get("history"))})
+                      "history": _as_list(body.get("history")),
+                      "xfail": body.get("xfail", False),
+                      "baseline_fail": body.get("baseline_fail"),
+                      "verified": body.get("verified", True)})
     return cases
 
 
@@ -368,29 +380,73 @@ def run_passed(records: list[dict]) -> bool:
     return all(c["passed"] for r in records for c in r["checks"])
 
 
+def expected_to_fail(case: dict) -> bool:
+    """xfail (answer only in images) or baseline_fail (a known, recorded bug)."""
+    return bool(case.get("xfail") or case.get("baseline_fail"))
+
+
+def case_status(case: dict, passes: int, runs: int) -> str:
+    """
+    PASS / FAIL / FLAKY for ordinary cases.
+    xfail cases:          XFAIL (all runs fail), XPASS (all pass), XFLAKY.
+    baseline_fail cases:  KFAIL (known failure), PASS, KFLAKY.
+    """
+    if case.get("xfail"):
+        return "XPASS" if passes == runs else "XFAIL" if passes == 0 else "XFLAKY"
+    if case.get("baseline_fail"):
+        return "PASS" if passes == runs else "KFAIL" if passes == 0 else "KFLAKY"
+    return "PASS" if passes == runs else "FAIL" if passes == 0 else "FLAKY"
+
+
+def case_tags(case: dict) -> str:
+    tags = []
+    if case.get("xfail"):
+        tags.append("xfail")
+    if case.get("baseline_fail"):
+        tags.append(f"known: {case['baseline_fail']}")
+    if not case.get("verified", True):
+        tags.append("unverified")
+    return f"  [{', '.join(tags)}]" if tags else ""
+
+
 def summarize(results: list[dict]) -> list[str]:
-    """Pass rates per case and the number of failed checks per stage."""
+    """
+    Pass rates per case and the number of failed checks per stage. Cases expected
+    to fail (xfail, baseline_fail) are counted apart and never count as failures.
+    """
     lines = []
     failures: Counter = Counter()
     passed_runs = total_runs = 0
+    expected: Counter = Counter()
     for item in results:
+        case = item["case"]
         passes = sum(run_passed(records) for records in item["runs"])
-        passed_runs += passes
-        total_runs += len(item["runs"])
+        status = case_status(case, passes, len(item["runs"]))
         failed = Counter(c["name"] for records in item["runs"] for r in records
                          for c in r["checks"] if not c["passed"])
-        failures.update(c["stage"] for records in item["runs"] for r in records
-                        for c in r["checks"] if not c["passed"])
-        status = "PASS" if passes == len(item["runs"]) else "FAIL" if passes == 0 else "FLAKY"
-        line = f"{status:5} {item['case']['id']:6} {passes}/{len(item['runs'])}  {item['case']['title']}"
+        if expected_to_fail(case):
+            expected[status] += 1
+        else:
+            passed_runs += passes
+            total_runs += len(item["runs"])
+            failures.update(c["stage"] for records in item["runs"] for r in records
+                            for c in r["checks"] if not c["passed"])
+        line = f"{status:6} {case['id']:6} {passes}/{len(item['runs'])}  {case['title']}{case_tags(case)}"
         if failed:
-            line += "\n" + "\n".join(f"             x{n} {name}" for name, n in failed.most_common())
+            line += "\n" + "\n".join(f"              x{n} {name}" for name, n in failed.most_common())
         lines.append(line)
     lines.append("")
-    lines.append(f"Runs passed: {passed_runs}/{total_runs}")
+    lines.append(f"Runs passed: {passed_runs}/{total_runs}" + (" (excluding expected failures)" if expected else ""))
     lines.append("Failed checks by stage: "
                  + (", ".join(f"{s} {failures[s]}" for s in STAGES if failures[s]) or "none"))
+    if expected:
+        lines.append("Expected failures: " + ", ".join(f"{s} {n}" for s, n in sorted(expected.items())))
     return lines
+
+
+def all_passed(results: list[dict]) -> bool:
+    """Exit status: every ordinary case passed every run (expected failures don't count)."""
+    return all(run_passed(r) for item in results if not expected_to_fail(item["case"]) for r in item["runs"])
 
 
 def format_report(results: list[dict], settings: str) -> str:
@@ -400,7 +456,7 @@ def format_report(results: list[dict], settings: str) -> str:
            *summarize(results), ""]
     for item in results:
         case = item["case"]
-        out += ["", rule, f"{case['id']}: {case['title']}", rule]
+        out += ["", rule, f"{case['id']}: {case['title']}{case_tags(case)}", rule]
         for run, records in enumerate(item["runs"], 1):
             out += ["", f"--- Run {run}: {'PASS' if run_passed(records) else 'FAIL'}"]
             for number, record in enumerate(records, 1):
@@ -497,7 +553,7 @@ def main() -> int:
     output = next_results_file(RESULTS_DIR)
     output.write_text(format_report(results, settings))
     print("", *summarize(results), f"\nReport: {output}", sep="\n")
-    return 0 if all(run_passed(r) for item in results for r in item["runs"]) else 1
+    return 0 if all_passed(results) else 1
 
 
 if __name__ == "__main__":
