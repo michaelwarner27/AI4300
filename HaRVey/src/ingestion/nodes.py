@@ -226,7 +226,16 @@ def parse_documents(state: IngestionState) -> dict[str, Any]:
         try:
             # Construct full file path
             doc_path = Path(state.config.document_input_dir) / doc.metadata.filename
-            
+
+            # Standalone images and videos: no text to read, so the filename and
+            # folder path stand in for it
+            kind = media_kind(doc_path)
+            if kind in ("image", "video"):
+                _parse_media(doc, doc_path, kind, diagram_extractor)
+                diagrams_found += len(doc.diagrams)
+                parsed_docs.append(doc)
+                continue
+
             # Parse document using pypdf for text
             full_text, per_page_texts = parser.parse_document(str(doc_path))
             
@@ -289,6 +298,37 @@ def parse_documents(state: IngestionState) -> dict[str, Any]:
     }
 
 
+def _parse_media(doc: ParsedDocument, doc_path: Path, kind: str, diagram_extractor: DiagramExtractor | None) -> None:
+    """
+    Fill in a standalone image or video as a one-page document.
+
+    - Image: no text; the file is copied in as the document's one diagram
+      (searchable by its folder path and filename).
+    - Video: one page of text naming the video and its folder, chunked like any
+      other text so the answer can cite it as a source.
+
+    Raises ValueError when an image can't be stored (no diagram extractor).
+    """
+    name = doc.metadata.filename
+    if kind == "image":
+        if diagram_extractor is None:
+            raise ValueError("Diagram extractor unavailable; cannot store image")
+        page = ""
+        doc.diagrams = diagram_extractor.store_image_file(doc_path, name)
+    else:
+        lines = [f"Video: {TextChunker.document_title(name)}"]
+        if folder_path(name):
+            lines.append(f"Folder: {folder_path(name)}")
+        page = "\n".join(lines)
+        doc.diagrams = []
+    doc.content = page
+    doc.pages = [page]
+    doc.page_contents = {0: page}
+    doc.tables = []
+    doc.metadata.table_count = 0
+    doc.metadata.diagram_count = len(doc.diagrams)
+
+
 def extract_metadata(state: IngestionState) -> dict[str, Any]:
     """
     Extract enhanced metadata including document structure and timestamps.
@@ -324,6 +364,11 @@ def extract_metadata(state: IngestionState) -> dict[str, Any]:
         doc_iter = documents
     
     for doc in doc_iter:
+        if media_kind(doc.metadata.filename) in ("image", "video"):
+            # Not a PDF: no layout or PDF metadata to read
+            doc.metadata.page_count = 1
+            doc.metadata.extraction_timestamp = now
+            continue
         try:
             # Layout analysis: positioned headings + heading path/context for each diagram.
             # If it fails, the document has no headings and is chunked page by page.

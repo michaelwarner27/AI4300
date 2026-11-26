@@ -270,6 +270,9 @@ class TextChunker:
         if document.sections:
             return self._chunk_sections(document, document.sections)
 
+        if media_kind(filename) == "image":  # its only chunk is the diagram reference
+            return []
+
         if not any(page.strip() for page in document.pages):
             logger.warning(f"Document {filename} has no content to chunk")
             return []
@@ -427,7 +430,10 @@ class TextChunker:
         Searchable text for a diagram: where it is, the section it belongs to,
         its figure label, the text inside it and the text leading up to it.
         """
-        lines = [f"Figure on page {diagram.page + 1} of {Path(filename).name}"]
+        if diagram.kind == "image_file":  # a standalone image, not a figure inside a PDF
+            lines = [f"Image: {Path(filename).name}"]
+        else:
+            lines = [f"Figure on page {diagram.page + 1} of {Path(filename).name}"]
         lines.append(TextChunker.section_line(TextChunker.section_path(diagram.heading_path, filename)))
         if diagram.label.strip():
             lines.append("Label: " + diagram.label.strip())
@@ -1376,9 +1382,10 @@ class DiagramExtractor:
         """
         Start of a document's image filenames. All images share one folder, so a
         document in a subfolder ("folder/a.pdf") gets a short hash of that path
-        to keep it apart from other files named "a.pdf".
+        to keep it apart from other files named "a.pdf". Standalone images always
+        get the hash, so "a.png" never clears the diagrams of "a.pdf".
         """
-        if document_name and "/" in document_name:
+        if document_name and ("/" in document_name or media_kind(document_name) == "image"):
             digest = hashlib.sha1(document_name.encode("utf-8")).hexdigest()[:8]
             return f"{file_path.stem}-{digest}"
         return file_path.stem
@@ -1402,6 +1409,35 @@ class DiagramExtractor:
                 removed += 1
         return removed
     
+    def store_image_file(self, file_path: Path, document_name: str | None = None) -> list[DiagramMetadata]:
+        """
+        Store a standalone image file (not inside a PDF) as the document's one diagram.
+
+        The file is copied unchanged into output_dir under the same naming
+        scheme as extracted images, so re-ingesting replaces it. With no text
+        to read, the folder path and filename are what make it searchable.
+
+        Returns:
+            A one-item list: DiagramMetadata with kind "image_file" on page 0
+        """
+        import shutil
+
+        name = document_name or file_path.name
+        ext = file_path.suffix.lower().lstrip(".")
+        self.clear_document_diagrams(file_path, document_name)
+        target = self.output_dir / f"{self.image_prefix(file_path, document_name)}_p0_img1.{ext}"
+        shutil.copyfile(file_path, target)
+        folders = folder_path(name)
+        return [DiagramMetadata(
+            page=0,
+            position_index=0,
+            image_path=str(target),
+            type=ext,
+            kind="image_file",
+            label=TextChunker.document_title(name),
+            context=f"Image in folder {folders}" if folders else "",
+        )]
+
     def extract_all_diagrams(self, file_path: Path, document_name: str | None = None) -> list[DiagramMetadata]:
         """
         Extract every diagram (embedded raster images and vector figures).

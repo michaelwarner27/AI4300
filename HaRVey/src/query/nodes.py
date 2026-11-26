@@ -154,6 +154,10 @@ SYSTEM_PROMPT = """You are HaRVey, an assistant that answers questions about equ
 - In EVERY respond_to_user call, whether or not the user asked for a diagram, put in diagram_refs the ref of each diagram that illustrates what your answer describes. Prefer diagrams in the same section or on the same page as the passages you used. Choose at most 4, most relevant first. Use an empty list only when no retrieved diagram relates to the answer.
 - When present, the "Diagrams available" list after the documents names every diagram you can show, with its ref, page and section. Only use diagram ref values that appear in the documents.
 - If the user asks to see a diagram and no relevant diagram_reference document is in your context, call search_documents (e.g. "diagram of <topic>") or read_section for the relevant section before answering.
+- A diagram whose text starts with "Image:" is a standalone picture file; only its filename and folder are known, so choose it only when its title clearly matches the topic.
+
+## Videos
+- A document whose text starts with "Video:" is a walkthrough video; only its title and folder are known, not what it shows. When its title clearly matches the user's problem, list it in "sources" (page 1, snippet = the video title) so the user gets a link to watch it, and mention it briefly in your answer. Do not describe its contents.
 
 ## Gathering more context
 - If the documents are not enough to answer fully, do not answer with partial information and do not give up yet: first search or read more, then answer from the new context.
