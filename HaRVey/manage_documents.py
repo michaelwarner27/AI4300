@@ -19,6 +19,7 @@ from typing import Optional
 
 from src.config import load_config
 from src.data_models import IngestionState
+from src.ingestion.tools import media_kind
 from src.ingestion.nodes import (
     list_documents, delete_document, update_document, stored_document_name,
 )
@@ -166,8 +167,8 @@ def cmd_update(document_path: str) -> int:
             print(f"Error: File not found: {document_path}")
             return 1
         
-        if not file_path.suffix.lower() == '.pdf':
-            print(f"Error: File is not a PDF: {document_path}")
+        if media_kind(file_path) is None:
+            print(f"Error: File is not a PDF, image or video: {document_path}")
             return 1
         
         config = load_config()

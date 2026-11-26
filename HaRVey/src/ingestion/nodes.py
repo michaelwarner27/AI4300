@@ -16,7 +16,7 @@ from src.data_models import (
 )
 from src.ingestion.tools import (
     PDFLoader, PDFParser, TextChunker, EmbeddingService, ChromaVectorStore,
-    DocumentHasher, DiagramExtractor, TableExtractor,
+    DocumentHasher, DiagramExtractor, TableExtractor, media_kind, folder_path,
 )
 from src.utils.logging import get_logger
 
@@ -66,13 +66,12 @@ def load_documents(state: IngestionState) -> dict[str, Any]:
     try:
         # Use PDFLoader to discover and load documents
         loader = PDFLoader()
-        # Recursively search all subdirectories for PDFs
+        # Recursively search all subdirectories for PDFs, images and videos
         base_path = Path(state.config.document_input_dir)
-        pdf_files = list(base_path.glob("**/*.pdf"))
-        pdf_files += list(base_path.glob("**/*.PDF"))
-        
+        pdf_files = sorted(p for p in base_path.rglob("*") if p.is_file() and media_kind(p) is not None)
+
         if not pdf_files:
-            raise ValueError(f"No PDF files found in {state.config.document_input_dir}")
+            raise ValueError(f"No PDF, image or video files found in {state.config.document_input_dir}")
         
         hasher = DocumentHasher()
         

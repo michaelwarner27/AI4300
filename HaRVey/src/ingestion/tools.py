@@ -29,6 +29,28 @@ from src.utils.part_numbers import (
 
 logger = get_logger()
 
+# Standalone media files in the manual collection, ingested alongside PDFs.
+# Images become one diagram each; videos become one text chunk (shown as a source link).
+IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
+VIDEO_EXTS = {".mp4"}  # .wmv is left out: most browsers can't play it
+
+
+def media_kind(filename: str | Path) -> str | None:
+    """"pdf", "image" or "video" by file extension (any case), or None if not ingested."""
+    ext = Path(filename).suffix.lower()
+    if ext == ".pdf":
+        return "pdf"
+    if ext in IMAGE_EXTS:
+        return "image"
+    if ext in VIDEO_EXTS:
+        return "video"
+    return None
+
+
+def folder_path(filename: str) -> str:
+    """The folders a document sits in, as "A > B > C" ("" at the top level)."""
+    return " > ".join(Path(filename).parent.parts)
+
 
 def _cosine(a: list[float], b: Any) -> float:
     """Cosine similarity of two vectors (matches Chroma's 1 - cosine distance)."""
@@ -58,7 +80,15 @@ class PDFLoader:
         """
         # Get relative path from document directory (preserves folder structure)
         filename = pdf_path.name
-        
+
+        # Images and videos are stored as one-page documents with no PDF metadata
+        if media_kind(pdf_path) in ("image", "video"):
+            return ParsedDocument(
+                content="",
+                metadata=DocumentMetadata(filename=filename, total_pages=1, processing_timestamp=""),
+                pages=[],
+            )
+
         # Open PDF and extract metadata
         try:
             reader = PdfReader(pdf_path)
