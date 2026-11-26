@@ -1,0 +1,209 @@
+# Table ground truth for "Dexter Trailer Catalog V1-24 p1-100.pdf".
+# Used by tests/dexter_tables.py (see tests/dexter-ocr-test-plan.md, layer 2).
+#
+# Each table:
+#   id        unique name
+#   page      PDF page (1-based, not the catalog's A-number)
+#   title     the heading printed above the table (used for the "found" check)
+#   columns   flattened column names (multi-level headers joined with a space)
+#   rows      cell values exactly as printed, including the " inch mark
+#   verified  false until checked against the rendered page (scratch/dexter-pages/)
+#   notes     things to check while verifying
+#
+# Every cell is single-quoted. Cells contain inch marks, commas and '#', which
+# break or silently split unquoted YAML flow lists.
+# Values were drafted from the page's text layer and cross-checked against the
+# rendered image where noted. Row order follows the printed table.
+
+tables:
+
+  - id: p12-hub-face-equations
+    page: 12
+    title: 'HOW TO MEASURE A BEAM'
+    columns: ['AXLE MODEL', 'EQUATION']
+    rows:
+      - ['2K', 'HUB FACE = OUTSIDE OF FLANGES + 6.90']
+      - ['3.5K', 'HUB FACE = OUTSIDE OF FLANGES + 6.34']
+      - ['5.2K (655)', 'HUB FACE = OUTSIDE OF FLANGES + 8.73']
+      - ['6K, 7K (865)', 'HUB FACE = OUTSIDE OF FLANGES + 8.73']
+      - ['5.2K - 6K WITH DEMOUNTABLE HUB', 'TRACK = OUTSIDE OF FLANGES + 7.73']
+      - ['7.2K AND D80N', 'HUB FACE = OUTSIDE OF FLANGES + 7.54']
+      - ['8K', 'HUB FACE = OUTSIDE OF FLANGES + 9.09']
+      - ['OLD 9K', 'HUB FACE = OUTSIDE OF FLANGES + 10.46']
+      - ['9K, 10K GD (2-PIECE)', 'HUB FACE = OUTSIDE OF FLANGES + 13.50']
+      - ['9K-10K GD (1-PIECE)', 'HUB FACE = OUTSIDE OF FLANGES + 10.98']
+      - ['10K HEAVY DUTY', 'HUB FACE = OUTSIDE OF FLANGES + 14.35']
+      - ['12K LOW PROFILE', 'HUB FACE = OUTSIDE OF FLANGES + 21.77']
+      - ['12K HIGH PROFILE', 'HUB FACE = OUTSIDE OF FLANGES + 15.27']
+      - ['15K', 'HUB FACE = OUTSIDE OF FLANGES + 17.45']
+      - ['10 ON 11 1/4" HUB', 'HUB FACE = OUTSIDE OF FLANGES + 11.16']
+      - ['TAG AXLE WITH 9-20 DRUM', 'HUB FACE = OUTSIDE OF FLANGES + 17.19']
+      - ['TAG AXLE WITH 9-23 DRUM', 'HUB FACE = OUTSIDE OF FLANGES + 15.38']
+    verified: false
+    notes: 'Two-column table. Some model cells contain commas ("6K, 7K (865)").'
+
+  - id: p14-d35-overhang
+    page: 14
+    title: 'DEXTER AXLE OVERHANG RESTRICTIONS'
+    columns: ['SPINDLE', 'HUB TYPE', 'MINIMUM', 'MAXIMUM']
+    rows:
+      - ['STRAIGHT—2 3/8"', 'IDLER/DRUM', '11.25"', '18"']
+      - ['STRAIGHT—2 3/8"', 'DRUM', '11.25"', '18"']
+      - ['STRAIGHT—2 3/8"', 'DISC', '15"', '18"']
+      - ['STRAIGHT—3.00"', 'IDLER/DRUM', '11.25"', '23"']
+      - ['4" DROP—2 3/8"', 'IDLER/DRUM', '14"', '18"']
+      - ['4" DROP—3.00"', 'IDLER/DRUM', '14"', '23"']
+      - ['4" DROP—2 3/8"', 'DISC', '15"', '18"']
+      - ['4" DROP—3.00"', 'DISC', '15"', '23"']
+      - ['STRAIGHT—3.00"', 'DISC', '15"', '23"']
+      - ['6" DROP—2 3/8"', 'IDLER/DRUM', '15.75"', '18"']
+      - ['6" DROP—2 3/8"', 'DISC', '15.75"', '18"']
+    verified: false
+    notes: 'Row order is the text-layer order. Check it against the printed order. Rows 1 and 2 look almost the same (IDLER/DRUM vs DRUM), so confirm both are printed. No table chunk holds this table at baseline.'
+
+  - id: p15-boxed-brake-assemblies
+    page: 15
+    title: 'GENUINE DEXTER BOXED BRAKE ASSEMBLIES'
+    columns: ['PART #', 'DEXTER #', 'DESCRIPTION']
+    rows:
+      - ['K23-026-00', '182753', 'ELECTRIC BRAKE, DEXTER, 10 X 2.25, LH, 3.5K/PR']
+      - ['K23-027-00', '182754', 'ELECTRIC BRAKE, DEXTER, 10 X 2.25, RH, 3.5K/PR']
+      - ['K23-468-00', '182756', 'ELECTRIC BRAKE, DEXTER, 10 X 2.25, LH, 3.5K/PR NEV-R-ADJUST']
+      - ['K23-469-00', '182757', 'ELECTRIC BRAKE, DEXTER, 10 X 2.25, RH, 3.5K/PR NEV-R-ADJUST']
+    verified: true
+    notes: 'Parts list without ruled lines. pdfplumber finds no table on this page at baseline. Column names are inferred because the page prints no header row. Checked against the page image during the survey.'
+
+  - id: p15-hubs
+    page: 15
+    title: 'GENUINE DEXTER HUBS'
+    columns: ['PART #', 'DEXTER #', 'DESCRIPTION']
+    rows:
+      - ['84545', '106800', 'HUB ONLY, 545 USES L68149/L44649, 1750 LB CAPACITY']
+      - ['845475', '107200', 'HUB ONLY, 5475 USES L68149/L44649, 1750 LB CAPACITY']
+      - ['84550', '107600', 'HUB ONLY, 550 USES L68149/L44649, 1750 LB CAPACITY']
+      - ['84555', '108000', 'HUB ONLY, 555 USES L68149/L44649, 1750 LB CAPACITY']
+      - ['84655', '117200', 'HUB ONLY, 655 USES L68149/L44649, 1750 LB CAPACITY']
+    verified: true
+    notes: 'Checked against the page image during the survey. 84655 shares Dexter # 117200 with 84556 in the HUB AND DRUMS table. That is as printed.'
+
+  - id: p32-hanger-kits
+    page: 32
+    title: '10K-15K HANGER AND ATTACHING PARTS KITS FOR 3" SLIPPER SPRINGS WITH 1" RUBBER BUSHED EYE'
+    columns: ['PART #', 'REF #', 'DESCRIPTION', 'AXLE SPACING']
+    rows:
+      - ['HAP-103-00', '041620', 'DEXTER SINGLE AXLE KIT', '—']
+      - ['HAP-103-00X', '041625', 'SINGLE AXLE KIT', '—']
+      - ['HAP-203-01', '041640', 'DEXTER MULTI-AXLE CONVERSION KIT', '38"']
+      - ['HAP-203-02', '041660', 'DEXTER MULTI-AXLE CONVERSION KIT', '42 1/4"']
+      - ['HAP-203-02X', '041665', 'MULTI-AXLE CONVERSION KIT', '42 1/4"']
+      - ['HAP-203-03', '041680', 'DEXTER MULTI-AXLE CONVERSION KIT', '48 1/2"']
+      - ['HAP-203-03X', '041685', 'MULTI-AXLE CONVERSION KIT', '48 1/2"']
+    verified: false
+    notes: 'Reference numbers have leading zeros. "—" means no spacing.'
+
+  - id: p45-full-load
+    page: 45
+    title: 'FULL LOAD DIMENSIONS'
+    columns: ['TIRE',
+              '45° DOWN H', '45° DOWN B', '45° DOWN C',
+              '22.5° DOWN H', '22.5° DOWN B', '22.5° DOWN C',
+              '10° DOWN H', '10° DOWN B', '10° DOWN C',
+              '0° H', '0° B', '0° C',
+              '10° UP H', '10° UP B', '10° UP C',
+              '22.5° UP H', '22.5° UP B', '22.5° UP C',
+              'D', 'E']
+    rows:
+      - ['ST175/80R13', '3.5"', '14.7"', '8.5"', '1.2"', '12.4"', '10.8"', '-0.1"', '11.1"', '12.1"', '-1.1"', '10.1"', '13.1"', '-2.0"', '9.2"', '14"', '-3"', '8.2"', '15"', '11.2"', '12"']
+      - ['4.80-8', '3.5"', '11.4"', '5.3"', '1.2"', '9.1"', '7.6"', '-0.1"', '7.8"', '8.9"', '-1.1"', '6.8"', '9.9"', '-2.0"', '5.9"', '10.8"', '-3"', '4.9"', '11.8"', '7.9"', '8.8"']
+      - ['4.80-12', '3.5"', '13"', '7.3"', '1.2"', '10.7"', '9.6"', '-0.1"', '9.4"', '10.9"', '-1.1"', '8.4"', '11.9"', '-2.0"', '7.5"', '12.8"', '-3"', '6.5"', '13.8"', '9.5"', '10.8"']
+      - ['20.5X8.0-10', '3.5"', '13.2"', '7.3"', '1.2"', '10.9"', '9.6"', '-0.1"', '9.6"', '10.9"', '-1.1"', '8.6"', '11.9"', '-2.0"', '7.7"', '12.8"', '-3"', '6.7"', '13.8"', '9.7"', '10.8"']
+    verified: false
+    notes: >
+      Key baseline case. pdfplumber drops rows ST175/80R13 and 4.80-12 (the shaded rows), and
+      the junk filter drops the remaining one-row pieces, so no data rows are stored at baseline.
+      Row 4.80-12 was checked against the image during the survey. Check the other three rows.
+
+  - id: p45-mounting-bracket
+    page: 45
+    title: 'MOUNTING BRACKET DIMENSIONS'
+    columns: ['DIAGRAM #', 'HIGH', 'LOW']
+    rows:
+      - ['A', '1.00', '1.00']
+      - ['B', '2.38', '2.38']
+      - ['C', '8.00', '8.00']
+      - ['D', '7.75', '7.75']
+      - ['E', '10.00', '10.00']
+      - ['F', '3.75', '2.88']
+      - ['G', '2.00', '2.00']
+      - ['J', '1.57', '1.57']
+    verified: true
+    notes: 'Footer lines under the table read BOLT SIZE 5/8" and TUBE SIZE 2.17". Checked against the image during the survey.'
+
+  - id: p45-articulation
+    page: 45
+    title: 'ARTICULATION DIMENSIONS'
+    columns: ['START ANGLE', 'BRACKET PROFILE', 'NO LOAD H', 'NO LOAD L', 'FULL LOAD H', 'FULL LOAD L']
+    rows:
+      - ['45° DOWN', 'LOW', '5.46', '4.24', '3.52', '5.54']
+      - ['45° DOWN', 'HIGH', '6.33', '4.24', '4.39', '5.54']
+      - ['32° DOWN', 'LOW', '4.40', '5.09', '2.21', '5.92']
+      - ['32° DOWN', 'HIGH', '5.27', '5.09', '3.08', '5.92']
+      - ['22° DOWN', 'LOW', '3.52', '5.54', '1.22', '6.00']
+      - ['22° DOWN', 'HIGH', '4.39', '5.54', '2.09', '6.00']
+      - ['10° DOWN', 'LOW', '2.26', '5.91', '-0.08', '5.86']
+      - ['10° DOWN', 'HIGH', '3.13', '5.91', '0.79', '5.86']
+      - ['0°', 'LOW', '1.22', '6.00', '-1.08', '5.54']
+      - ['0°', 'HIGH', '2.09', '6.00', '-0.21', '5.54']
+      - ['10° UP', 'LOW', '0.18', '5.91', '-2.00', '5.06']
+      - ['10° UP', 'HIGH', '1.05', '5.91', '-1.13', '5.06']
+      - ['22° UP', 'LOW', '-1.08', '5.54', '-3.02', '4.24']
+      - ['22° UP', 'HIGH', '-0.21', '5.54', '-2.15', '4.24']
+    verified: false
+    notes: 'The start angle is printed once per pair of rows (merged cell). Ground truth repeats it on both rows. Check the minus signs.'
+
+  - id: p59-full-load
+    page: 59
+    title: 'FULL LOAD DIMENSIONS'
+    columns: ['TIRE',
+              '45° DOWN H', '45° DOWN B', '45° DOWN C',
+              '22.5° DOWN H', '22.5° DOWN B', '22.5° DOWN C',
+              '10° DOWN H', '10° DOWN B', '10° DOWN C',
+              '0° H', '0° B', '0° C',
+              '10° UP H', '10° UP B', '10° UP C',
+              '22.5° UP H', '22.5° UP B', '22.5° UP C',
+              'D', 'E']
+    rows:
+      - ['10R17.5 HC', '4.6"', '20.2"', '13.4"', '2.3"', '17.9"', '15.7"', '1"', '16.6"', '17"', '-0.1"', '15.5"', '18.1"', '-0.1"', '14.6"', '19"', '-2"', '13.6"', '20"', '15.6"', '18"']
+      - ['215/75R 17.5', '4.6"', '18.6"', '10.7"', '2.3"', '16.3"', '13"', '1"', '15"', '14.3"', '-0.1"', '13.9"', '15.4"', '-0.1"', '13"', '16.3"', '-2"', '12"', '17.3"', '14"', '15.3"']
+      - ['12-16.5 LT', '4.6"', '19.5"', '11.2"', '2.3"', '17.2"', '13.5"', '1"', '15.9"', '14.8"', '-0.1"', '14.8"', '15.9"', '-0.1"', '13.9"', '16.8"', '-2"', '12.9"', '17.8"', '14.9"', '15.8"']
+      - ['9.50-16.5 LT', '4.6"', '18.7"', '10.6"', '2.3"', '16.4"', '12.9"', '1"', '15.1"', '14.2"', '-0.1"', '14"', '15.3"', '-0.1"', '13.1"', '16.2"', '-2"', '12.1"', '17.2"', '14.1"', '15.2"']
+      - ['9R 17.5 HC', '4.6"', '20"', '12.5"', '2.3"', '17.7"', '14.8"', '1"', '16.4"', '16.1"', '-0.1"', '15.3"', '17.2"', '-0.1"', '14.4"', '18.1"', '-2"', '13.4"', '19.1"', '15.4"', '17.1"']
+    verified: false
+    notes: 'The text layer gives -0.1" for both 0° H and 10° UP H. That may be a catalog typo, so check against the image. Same layout as p45, but a different Torflex model (#13).'
+
+  - id: p96-brake-springs-adjusters
+    page: 96
+    title: 'BRAKE SPRINGS & ADJUSTERS, 1 WHEEL'
+    columns: ['PART #', 'DEXTER #', 'DESCRIPTION']
+    rows:
+      - ['BP10-136', '223710', 'ADJUSTER & LEVER FOR 8-15K 12.25" WITH CAST BACK, LEFT HAND']
+      - ['BP10-146', '223910', 'ADJUSTER & LEVER FOR 8-15K 12.25" WITH CAST BACK, RIGHT HAND']
+      - ['BP07-190', '218000', 'SHOE RETURN SPRINGS, 12.25" ELECTRIC']
+      - ['BP07-195', '218100', 'SHOE CENTER SPRINGS, 12.25" 7.2-15K ELECTRIC']
+      - ['BP08-155', '220910', 'ADJUSTER SPRING, 12.25" ELECTRIC']
+    verified: false
+    notes: 'Replacement-guide layout. pdfplumber finds no table on this page at baseline.'
+
+  - id: p100-rt35-overhang
+    page: 100
+    title: 'ROCKWELL AXLE OVERHANG RESTRICTIONS'
+    columns: ['SPINDLE', 'HUB TYPE', 'MINIMUM', 'MAXIMUM']
+    rows:
+      - ['STRAIGHT', 'IDLER', '12"', '18"']
+      - ['STRAIGHT', 'DRUM', '12"', '18"']
+      - ['STRAIGHT', 'DISC', '12"', '18"']
+      - ['4" DROP', 'IDLER', '14"', '18"']
+      - ['4" DROP', 'DRUM', '14"', '18"']
+      - ['4" DROP', 'DISC', '14"', '18"']
+    verified: false
+    notes: 'Rockwell brand, not Dexter. Tests that the title "ROCKWELL AXLE OVERHANG RESTRICTIONS" is kept.'

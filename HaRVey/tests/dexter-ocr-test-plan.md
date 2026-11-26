@@ -23,6 +23,10 @@ Record how well the current pipeline (PyMuPDF text, pdfplumber tables, image and
 | Most callouts *are* in the text layer | Page 7: "Equalizer", "Shackle Link", "Free Arch Height". Page 15: part captions "23-26", "84545". | These are regression guards. OCR must not make them worse, for example by duplicating text. |
 | Repetitive page templates | 40+ "DEXTER AXLE OPTIONS" pages that differ only in model and values (D35, D44, …, M12E) | Retrieval has to tell near-identical pages apart. This is a hard test for both BM25 and vectors. |
 | Page footer and header repeat on every page | "Browse inventory … DEXTERINDEX.COM", "1-877-973-3632" | Noise in chunks. Track whether OCR adds more of it. |
+| The junk-table filter drops most table pieces | pdfplumber extracted 460 tables, but only **41** were stored. The filter (`TextChunker.is_meaningful_table`) needs at least 2 rows, 2 columns and 6 filled cells. Page 45's one-row data pieces fail it, so that page stores only two **header-only** table chunks with no values. | Two different failures look the same from outside: the extractor broke the table, or the filter threw the pieces away. Measure them separately. |
+| Table section paths can be stale | Page 45's tables are labelled `INSTALL DIRECTLY FROM THE BOX WITH LESS MESS > » Easy to identify retail packaging`, a heading from page 39 (a marketing page). | Wrong section lines hurt retrieval and citations. Track how often a chunk's section path doesn't match its page. |
+| Text chunks are tagged with the wrong page | A text chunk's page is the page where it **starts** (`section.page_at(local)` in `TextChunker._chunk_sections`). Heading detection fails on this catalog, so sections, and therefore chunks, run over page boundaries. About half of the Dexter text chunks don't start on their tagged page. Many facts end up under page N−1: D35 bearings (p14) under page 13, K23-026-00 (p15) under page 14, M11V (p90) under page 89. | Citations point to the wrong page, and strict page checks fail. This is a pipeline bug, not an OCR target. Tests use the **true** page and report a lenient (true page or the page before) score next to the strict one, so the bug's effect stays apart from OCR's. Fixing it is a separate decision. |
+| Tables are never split | Each table is one chunk whatever its size. The largest baseline table chunk is 1,208 characters, and there is no logic to repeat headers. | Docling may produce whole, larger tables. Table-splitting logic, with the header repeated on each piece, will be designed together with the Docling integration (not part of this baseline). |
 
 ## Representative page set
 
@@ -55,12 +59,16 @@ Reads the live Chroma collection, filtered to the Dexter file. No LLM or embeddi
   - text-layer labels (expected present)
   - table values that pdfplumber drops (e.g. `ST175/80R13` in a *table* chunk on page 45)
 - **Noise:** how many chunks have a repeated footer, and the share of near-duplicate chunks
+- **Table pipeline counts:** tables extracted, tables dropped by the junk filter and tables stored, in total and per page. Also the number of stored table chunks that contain only header rows (no data cells), and the largest table chunk size, which feeds into the later table-splitting design.
+- **Section-path accuracy:** for each chunk, whether its `Section:` path matches a heading actually printed on that page or a nearby page. The check uses the page's title band, e.g. "#9 TORFLEX AXLES" on page 45. The snapshot records the share of stale paths and lists the worst pages.
+- **Page-tag accuracy:** the share of text chunks whose opening text is printed on their tagged page, and how far off the rest are (in pages)
+- **Probes:** listed in `tests/dexter-ground-truth/probes.yaml`. Probes with `baseline_fail: page-tag` are reported separately.
 
 A `--compare baseline ocr-1` option prints a per-page diff and highlights changes of more than 20%.
 
 ### 2. Table fidelity: `tests/dexter_tables.py` (new)
 
-**Ground truth:** `tests/dexter-ground-truth/tables/*.json`, one file per table. Each file holds the page, a title, header rows and cell values, plus `verified: true/false`.
+**Ground truth:** `tests/dexter-ground-truth/tables.yaml`, one file for all tables so they can be verified in one pass. Each entry holds the page, a title, flattened column names, the rows, `verified` and notes on what to check.
 
 **Starting set (about 10 tables):**
 
@@ -83,13 +91,24 @@ A `--compare baseline ocr-1` option prints a per-page diff and highlights change
 - **Cell accuracy:** share of ground-truth cells present in the right row
 - **Header kept:** whether the column headers appear in the same chunk as the data rows
 
-Run the script directly against the PDF with the pipeline's table extractor (`src/ingestion/tools.py`). Also check the stored table chunks, so that extraction quality and chunking effects can be told apart.
+Each table is scored at three stages, so the step where the loss happens is visible:
+
+1. **Extracted:** the raw output of `TableExtractor`, before filtering
+2. **After filter:** what is left after `is_meaningful_table`
+3. **Stored:** the table chunks in Chroma
+
+For example, on page 45 the data rows are partly found at stage 1 and all lost at stage 2. Each table also gets a **section path correct** flag.
+
+Once table splitting is added with Docling, two more metrics apply:
+
+- **Header repeated:** every piece of a split table carries its column headers
+- **No row cut in half:** no row is divided between two pieces
 
 ### 3. Retrieval only: `tests/dexter_retrieval.py` (new)
 
 Calls the hybrid search function used by `vector_store_search` (vectors, BM25 and exact part numbers). It needs the embedding server but **no LLM**, so it is cheap and repeatable.
 
-**Cases:** `tests/dexter-ground-truth/retrieval.yaml`, about 40 queries. Each has the expected PDF page(s), a category and an optional `xfail` flag.
+**Cases:** `tests/dexter-ground-truth/retrieval.yaml`, 40 queries. Each has the expected PDF page(s), a category and an optional `xfail` flag. Scores are reported **strict** (true page) and **lenient** (true page or the page before), because of the page-tag bug.
 
 | Category | Count | Example |
 |---|---|---|
@@ -147,7 +166,7 @@ Values I have already read from the page images. These are drafts and still need
 
 ## Implementation steps (check in after each)
 
-1. **Ground-truth drafts.** Write the table JSONs, `retrieval.yaml` and the DX cases with `verified: false`, and render the reference pages. Hand over for your verification.
+1. **Ground-truth drafts.** *(drafted 2026-11-26, waiting for your check)* The drafts in `tests/dexter-ground-truth/` are `tables.yaml` (11 tables), `retrieval.yaml` (40 queries), `probes.yaml` (32 probes, all checked against the live database) and `dx-cases.md` (16 cases). The reference pages are rendered in `scratch/dexter-pages/`.
 2. **Snapshot script.** Write `dexter_snapshot.py` and record the baseline snapshot.
 3. **Table fidelity script.** Write `dexter_tables.py` and record the baseline.
 4. **Retrieval script.** Write `dexter_retrieval.py` and record the baseline.
@@ -159,5 +178,6 @@ Values I have already read from the page images. These are drafts and still need
 - **Answers vary between runs.** End-to-end results vary from run to run, so use `--repeat 3` and pass rates. Retrieval and table metrics are fully repeatable and are the main comparison.
 - **Chunk counts will change with OCR.** Docling will change chunk boundaries, so per-chunk diffs will be noisy. Compare by page and by probe instead.
 - **Part numbers may clash** between Dexter part numbers and the RV manuals, for example 5-digit hub numbers. Watch for this in exact-match search.
+- **Table splitting is out of scope for the baseline.** Splitting logic will be added with Docling, and its metrics only apply from then on.
 - **Only 100 of 516 pages are used.** Results don't cover sections B onward (brakes, fenders, tires, …). Add more pages later if needed.
 - **The live database now includes Dexter.** The existing query suite results may shift slightly as a result. Re-run it once to set a new baseline, or restore `scratch/chroma_db.bak-pre-dexter` when you need the old corpus only.

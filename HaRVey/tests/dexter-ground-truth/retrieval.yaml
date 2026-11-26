@@ -1,0 +1,86 @@
+# Retrieval-only cases for "Dexter Trailer Catalog V1-24 p1-100.pdf".
+# Used by tests/dexter_retrieval.py (see tests/dexter-ocr-test-plan.md, layer 3).
+#
+# Each query is run through the hybrid search against the whole corpus (no LLM).
+# A case is a hit at k if any chunk from this file on one of `pages` ranks in the
+# top k.
+#
+#   id         DXR-<category code><n>
+#   category   part_number | spec | table_cell | disambiguation | image_only | concept
+#   query      what a user would type
+#   pages      acceptable PDF pages (1-based). Part-number pages were found by
+#              searching the text layer for every page that prints the number.
+#   wrong_pages  (disambiguation only) pages that must rank lower than the right page
+#   chunk_type (optional) the chunk type that should hold the answer: text | table | diagram
+#   xfail      true when the answer exists only in images (expected to miss before OCR)
+#   verified   false until checked
+#
+# Page-tag bug (found while drafting, 2026-11-26): a text chunk is tagged with the
+# page where it STARTS, and chunks run over page boundaries because heading
+# detection fails on this catalog. Many facts are therefore stored under page N-1
+# (e.g. D35 bearings under page 13, K23-026-00 under page 14). `pages` always lists
+# the TRUE page. The retrieval script reports strict hits and also lenient hits
+# (true page or the page before) so this bug stays visible apart from OCR effects.
+
+file: Dexter Trailer Catalog V1-24 p1-100.pdf
+
+cases:
+
+  # --- Exact part numbers (exact-match path should win) ---------------------
+  - {id: DXR-P01, category: part_number, query: "K23-026-00", pages: [15], verified: false}
+  - {id: DXR-P02, category: part_number, query: "What is hub 84545?", pages: [15], verified: false}
+  - {id: DXR-P03, category: part_number, query: "K08-249-1G hub and drum kit", pages: [15], verified: false}
+  - {id: DXR-P04, category: part_number, query: "K23-105-00 electric brake", pages: [21], verified: false}
+  - {id: DXR-P05, category: part_number, query: "EB01-130 brake assembly", pages: [96], verified: false}
+  - {id: DXR-P06, category: part_number, query: "BP04-245 brake shoes", pages: [96, 97], verified: false}
+  - {id: DXR-P07, category: part_number, query: "HAP-203-02 hanger kit axle spacing", pages: [32, 33, 34], verified: false}
+  - {id: DXR-P08, category: part_number, query: "APUBR-35 U-bolt kit", pages: [96], verified: false}
+
+  # --- Spec lookups that are plain text-layer facts --------------------------
+  - {id: DXR-S01, category: spec, query: "What bearings does a Dexter D35 3,500 lb leaf spring axle use?", pages: [14], verified: false}
+  - {id: DXR-S02, category: spec, query: "D70 7,000 lb axle lubrication options", pages: [20], verified: false}
+  - {id: DXR-S03, category: spec, query: "D100 10,000 lb axle suspension options DexAir", pages: [32], verified: false}
+  - {id: DXR-S04, category: spec, query: "#9 Torflex bolt pattern options", pages: [44], verified: false}
+  - {id: DXR-S05, category: spec, query: "#13 Torflex axle bearing options", pages: [58], verified: false}
+  - {id: DXR-S06, category: spec, query: "Rockwell RT35 lubrication Posi-Lube", pages: [100], verified: false}
+  - {id: DXR-S07, category: spec, query: "M12V Versa-Flex bearings", pages: [91], verified: false}
+  - {id: DXR-S08, category: spec, query: "What warranty covers genuine Dexter replacement parts?", pages: [15, 21], verified: false}
+
+  # --- Values that live in tables -------------------------------------------
+  - {id: DXR-T01, category: table_cell, query: "D35 maximum hub face overhang 4 inch drop 3.00 tube disc brakes", pages: [14], chunk_type: table, verified: false}
+  - {id: DXR-T02, category: table_cell, query: "D70 overhang restrictions Nev-R-Lube drum minimum", pages: [20], chunk_type: table, verified: false}
+  - {id: DXR-T03, category: table_cell, query: "#9 Torflex full load dimensions 4.80-12 tire at 0 degrees", pages: [45], chunk_type: table, verified: false,
+     note: "The 4.80-12 row is dropped from table chunks at baseline. The text chunk may still match."}
+  - {id: DXR-T04, category: table_cell, query: "#9 Torflex ST175/80R13 full load B dimension", pages: [45], chunk_type: table, verified: false}
+  - {id: DXR-T05, category: table_cell, query: "#9 Torflex mounting bracket dimension F high and low profile", pages: [45], chunk_type: table, verified: false}
+  - {id: DXR-T06, category: table_cell, query: "#9 Torflex articulation 32 degree down high profile full load", pages: [45], chunk_type: table, verified: false}
+  - {id: DXR-T07, category: table_cell, query: "#13 Torflex full load dimensions 215/75R 17.5", pages: [59], chunk_type: table, verified: false}
+  - {id: DXR-T08, category: table_cell, query: "hub face equation for 8K axle outside of flanges", pages: [12], chunk_type: table, verified: false}
+  - {id: DXR-T09, category: table_cell, query: "Rockwell RT35 4 inch drop disc minimum overhang", pages: [100], chunk_type: table, verified: false}
+  - {id: DXR-T10, category: table_cell, query: "shoe return springs 12.25 electric part number 8,000 lb axle", pages: [96], verified: false}
+
+  # --- Near-identical template pages ----------------------------------------
+  - {id: DXR-D01, category: disambiguation, query: "M11V Versa-Flex torsion axle capacity and bolt pattern", pages: [90], wrong_pages: [88, 89, 91], verified: false}
+  - {id: DXR-D02, category: disambiguation, query: "M10FV Versa-Flex 4,200 lb bearing options", pages: [89], wrong_pages: [88, 90, 91], verified: false}
+  - {id: DXR-D03, category: disambiguation, query: "D70 7,000 lb leaf spring axle bearing options", pages: [20], wrong_pages: [19, 22, 23], verified: false}
+  - {id: DXR-D04, category: disambiguation, query: "#13 Torflex full load dimensions", pages: [59], wrong_pages: [57, 61], verified: false,
+     note: "Pages 57 (#13N) and 61 (#13T) have the same layout."}
+  - {id: DXR-D05, category: disambiguation, query: "Rockwell RT20 2,200 lb axle overhang", pages: [99], wrong_pages: [13, 100], verified: false}
+  - {id: DXR-D06, category: disambiguation, query: "#9 Torflex 1,000-2,200 lb spindle starting angle options", pages: [44], wrong_pages: [74], verified: false,
+     note: "Page 74 is M9, the marine version of the same capacity."}
+
+  # --- Text that exists only inside images (OCR targets) --------------------
+  - {id: DXR-X01, category: image_only, query: "Torflex arm length", pages: [43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 77, 79], xfail: true, verified: false,
+     note: "'Arm Length' label on the articulation diagram. The same diagram is on every Torflex dimension page (found via its 'For Wiring' label), so any of them counts."}
+  - {id: DXR-X02, category: image_only, query: "center of spindle to top of frame Torflex diagram", pages: [43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 77, 79], xfail: true, verified: false}
+  - {id: DXR-X03, category: image_only, query: "Where is the axle label on a leaf spring axle?", pages: [7], xfail: true, verified: false,
+     note: "'AXLE LABEL' callout on the page 7 axle drawing, only in image."}
+  - {id: DXR-X04, category: image_only, query: "Are Dexter replacement brakes made in America?", pages: [15], xfail: true, verified: false,
+     note: "'MADE IN AMERICA' is only in the logo image on page 15."}
+  - {id: DXR-X05, category: image_only, query: "Torflex axle location center of axle", pages: [43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 77, 79], xfail: true, verified: false,
+     note: "'Axle Location' is in page 7's text layer but not page 45's. 'Center of Axle' is only in images."}
+
+  # --- Concept / explainer --------------------------------------------------
+  - {id: DXR-C01, category: concept, query: "What is a torsion axle?", pages: [6], verified: false}
+  - {id: DXR-C02, category: concept, query: "How high should I set fenders above the tires on a torsion axle?", pages: [9], verified: false}
+  - {id: DXR-C03, category: concept, query: "How do I measure hub face when I only have a bare beam?", pages: [12], verified: false}

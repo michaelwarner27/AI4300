@@ -1,0 +1,65 @@
+# Probe strings for tests/dexter_snapshot.py (see tests/dexter-ocr-test-plan.md, layer 1).
+#
+# For each probe the snapshot records whether `text` appears (case-insensitive,
+# whitespace collapsed) in any stored chunk from `page`, optionally limited to one
+# chunk_type.
+#
+#   expect   present  - must be found (regression guard; failure after OCR = regression)
+#            missing  - expected to be absent at baseline (OCR target; xfail)
+#   why      what the probe is checking
+#
+#   baseline_fail  (optional) a known reason the probe fails at baseline even though
+#            `expect` is the correct target. "page-tag" = the text is stored under the
+#            wrong page (see the note in retrieval.yaml). Reported apart from OCR results.
+#
+# Matching collapses whitespace. "missing" probes were confirmed absent from the
+# page's text layer with whitespace collapsed. Every expectation was checked
+# against the live database on 2026-11-26.
+
+file: Dexter Trailer Catalog V1-24 p1-100.pdf
+
+probes:
+
+  # --- Image-only diagram labels (expected missing now) ---------------------
+  - {page: 45, text: "Arm Length", expect: missing, why: "Articulation diagram label, only in image"}
+  - {page: 45, text: "Center of Spindle", expect: missing, why: "Articulation diagram label, only in image"}
+  - {page: 45, text: "Center of Axle", expect: missing, why: "Articulation diagram label, only in image"}
+  - {page: 45, text: "Top of Frame", expect: missing, why: "Articulation diagram label, only in image"}
+  - {page: 45, text: "Axle Location", expect: missing, why: "Articulation diagram label, only in image (it is in page 7's text layer)"}
+  - {page: 7, text: "Axle Label", expect: missing, why: "Callout on the axle drawing, only in image"}
+  - {page: 15, text: "Made in America", expect: missing, why: "Logo image"}
+
+  # --- Text-layer diagram labels (must stay present) ------------------------
+  - {page: 7, text: "Shackle Link", expect: present, why: "Vector diagram label in the text layer"}
+  - {page: 7, text: "Free Arch Height", expect: present, why: "Vector diagram label in the text layer"}
+  - {page: 7, text: "Equalizer", expect: present, why: "Vector diagram label in the text layer"}
+  - {page: 7, text: "Track Width", expect: present, why: "Vector diagram label in the text layer"}
+  - {page: 7, text: "Stack Height", expect: present, why: "Label split over two lines in the text layer. A whitespace-sensitive check misses it"}
+  - {page: 7, text: "Loaded Arch Height", expect: present, why: "Label split over two lines in the text layer"}
+  - {page: 45, text: "For Wiring Access", expect: present, why: "Bracket diagram label in the text layer"}
+  - {page: 15, text: "23-312", expect: present, why: "Photo caption part number"}
+
+  # --- Plain text facts (must stay present) ---------------------------------
+  - {page: 14, text: "L68149 INNER/L44649 OUTER", expect: present, baseline_fail: page-tag, why: "D35 bearings. Stored under page 13 at baseline"}
+  - {page: 15, text: "K23-026-00", expect: present, baseline_fail: page-tag, why: "Part number in parts list. Stored under page 14 at baseline"}
+  - {page: 6, text: "What is Torsion?", expect: present, why: "Explainer heading"}
+  - {page: 9, text: "Shock Load", expect: present, why: "Articulation explainer"}
+  - {page: 32, text: "395S INNER/387A OUTER", expect: present, why: "D100 bearings"}
+  - {page: 100, text: "ROCKWELL AXLE OPTIONS", expect: present, why: "Different brand"}
+
+  # --- Table values in table chunks -----------------------------------------
+  # Expected results at baseline are noted. A probe whose expectation is
+  # "missing" for a table chunk is an OCR / Docling table target.
+  - {page: 45, chunk_type: table, text: "ST175/80R13", expect: missing, why: "Row dropped by pdfplumber (shaded row)"}
+  - {page: 45, chunk_type: table, text: "4.80-12", expect: missing, why: "Row dropped by pdfplumber (shaded row)"}
+  - {page: 45, chunk_type: table, text: "20.5X8.0-10", expect: missing, why: "One-row piece dropped by the junk filter"}
+  - {page: 45, chunk_type: table, text: "3.75", expect: missing, why: "Mounting bracket F (high), split into one-row pieces"}
+  - {page: 45, chunk_type: table, text: "5.46", expect: missing, why: "Articulation 45° DOWN LOW no-load H. Only the header piece is stored"}
+  - {page: 15, chunk_type: table, text: "182753", expect: missing, why: "Parts list not detected as a table"}
+  - {page: 96, chunk_type: table, text: "223710", expect: missing, why: "Parts list not detected as a table"}
+  - {page: 14, chunk_type: table, text: "15.75", expect: missing, why: "D35 overhang table, 6\" drop minimum. No table chunk holds it at baseline"}
+  - {page: 12, chunk_type: table, text: "+ 9.09", expect: present, why: "Hub face equation for 8K"}
+
+  # --- Same values in the text layer (must stay present, any chunk type) ----
+  - {page: 45, text: "ST175/80R13", expect: present, why: "Row is in the text layer even though the table chunk loses it"}
+  - {page: 45, text: "4.80-12", expect: present, why: "Row is in the text layer even though the table chunk loses it"}
