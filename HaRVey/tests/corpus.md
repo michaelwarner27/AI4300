@@ -88,6 +88,15 @@ python tests/test_queries.py --validate      # every document and page the cases
 | Lippert PowerLevel Operation | 59 / 21 | similar fault indications | R09 |
 | Zephyr ZX-9 (made up) | 1 / 0 | instructions hidden in a document | S07 |
 
+### Standalone images and videos
+
+Files that are not PDFs. With no text to read, each is found only by its folder path and filename. Each image is stored as one diagram that can be shown in the viewer. Each video is one text chunk ("Video: <title>") that can be cited as a source and opens in a new tab. The one `.wmv` (Coleman-Mach thermostat troubleshooting) is not ingested because most browsers can't play it.
+
+| Files | Chunks each | Tests |
+|---|---|---|
+| 8 images (Dometic awnings, range, Air Command thermostat, refrigerator squareness; Coleman Mach carrier conversion, application guide) | 1 / 1 | image shown by title match |
+| 7 videos (Coleman Mach performance worksheet, Air Vantage kit, Mach 8 install, 4 zone control) | 1 / 0 | video cited as a source link |
+
 ## Observations to watch in the baseline
 
 - **Diagram references are 39% of all chunks.** MaxxFan Troubleshooting is 221 of 230 and MaxxFan Operation 195 of 214. They may crowd text out of search results.

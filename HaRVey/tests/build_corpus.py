@@ -5,7 +5,8 @@ Copy the test corpus into the documents folder.
     python tests/build_corpus.py --copy   also copy them into documents/
 
 Reads tests/corpus-manifest.txt. For each PDF it prints the page count, how many
-pages have no text layer (there is no OCR) and whether a file with identical
+pages have no text layer (there is no OCR); images and videos show "-". For
+every file it also prints whether a file with identical
 content is already in documents/ under another name. Subfolders are kept.
 Existing files are never overwritten with different content. --copy also creates
 a small made-up "canary" manual used by the prompt-injection test; remove it from
@@ -19,6 +20,8 @@ from pathlib import Path
 import pymupdf
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from src.ingestion.tools import media_kind  # noqa: E402
 SOURCE = ROOT / "Harvey-Manuals-All"
 TARGET = ROOT / "documents"
 MANIFEST = ROOT / "tests" / "corpus-manifest.txt"
@@ -60,22 +63,35 @@ def main() -> int:
     copy = "--copy" in sys.argv
     names = [line.strip() for line in MANIFEST.read_text().splitlines()
              if line.strip() and not line.startswith("#")]
+    # Files made outside Harvey-Manuals-All (e.g. PDFs converted from .pptx) that
+    # are already in documents/ are fine: they are reported and left alone
+    already = [n for n in names if not (SOURCE / n).is_file() and (TARGET / n).is_file()]
+    if already:
+        print("Not in Harvey-Manuals-All/, already in documents/ (skipped):", *already, sep="\n  ")
+        names = [n for n in names if n not in already]
     missing = [n for n in names if not (SOURCE / n).is_file()]
     if missing:
         print("Missing from Harvey-Manuals-All/:", *missing, sep="\n  ")
         return 1
+    unsupported = [n for n in names if media_kind(n) is None]
+    if unsupported:
+        print("Not a type the ingestion reads (pdf, jpg/jpeg/png, mp4):", *unsupported, sep="\n  ")
+        return 1
 
     existing = {digest(p): p.relative_to(TARGET).as_posix()
-                for p in TARGET.rglob("*") if p.suffix.lower() == ".pdf"}
+                for p in TARGET.rglob("*") if p.is_file() and media_kind(p) is not None}
     pymupdf.TOOLS.mupdf_display_errors(False)
     total_pages = copied = conflicts = 0
     print(f"{'pages':>5} {'no text':>7}  file")
     for name in names:
         source, target = SOURCE / name, TARGET / name
-        with pymupdf.open(source) as doc:
-            pages = len(doc)
-            blank = sum(len(page.get_text().strip()) < MIN_TEXT_CHARS for page in doc)
-        total_pages += pages
+        if media_kind(source) == "pdf":
+            with pymupdf.open(source) as doc:
+                pages = len(doc)
+                blank = sum(len(page.get_text().strip()) < MIN_TEXT_CHARS for page in doc)
+            total_pages += pages
+        else:  # image or video: no pages to count
+            pages = blank = "-"
         file_hash = digest(source)
         note = ""
         duplicate = existing.get(file_hash)

@@ -53,3 +53,20 @@ Airxcel/Airxcel Coleman Mach/Thermostats/Heat-Cool T-Stat wiring.pdf
 Airxcel/Airxcel MAXXAIR/MaxxFan Operation.pdf
 Airxcel/Airxcel MAXXAIR/MaxxFan Troubleshooting_K models.pdf
 Lippert/3010001202_operations_manual_power_level_automatic_hydraulic_leveling_.pdf
+
+# Standalone images and videos (found by folder path and filename only; .wmv not ingested)
+Dometic/Guides/Awnings/Power Awning Proper Extension.PNG
+Dometic/Guides/Awnings/Door Awnings/Oasis Door Adjustments.png
+Dometic/Guides/Cooktop & Ranges/Range Breakdown.PNG
+Dometic/Guides/Air Conditioning/Air Command/Atwood thermostat to Analog Box.jpeg
+Dometic/Guides/Refrigerators/Americana/Americana measure for squareness.jpg
+Dometic/Guides/Refrigerators/RM3762, RM3962, RM1350/RM1350 measure for squareness.jpg
+Airxcel/Airxcel Coleman Mach/Air Conditioning/carrier-conversion_1a-and-1b.png
+Airxcel/Airxcel Coleman Mach/Air Conditioning/Application Guide.jpg
+Airxcel/Airxcel Coleman Mach/Air Conditioning/Coleman Mach Performance Worksheet Video (1).mp4
+Airxcel/Airxcel Coleman Mach/Air Conditioning/Coleman Mach Air Vantage Kit video (1).mp4
+Airxcel/Airxcel Coleman Mach/Mach 8/Coleman Mach 8 Installation Video.mp4
+Airxcel/Airxcel Coleman Mach/Zone Control/COMFORT.ZC no communication.mp4
+Airxcel/Airxcel Coleman Mach/Zone Control/Testing Non Zone Thermostat.mp4
+Airxcel/Airxcel Coleman Mach/Zone Control/Troubleshoot No Compressor Operation In a Zone Control.mp4
+Airxcel/Airxcel Coleman Mach/Zone Control/Zone Control No Compressor Operation.mp4
