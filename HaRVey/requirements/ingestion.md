@@ -1,19 +1,21 @@
 # Vector Ingestion Pipeline
 
-This document describes the LangGraph-based ingestion pipeline that processes PDF documents and converts them into embeddings stored in a vector database. The pipeline includes advanced features for table extraction, diagram detection, change tracking, and post-ingestion document management.
+This document describes the LangGraph-based ingestion pipeline. It processes PDF documents, plus standalone image and video files, and turns them into embeddings stored in a vector database. The pipeline also handles table extraction, diagram detection, change tracking, and managing documents after ingestion.
 
 ## Overview
 
-The ingestion pipeline reads PDF documents from a local directory, extracts text content (including tables and diagrams), splits it into manageable chunks, generates embeddings with automatic retry logic, and persists them to Chroma for retrieval-based applications. It supports change detection to skip re-processing unchanged files and provides document lifecycle management (add, delete, update).
+The ingestion pipeline reads documents from a local folder. It extracts text, tables and diagrams, splits the text into chunks, generates embeddings with automatic retries, and saves everything to Chroma for retrieval. Change detection skips files that haven't changed, and documents can be added, deleted and updated after ingestion.
+
+Besides PDFs, the manual collection includes some standalone images (`.jpg`, `.jpeg`, `.png`) and videos (`.mp4`). These are ingested as one-page documents. With no text to read, they are found by their folder path and filename (see [Standalone images and videos](#standalone-images-and-videos)).
 
 ### Architecture Diagram
 
 ```
-PDF Documents
+PDF, image and video files
     ↓
 ┌─────────────────────────┐
-│  load_documents         │ Discover PDFs, calculate hashes
-│                         │ (skip unchanged with detection)
+│  load_documents         │ Discover PDFs, images, videos;
+│                         │ calculate hashes (skip unchanged)
 └─────────────┬───────────┘
               ↓
 ┌─────────────────────────┐
@@ -57,21 +59,21 @@ PDF Documents
 
 ### 1. load_documents
 
-**Purpose**: Discover and load PDF files from the configured input directory.
+**Purpose**: Discover and load PDF, image and video files from the configured input directory.
 
 **Inputs**: None (reads from `DOCUMENT_INPUT_DIR`)
 
 **Outputs**: List of Document objects with file metadata
 
 **Responsibilities**:
-- Scan `./documents/` directory for PDF files
-- Extract document-level metadata (filename, page count, timestamps)
+- Scan `./documents/` and its subfolders for every file type the pipeline reads: `.pdf`, `.jpg`, `.jpeg`, `.png` and `.mp4`, in any letter case. Other files are ignored, including `.wmv` (most browsers can't play it)
+- Extract document-level metadata (filename, page count, timestamps). Images and videos get `total_pages=1` and no PDF metadata
 - Validate file readability
 - Handle missing or empty directories gracefully (skip and continue pattern)
 
 **Key Functions**:
-- Uses `Path.glob()` to discover PDFs
-- Creates Document objects with metadata
+- Uses `Path.rglob("*")` filtered by `media_kind()` (`src/ingestion/tools.py`), which returns `"pdf"`, `"image"`, `"video"` or `None` from the file extension
+- Creates Document objects with metadata (`PDFLoader._load_single_document`, which handles images and videos too)
 - Logs documents found and processing status
 
 ---
@@ -111,6 +113,24 @@ PDF Documents
 - Figures found close together may merge into one crop
 - Previously extracted files for a document are deleted before re-extracting, so re-ingesting never leaves stale images
 
+#### Standalone images and videos
+
+Image and video files skip the PDF parsing above. `_parse_media` (`src/ingestion/nodes.py`) handles them instead:
+
+- **Image** (`.jpg`, `.jpeg`, `.png`): `DiagramExtractor.store_image_file` copies the file unchanged into `extracted_diagrams/` as `{stem}-{hash}_p0_img1.{ext}`. It uses the same naming scheme as extracted images, so re-ingesting replaces the file instead of adding another. Standalone images always get the path hash in the name, even at the top level, so `a.png` can never delete the diagrams of `a.pdf`. The document has no text and one `DiagramMetadata`:
+  - `kind="image_file"`, `page=0`
+  - `label`: the title built from the filename (e.g. `Americana measure for squareness`)
+  - `context`: `Image in folder Dometic > Guides > Refrigerators > Americana`
+- **Video** (`.mp4`): one page of text naming the video and its folder, chunked as ordinary text. There are no tables or diagrams:
+  ```
+  Video: Testing Non Zone Thermostat
+  Folder: Airxcel > Airxcel Coleman Mach > Zone Control
+  ```
+
+Neither type is OCR'd, transcribed or described by a vision model. Only the folder path and filename are searchable, so this works because the collection's media files have descriptive names. On the query side:
+- The LLM shows a standalone image in the diagram viewer like any other diagram, but only when its title clearly matches the topic.
+- The LLM cites a matching video as a source. The web app links it through `/manuals/<path>`, which serves PDFs, images and mp4s and supports seeking within videos.
+
 ---
 
 ### 3. extract_metadata
@@ -141,6 +161,7 @@ PDF Documents
 - Generates processing timestamps
 - Validates metadata availability
 - `python tests/verify_ingestion.py --headings` prints every heading detected in `documents/` for review
+- Images and videos skip layout analysis and PDF metadata. They get `page_count=1` and an extraction timestamp
 
 ---
 
@@ -177,9 +198,9 @@ PDF Documents
 - Changing them requires a re-ingest with `ENABLE_CHANGE_DETECTION=false`, because unchanged PDFs are otherwise skipped
 
 **Chunk Types** (`chunk_sequence` runs continuously across all three, so chunk IDs stay unique):
-- `text` - Section text, split to fit `CHUNK_SIZE`. Content is the `Section:` line followed by the text
+- `text` - Section text, split to fit `CHUNK_SIZE`. Content is the `Section:` line followed by the text. Each video is one `text` chunk whose text starts with `Video:`
 - `table` - One chunk per meaningful table, never split. Content is `Table from {file}, page N:`, the `Section:` line, then the markdown table. A strict filter drops junk tables (drawn boxes, empty grids, labels): a table needs at least 2 rows, 2 columns, 6 cells with text, and 60% of cells filled
-- `diagram_reference` - One per diagram, captioned or not. Content lists the page, `Section:`, `Label:` (a nearby `FIG. N` line), `Text in figure:` (caption) and `Context:`, skipping empty parts. Metadata holds `diagram_path` and `diagram_kind`
+- `diagram_reference` - One per diagram, captioned or not. Content lists the page, `Section:`, `Label:` (a nearby `FIG. N` line), `Text in figure:` (caption) and `Context:`, skipping empty parts. Metadata holds `diagram_path` and `diagram_kind` (`raster`, `vector_figure`, or `image_file` for a standalone image). A standalone image is the document's only chunk, and its first line is `Image: {filename}` instead of the page line
 
 Pages in all chunk metadata are 1-indexed. Each chunk also stores `file_hash`, `ingested_at`, `total_chunks` (used by `store_vectors` as a completeness check) and `part_numbers`.
 
@@ -222,6 +243,23 @@ Text in figure: ELEC HEAT H,6 C,4 L,3 THERMOSTAT 314841.000 WHT BLK ... FACTORY 
 Context: 115 VAC FIELD WIRING
 ```
 Metadata: `chunk_type="diagram_reference"`, `diagram_path=".../..._p17_fig1.png"`, `diagram_kind="vector_figure"`
+
+`diagram_reference` for a standalone image (`Dometic/Guides/Refrigerators/Americana/Americana measure for squareness.jpg`):
+```
+Image: Americana measure for squareness.jpg
+Section: Americana measure for squareness
+Label: Americana measure for squareness
+Context: Image in folder Dometic > Guides > Refrigerators > Americana
+```
+Metadata: `chunk_type="diagram_reference"`, `page_number=1`, `diagram_path=".../Americana measure for squareness-{hash}_p0_img1.jpg"`, `diagram_kind="image_file"`
+
+`text` for a video (`Airxcel/Airxcel Coleman Mach/Zone Control/Testing Non Zone Thermostat.mp4`):
+```
+Section: Testing Non Zone Thermostat
+Video: Testing Non Zone Thermostat
+Folder: Airxcel > Airxcel Coleman Mach > Zone Control
+```
+Metadata: `chunk_type="text"`, `page_number=1`
 
 **Key Functions**:
 - Creates metadata for each chunk including page, type, and sequence
@@ -451,6 +489,8 @@ python ingestion_main.py
 
 ✅ **Diagram Support** - Diagram detection and image extraction. Every diagram is searchable by its section path, label, figure text and context
 
+✅ **Standalone Media** - Image files are stored as diagrams, and mp4 videos as text chunks the answer can link to. Both are found by folder path and filename only
+
 ✅ **Section Awareness** - Font-based heading detection, column-aware reading order, and a section path on every chunk
 
 ✅ **Part-Number Metadata** - Model, part and fault codes extracted from each chunk and its filename, for exact matching in hybrid search
@@ -494,7 +534,7 @@ def validate_chunks(state: IngestionState) -> dict[str, Any]:
 | `src/config.py` | Configuration loading from .env (enhanced with retry, table, change-detection options) |
 | `src/data_models.py` | Data structures (Document, TextChunk, IngestionState, TableData, DiagramMetadata) |
 | `src/ingestion/nodes.py` | 9 node function implementations (6 pipeline + 3 document management) |
-| `src/ingestion/tools.py` | Tool classes (PDFLoader, PDFParser, DocumentHasher, TableExtractor, DiagramExtractor, TextChunker, EmbeddingService, ChromaVectorStore) |
+| `src/ingestion/tools.py` | Tool classes (PDFLoader, PDFParser, DocumentHasher, TableExtractor, DiagramExtractor, TextChunker, EmbeddingService, ChromaVectorStore), plus `media_kind` / `folder_path` and the `IMAGE_EXTS` / `VIDEO_EXTS` file types |
 | `src/ingestion/layout.py` | Layout analysis: TextRepair (shifted fonts), DocumentLayout (reading order), FontHeadingDetector, `analyze_document` (sections, diagram/table section paths) |
 | `src/ingestion/graph.py` | LangGraph pipeline definition with new nodes and edges |
 | `src/utils/logging.py` | Logging configuration |
@@ -594,7 +634,8 @@ Success! Deleted 245 vectors for 'report.pdf'
 
 **Important Notes**:
 - Only removes vectors from the database
-- The PDF file in `./documents/` is NOT affected
+- The file in `./documents/` is NOT affected
+- The document's images in `extracted_diagrams/` are not deleted yet (TODO item 10). They are replaced if the document is ingested again
 - This action cannot be undone (deleted vectors are permanently removed)
 - Confirmation is required before deletion
 
@@ -643,7 +684,7 @@ The document will be re-ingested with its latest version.
    - Only the modified document is re-processed through the pipeline
 
 **Behavior**:
-- Validates that the file exists and is a PDF
+- Validates that the file exists and is a type the pipeline reads (PDF, jpg/jpeg/png or mp4)
 - Checks if document exists in database
 - Asks for confirmation before deletion
 - Deletes all existing vectors for the document
@@ -687,9 +728,9 @@ This is the recommended approach for most document updates.
 - Verify all variables in `src/config.py` are set in `.env`
 - Ensure no placeholder values remain (no `<>` brackets)
 
-**Error: "No documents found"**
+**Error: "No PDF, image or video files found"**
 - Create `./documents/` directory if it doesn't exist
-- Add PDF files to the directory
+- Add PDF, image or mp4 files to the directory (`python tests/build_corpus.py --copy` copies the test corpus)
 - Verify PDFs are readable
 
 **Error: "Embedding API connection failed"**
