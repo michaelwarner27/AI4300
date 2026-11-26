@@ -188,7 +188,21 @@ Values I have already read from the page images. These are drafts and still need
    - Every stored page 45 and page 59 table chunk has a stale section path.
 
    Scoring rules: a row earns credit only if at least half its cells, and at least 2, match in order. A filled-in first cell that differs from the expected key means a different row. Both rules were checked against the raw page 45 pieces.
-4. **Retrieval script.** Write `dexter_retrieval.py` and record the baseline.
+4. **Retrieval script.** *(done 2026-11-26)* `tests/dexter_retrieval.py` wrote `tests/results/dexter/baseline/retrieval.json`. It records ranked hybrid hits (top 20) and whether the right page reaches the LLM's first context. Baseline results, strict / lenient, for the 35 cases that aren't xfail:
+
+   | Category | R@10 | MRR | In context |
+   |---|---|---|---|
+   | Part number | 88% / 100% | 0.73 / 0.92 | 100% |
+   | Spec | 38% / 88% | 0.18 / 0.64 | 75% / 88% |
+   | Table cell | 70% / 80% | 0.36 / 0.52 | 80% |
+   | Disambiguation | 50% / 83% | 0.08 / 0.55 | 67% / 83% |
+   | Concept | 100% | 1.00 | 100% |
+   | **All** | **67% / 89%** | **0.43 / 0.69** | **83% / 89%** |
+
+   - **Table chunks:** only 1 of 9 typed table cases reaches a table chunk in the top 10. Table answers come from flat text chunks.
+   - **Page-tag bug:** this is the biggest gap between strict and lenient (spec: 38% → 88%).
+   - **DXR-X03:** moved out of xfail. Page 7 ranks first without OCR, so the case can't show a gain.
+   - **Image-only cases are a weak OCR signal** at page level. The probes and DX facts are the stronger checks.
 5. **End-to-end cases.** Add `xfail` support to `test_queries.py`, add the DX cases, update `corpus.md`, and run with `--repeat 3`.
 6. **Baseline report and commit.** Summarise the results in `tests/results/dexter/baseline/README.md` and commit.
 

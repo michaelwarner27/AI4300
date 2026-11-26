@@ -1,0 +1,1834 @@
+{
+  "label": "baseline",
+  "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+  "created": "2026-11-26T11:50:14",
+  "rank_depth": 20,
+  "corpus_chunks": 6757,
+  "summary": {
+    "part_number": {
+      "strict": {
+        "cases": 8,
+        "recall@1": 0.625,
+        "recall@5": 0.875,
+        "recall@10": 0.875,
+        "mrr": 0.729,
+        "in_context": 1.0
+      },
+      "lenient": {
+        "cases": 8,
+        "recall@1": 0.875,
+        "recall@5": 1.0,
+        "recall@10": 1.0,
+        "mrr": 0.917,
+        "in_context": 1.0
+      }
+    },
+    "ALL (excluding xfail)": {
+      "strict": {
+        "cases": 36,
+        "recall@1": 0.333,
+        "recall@5": 0.611,
+        "recall@10": 0.667,
+        "mrr": 0.426,
+        "in_context": 0.833,
+        "typed_recall@10": 0.111,
+        "disambiguated": "1/6"
+      },
+      "lenient": {
+        "cases": 36,
+        "recall@1": 0.583,
+        "recall@5": 0.889,
+        "recall@10": 0.889,
+        "mrr": 0.694,
+        "in_context": 0.889,
+        "typed_recall@10": 0.111,
+        "disambiguated": "5/6"
+      }
+    },
+    "spec": {
+      "strict": {
+        "cases": 8,
+        "recall@1": 0.125,
+        "recall@5": 0.375,
+        "recall@10": 0.375,
+        "mrr": 0.181,
+        "in_context": 0.75
+      },
+      "lenient": {
+        "cases": 8,
+        "recall@1": 0.5,
+        "recall@5": 0.875,
+        "recall@10": 0.875,
+        "mrr": 0.635,
+        "in_context": 0.875
+      }
+    },
+    "table_cell": {
+      "strict": {
+        "cases": 10,
+        "recall@1": 0.2,
+        "recall@5": 0.7,
+        "recall@10": 0.7,
+        "mrr": 0.356,
+        "in_context": 0.8,
+        "typed_recall@10": 0.111
+      },
+      "lenient": {
+        "cases": 10,
+        "recall@1": 0.4,
+        "recall@5": 0.8,
+        "recall@10": 0.8,
+        "mrr": 0.524,
+        "in_context": 0.8,
+        "typed_recall@10": 0.111
+      }
+    },
+    "disambiguation": {
+      "strict": {
+        "cases": 6,
+        "recall@1": 0.0,
+        "recall@5": 0.167,
+        "recall@10": 0.5,
+        "mrr": 0.082,
+        "in_context": 0.667,
+        "disambiguated": "1/6"
+      },
+      "lenient": {
+        "cases": 6,
+        "recall@1": 0.333,
+        "recall@5": 0.833,
+        "recall@10": 0.833,
+        "mrr": 0.551,
+        "in_context": 0.833,
+        "disambiguated": "5/6"
+      }
+    },
+    "image_only": {
+      "strict": {
+        "cases": 5,
+        "recall@1": 0.2,
+        "recall@5": 0.2,
+        "recall@10": 0.2,
+        "mrr": 0.218,
+        "in_context": 0.6
+      },
+      "lenient": {
+        "cases": 5,
+        "recall@1": 0.2,
+        "recall@5": 0.6,
+        "recall@10": 0.8,
+        "mrr": 0.375,
+        "in_context": 0.8
+      }
+    },
+    "concept": {
+      "strict": {
+        "cases": 3,
+        "recall@1": 1.0,
+        "recall@5": 1.0,
+        "recall@10": 1.0,
+        "mrr": 1.0,
+        "in_context": 1.0
+      },
+      "lenient": {
+        "cases": 3,
+        "recall@1": 1.0,
+        "recall@5": 1.0,
+        "recall@10": 1.0,
+        "mrr": 1.0,
+        "in_context": 1.0
+      }
+    },
+    "xpass": []
+  },
+  "cases": [
+    {
+      "id": "DXR-P01",
+      "category": "part_number",
+      "query": "K23-026-00",
+      "pages": [
+        15
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 14,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 21,
+          "type": "text",
+          "match": "lexical"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "text",
+          "match": "lexical"
+        }
+      ],
+      "catalog_in_top10": 6,
+      "context_size": 22
+    },
+    {
+      "id": "DXR-P02",
+      "category": "part_number",
+      "query": "What is hub 84545?",
+      "pages": [
+        15
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 15,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 15,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 9,
+      "context_size": 19
+    },
+    {
+      "id": "DXR-P03",
+      "category": "part_number",
+      "query": "K08-249-1G hub and drum kit",
+      "pages": [
+        15
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 15,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 21,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 21,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-P04",
+      "category": "part_number",
+      "query": "K23-105-00 electric brake",
+      "pages": [
+        21
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 21,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-P05",
+      "category": "part_number",
+      "query": "EB01-130 brake assembly",
+      "pages": [
+        96
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 2,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 95,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 96,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 19
+    },
+    {
+      "id": "DXR-P06",
+      "category": "part_number",
+      "query": "BP04-245 brake shoes",
+      "pages": [
+        96,
+        97
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 96,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-P07",
+      "category": "part_number",
+      "query": "HAP-203-02 hanger kit axle spacing",
+      "pages": [
+        32,
+        33,
+        34
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 34,
+          "type": "diagram_reference",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 34,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 32,
+          "type": "diagram_reference",
+          "match": "exact_part"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-P08",
+      "category": "part_number",
+      "query": "APUBR-35 U-bolt kit",
+      "pages": [
+        96
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 3,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 3,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 96,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 7,
+      "context_size": 19
+    },
+    {
+      "id": "DXR-S01",
+      "category": "spec",
+      "query": "What bearings does a Dexter D35 3,500 lb leaf spring axle use?",
+      "pages": [
+        14
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 13,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 25
+    },
+    {
+      "id": "DXR-S02",
+      "category": "spec",
+      "query": "D70 7,000 lb axle lubrication options",
+      "pages": [
+        20
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 19,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 38,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 57,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 25
+    },
+    {
+      "id": "DXR-S03",
+      "category": "spec",
+      "query": "D100 10,000 lb axle suspension options DexAir",
+      "pages": [
+        32
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 5,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 36,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 29,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-S04",
+      "category": "spec",
+      "query": "#9 Torflex bolt pattern options",
+      "pages": [
+        44
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": false
+      },
+      "lenient": {
+        "rank": null,
+        "in_context": false
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 86,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 8,
+          "type": "text",
+          "match": "lexical"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 95,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 9,
+      "context_size": 21
+    },
+    {
+      "id": "DXR-S05",
+      "category": "spec",
+      "query": "#13 Torflex axle bearing options",
+      "pages": [
+        58
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 4,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 55,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 87,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 23
+    },
+    {
+      "id": "DXR-S06",
+      "category": "spec",
+      "query": "Rockwell RT35 lubrication Posi-Lube",
+      "pages": [
+        100
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "exact_part"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 10
+    },
+    {
+      "id": "DXR-S07",
+      "category": "spec",
+      "query": "M12V Versa-Flex bearings",
+      "pages": [
+        91
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": false
+      },
+      "lenient": {
+        "rank": 2,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 5,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 90,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 90,
+          "type": "text",
+          "match": "exact_part"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-S08",
+      "category": "spec",
+      "query": "What warranty covers genuine Dexter replacement parts?",
+      "pages": [
+        15,
+        21
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 4,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 3,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 14,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 6,
+      "context_size": 24
+    },
+    {
+      "id": "DXR-T01",
+      "category": "table_cell",
+      "query": "D35 maximum hub face overhang 4 inch drop 3.00 tube disc brakes",
+      "pages": [
+        14
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 15,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 13,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 20,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 19,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 23
+    },
+    {
+      "id": "DXR-T02",
+      "category": "table_cell",
+      "query": "D70 overhang restrictions Nev-R-Lube drum minimum",
+      "pages": [
+        20
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 4,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 19,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 24,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 82,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 21
+    },
+    {
+      "id": "DXR-T03",
+      "category": "table_cell",
+      "query": "#9 Torflex full load dimensions 4.80-12 tire at 0 degrees",
+      "pages": [
+        45
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 3,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 3,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 43,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 45,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 23
+    },
+    {
+      "id": "DXR-T04",
+      "category": "table_cell",
+      "query": "#9 Torflex ST175/80R13 full load B dimension",
+      "pages": [
+        45
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 4,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 4,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 77,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 47,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 43,
+          "type": "text",
+          "match": "exact_part"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 28
+    },
+    {
+      "id": "DXR-T05",
+      "category": "table_cell",
+      "query": "#9 Torflex mounting bracket dimension F high and low profile",
+      "pages": [
+        45
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 13,
+        "in_context": false,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 13,
+        "in_context": false,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 63,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 81,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 26
+    },
+    {
+      "id": "DXR-T06",
+      "category": "table_cell",
+      "query": "#9 Torflex articulation 32 degree down high profile full load",
+      "pages": [
+        45
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 20,
+        "in_context": false,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 20,
+        "in_context": false,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "table",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 22
+    },
+    {
+      "id": "DXR-T07",
+      "category": "table_cell",
+      "query": "#13 Torflex full load dimensions 215/75R 17.5",
+      "pages": [
+        59
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 3,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 3,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 57,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 59,
+          "type": "text",
+          "match": "exact_part"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 27
+    },
+    {
+      "id": "DXR-T08",
+      "category": "table_cell",
+      "query": "hub face equation for 8K axle outside of flanges",
+      "pages": [
+        12
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true,
+        "typed_rank": 1
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true,
+        "typed_rank": 1
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 12,
+          "type": "table",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 12,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 12,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 11
+    },
+    {
+      "id": "DXR-T09",
+      "category": "table_cell",
+      "query": "Rockwell RT35 4 inch drop disc minimum overhang",
+      "pages": [
+        100
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true,
+        "typed_rank": null
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "exact_part"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 10
+    },
+    {
+      "id": "DXR-T10",
+      "category": "table_cell",
+      "query": "shoe return springs 12.25 electric part number 8,000 lb axle",
+      "pages": [
+        96
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 5,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 5,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 97,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-D01",
+      "category": "disambiguation",
+      "query": "M11V Versa-Flex torsion axle capacity and bolt pattern",
+      "pages": [
+        90
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 7,
+        "in_context": true,
+        "wrong_rank": 2,
+        "disambiguated": false
+      },
+      "lenient": {
+        "rank": 2,
+        "in_context": true,
+        "wrong_rank": 6,
+        "disambiguated": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 5,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 89,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 25,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 22
+    },
+    {
+      "id": "DXR-D02",
+      "category": "disambiguation",
+      "query": "M10FV Versa-Flex 4,200 lb bearing options",
+      "pages": [
+        89
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 10,
+        "in_context": true,
+        "wrong_rank": 2,
+        "disambiguated": false
+      },
+      "lenient": {
+        "rank": 2,
+        "in_context": true,
+        "wrong_rank": 7,
+        "disambiguated": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 5,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 88,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 88,
+          "type": "text",
+          "match": "exact_part"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 20
+    },
+    {
+      "id": "DXR-D03",
+      "category": "disambiguation",
+      "query": "D70 7,000 lb leaf spring axle bearing options",
+      "pages": [
+        20
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": true,
+        "wrong_rank": 1,
+        "disambiguated": false
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true,
+        "wrong_rank": null,
+        "disambiguated": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 19,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 6,
+          "type": "text",
+          "match": "lexical"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 22
+    },
+    {
+      "id": "DXR-D04",
+      "category": "disambiguation",
+      "query": "#13 Torflex full load dimensions",
+      "pages": [
+        59
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": false,
+        "wrong_rank": null,
+        "disambiguated": false
+      },
+      "lenient": {
+        "rank": 17,
+        "in_context": false,
+        "wrong_rank": null,
+        "disambiguated": false
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "table",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 17
+    },
+    {
+      "id": "DXR-D05",
+      "category": "disambiguation",
+      "query": "Rockwell RT20 2,200 lb axle overhang",
+      "pages": [
+        99
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": false,
+        "wrong_rank": 2,
+        "disambiguated": false
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true,
+        "wrong_rank": 2,
+        "disambiguated": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 98,
+          "type": "text",
+          "match": "exact_part"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 100,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 12
+    },
+    {
+      "id": "DXR-D06",
+      "category": "disambiguation",
+      "query": "#9 Torflex 1,000-2,200 lb spindle starting angle options",
+      "pages": [
+        44
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 4,
+        "in_context": true,
+        "wrong_rank": 13,
+        "disambiguated": true
+      },
+      "lenient": {
+        "rank": 4,
+        "in_context": true,
+        "wrong_rank": 13,
+        "disambiguated": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 95,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 86,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 22
+    },
+    {
+      "id": "DXR-X01",
+      "category": "image_only",
+      "query": "Torflex arm length",
+      "pages": [
+        43,
+        45,
+        47,
+        49,
+        51,
+        53,
+        55,
+        57,
+        59,
+        61,
+        63,
+        65,
+        67,
+        77,
+        79
+      ],
+      "xfail": true,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": false
+      },
+      "lenient": {
+        "rank": null,
+        "in_context": false
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 7,
+          "type": "diagram_reference",
+          "match": "lexical"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 7,
+          "type": "diagram_reference",
+          "match": "lexical"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 7,
+          "type": "diagram_reference",
+          "match": "lexical"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 18
+    },
+    {
+      "id": "DXR-X02",
+      "category": "image_only",
+      "query": "center of spindle to top of frame Torflex diagram",
+      "pages": [
+        43,
+        45,
+        47,
+        49,
+        51,
+        53,
+        55,
+        57,
+        59,
+        61,
+        63,
+        65,
+        67,
+        77,
+        79
+      ],
+      "xfail": true,
+      "verified": false,
+      "strict": {
+        "rank": 11,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 2,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 85,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 44,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 56,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 26
+    },
+    {
+      "id": "DXR-X03",
+      "category": "image_only",
+      "query": "Where is the axle label on a leaf spring axle?",
+      "pages": [
+        7
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 7,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 7,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 7,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 19
+    },
+    {
+      "id": "DXR-X04",
+      "category": "image_only",
+      "query": "Are Dexter replacement brakes made in America?",
+      "pages": [
+        15
+      ],
+      "xfail": true,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 4,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 31,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 25,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 22
+    },
+    {
+      "id": "DXR-X05",
+      "category": "image_only",
+      "query": "Torflex axle location center of axle",
+      "pages": [
+        43,
+        45,
+        47,
+        49,
+        51,
+        53,
+        55,
+        57,
+        59,
+        61,
+        63,
+        65,
+        67,
+        77,
+        79
+      ],
+      "xfail": true,
+      "verified": false,
+      "strict": {
+        "rank": null,
+        "in_context": false
+      },
+      "lenient": {
+        "rank": 8,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 7,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 25,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 87,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 18
+    },
+    {
+      "id": "DXR-C01",
+      "category": "concept",
+      "query": "What is a torsion axle?",
+      "pages": [
+        6
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 6,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 25,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 11,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 18
+    },
+    {
+      "id": "DXR-C02",
+      "category": "concept",
+      "query": "How high should I set fenders above the tires on a torsion axle?",
+      "pages": [
+        9
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 9,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 25,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 8,
+          "type": "text",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 19
+    },
+    {
+      "id": "DXR-C03",
+      "category": "concept",
+      "query": "How do I measure hub face when I only have a bare beam?",
+      "pages": [
+        12
+      ],
+      "xfail": false,
+      "verified": false,
+      "strict": {
+        "rank": 1,
+        "in_context": true
+      },
+      "lenient": {
+        "rank": 1,
+        "in_context": true
+      },
+      "top": [
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 12,
+          "type": "text",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 12,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        },
+        {
+          "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+          "page": 12,
+          "type": "diagram_reference",
+          "match": "hybrid"
+        }
+      ],
+      "catalog_in_top10": 10,
+      "context_size": 13
+    }
+  ]
+}

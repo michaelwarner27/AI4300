@@ -70,11 +70,14 @@ cases:
      note: "Page 74 is M9, the marine version of the same capacity."}
 
   # --- Text that exists only inside images (OCR targets) --------------------
+  # Retrieval is scored by page, and a page can rank well for other reasons, so
+  # these cases are a weak OCR signal. The probes (layer 1) and DX answer facts
+  # (layer 4) check whether the image text itself became readable.
   - {id: DXR-X01, category: image_only, query: "Torflex arm length", pages: [43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 77, 79], xfail: true, verified: false,
      note: "'Arm Length' label on the articulation diagram. The same diagram is on every Torflex dimension page (found via its 'For Wiring' label), so any of them counts."}
   - {id: DXR-X02, category: image_only, query: "center of spindle to top of frame Torflex diagram", pages: [43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 77, 79], xfail: true, verified: false}
-  - {id: DXR-X03, category: image_only, query: "Where is the axle label on a leaf spring axle?", pages: [7], xfail: true, verified: false,
-     note: "'AXLE LABEL' callout on the page 7 axle drawing, only in image."}
+  - {id: DXR-X03, category: image_only, query: "Where is the axle label on a leaf spring axle?", pages: [7], verified: false,
+     note: "'AXLE LABEL' callout on the page 7 axle drawing, only in image. Not xfail: page 7 already ranks first at baseline because it is the leaf-spring measurement page, so this case can't show an OCR gain. Kept as a regression guard. DX14 checks the answer itself."}
   - {id: DXR-X04, category: image_only, query: "Are Dexter replacement brakes made in America?", pages: [15], xfail: true, verified: false,
      note: "'MADE IN AMERICA' is only in the logo image on page 15."}
   - {id: DXR-X05, category: image_only, query: "Torflex axle location center of axle", pages: [43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 77, 79], xfail: true, verified: false,
