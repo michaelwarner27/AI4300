@@ -9,6 +9,8 @@
 #   rows      cell values exactly as printed, including the " inch mark
 #   verified  false until checked against the rendered page (scratch/dexter-pages/)
 #   notes     things to check while verifying
+#   header_printed  (optional, default true) false when the page prints no column
+#             header row, so the 'header kept' check is skipped
 #
 # Every cell is single-quoted. Cells contain inch marks, commas and '#', which
 # break or silently split unquoted YAML flow lists.
@@ -63,6 +65,7 @@ tables:
 
   - id: p15-boxed-brake-assemblies
     page: 15
+    header_printed: false
     title: 'GENUINE DEXTER BOXED BRAKE ASSEMBLIES'
     columns: ['PART #', 'DEXTER #', 'DESCRIPTION']
     rows:
@@ -75,6 +78,7 @@ tables:
 
   - id: p15-hubs
     page: 15
+    header_printed: false
     title: 'GENUINE DEXTER HUBS'
     columns: ['PART #', 'DEXTER #', 'DESCRIPTION']
     rows:

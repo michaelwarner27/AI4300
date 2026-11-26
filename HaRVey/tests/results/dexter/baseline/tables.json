@@ -1,0 +1,425 @@
+{
+  "label": "baseline",
+  "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
+  "created": "2026-11-26T11:41:31",
+  "extractor": "pdfplumber (TableExtractor)",
+  "summary": {
+    "all": {
+      "extracted": {
+        "found": 7,
+        "tables": 11,
+        "mean_row_recall": 0.344,
+        "mean_cell_accuracy": 0.437,
+        "mean_fragments_when_found": 2.86,
+        "header_kept": "1/9"
+      },
+      "filtered": {
+        "found": 1,
+        "tables": 11,
+        "mean_row_recall": 0.091,
+        "mean_cell_accuracy": 0.091,
+        "mean_fragments_when_found": 1.0,
+        "header_kept": "1/9"
+      },
+      "stored": {
+        "found": 1,
+        "tables": 11,
+        "mean_row_recall": 0.091,
+        "mean_cell_accuracy": 0.091,
+        "mean_fragments_when_found": 1.0,
+        "header_kept": "1/9"
+      }
+    },
+    "verified": {
+      "extracted": {
+        "found": 1,
+        "tables": 3,
+        "mean_row_recall": 0.167,
+        "mean_cell_accuracy": 0.167,
+        "mean_fragments_when_found": 4.0,
+        "header_kept": "0/1"
+      },
+      "filtered": {
+        "found": 0,
+        "tables": 3,
+        "mean_row_recall": 0.0,
+        "mean_cell_accuracy": 0.0,
+        "mean_fragments_when_found": 0.0,
+        "header_kept": "0/1"
+      },
+      "stored": {
+        "found": 0,
+        "tables": 3,
+        "mean_row_recall": 0.0,
+        "mean_cell_accuracy": 0.0,
+        "mean_fragments_when_found": 0.0,
+        "header_kept": "0/1"
+      }
+    }
+  },
+  "tables": [
+    {
+      "id": "p12-hub-face-equations",
+      "page": 12,
+      "verified": false,
+      "rows": 17,
+      "stages": {
+        "extracted": {
+          "found": true,
+          "fragments": 1,
+          "row_recall": 1.0,
+          "cell_accuracy": 1.0,
+          "header_kept": true,
+          "pieces_on_page": 2
+        },
+        "filtered": {
+          "found": true,
+          "fragments": 1,
+          "row_recall": 1.0,
+          "cell_accuracy": 1.0,
+          "header_kept": true,
+          "pieces_on_page": 1
+        },
+        "stored": {
+          "found": true,
+          "fragments": 1,
+          "row_recall": 1.0,
+          "cell_accuracy": 1.0,
+          "header_kept": true,
+          "pieces_on_page": 1,
+          "section_ok": true
+        }
+      }
+    },
+    {
+      "id": "p14-d35-overhang",
+      "page": 14,
+      "verified": false,
+      "rows": 11,
+      "stages": {
+        "extracted": {
+          "found": true,
+          "fragments": 5,
+          "row_recall": 0.455,
+          "cell_accuracy": 0.682,
+          "header_kept": false,
+          "pieces_on_page": 7
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0,
+          "section_ok": null
+        }
+      }
+    },
+    {
+      "id": "p15-boxed-brake-assemblies",
+      "page": 15,
+      "verified": true,
+      "rows": 4,
+      "stages": {
+        "extracted": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": null,
+          "pieces_on_page": 0
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": null,
+          "pieces_on_page": 0
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": null,
+          "pieces_on_page": 0,
+          "section_ok": null
+        }
+      }
+    },
+    {
+      "id": "p15-hubs",
+      "page": 15,
+      "verified": true,
+      "rows": 5,
+      "stages": {
+        "extracted": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": null,
+          "pieces_on_page": 0
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": null,
+          "pieces_on_page": 0
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": null,
+          "pieces_on_page": 0,
+          "section_ok": null
+        }
+      }
+    },
+    {
+      "id": "p32-hanger-kits",
+      "page": 32,
+      "verified": false,
+      "rows": 7,
+      "stages": {
+        "extracted": {
+          "found": true,
+          "fragments": 3,
+          "row_recall": 0.429,
+          "cell_accuracy": 0.429,
+          "header_kept": false,
+          "pieces_on_page": 6
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0,
+          "section_ok": null
+        }
+      }
+    },
+    {
+      "id": "p45-full-load",
+      "page": 45,
+      "verified": false,
+      "rows": 4,
+      "stages": {
+        "extracted": {
+          "found": true,
+          "fragments": 2,
+          "row_recall": 0.5,
+          "cell_accuracy": 0.5,
+          "header_kept": false,
+          "pieces_on_page": 16
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2,
+          "section_ok": false
+        }
+      }
+    },
+    {
+      "id": "p45-mounting-bracket",
+      "page": 45,
+      "verified": true,
+      "rows": 8,
+      "stages": {
+        "extracted": {
+          "found": true,
+          "fragments": 4,
+          "row_recall": 0.5,
+          "cell_accuracy": 0.5,
+          "header_kept": false,
+          "pieces_on_page": 16
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2,
+          "section_ok": false
+        }
+      }
+    },
+    {
+      "id": "p45-articulation",
+      "page": 45,
+      "verified": false,
+      "rows": 14,
+      "stages": {
+        "extracted": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.417,
+          "header_kept": false,
+          "pieces_on_page": 16
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2,
+          "section_ok": false
+        }
+      }
+    },
+    {
+      "id": "p59-full-load",
+      "page": 59,
+      "verified": false,
+      "rows": 5,
+      "stages": {
+        "extracted": {
+          "found": true,
+          "fragments": 2,
+          "row_recall": 0.4,
+          "cell_accuracy": 0.4,
+          "header_kept": false,
+          "pieces_on_page": 16
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 2,
+          "section_ok": false
+        }
+      }
+    },
+    {
+      "id": "p96-brake-springs-adjusters",
+      "page": 96,
+      "verified": false,
+      "rows": 5,
+      "stages": {
+        "extracted": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0,
+          "section_ok": null
+        }
+      }
+    },
+    {
+      "id": "p100-rt35-overhang",
+      "page": 100,
+      "verified": false,
+      "rows": 6,
+      "stages": {
+        "extracted": {
+          "found": true,
+          "fragments": 3,
+          "row_recall": 0.5,
+          "cell_accuracy": 0.875,
+          "header_kept": false,
+          "pieces_on_page": 4
+        },
+        "filtered": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0
+        },
+        "stored": {
+          "found": false,
+          "fragments": 0,
+          "row_recall": 0.0,
+          "cell_accuracy": 0.0,
+          "header_kept": false,
+          "pieces_on_page": 0,
+          "section_ok": null
+        }
+      }
+    }
+  ]
+}

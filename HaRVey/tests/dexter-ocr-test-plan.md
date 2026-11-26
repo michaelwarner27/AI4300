@@ -174,7 +174,20 @@ Values I have already read from the page images. These are drafts and still need
    - **Section paths:** 36% are current. 365 chunks share one stale path from page 39.
    - **Noise:** the footer appears in 525 chunks, and 14% of text chunks are near-duplicates.
    - **Probes:** 30 pass, 2 known page-tag failures.
-3. **Table fidelity script.** Write `dexter_tables.py` and record the baseline.
+3. **Table fidelity script.** *(done 2026-11-26)* `tests/dexter_tables.py` wrote `tests/results/dexter/baseline/tables.json`. Baseline results over the 11 tables:
+
+   | Stage | Found | Row recall | Cell accuracy | Header kept |
+   |---|---|---|---|---|
+   | Extracted | 7/11 | 34% | 44% | 1/9 |
+   | After filter | 1/11 | 9% | 9% | 1/9 |
+   | Stored | 1/11 | 9% | 9% | 1/9 |
+
+   - Only page 12 survives whole.
+   - pdfplumber returns only the shaded rows of the Torflex tables, as one-row pieces, and the filter then drops them all.
+   - The parts lists (p15, p96) are never detected as tables.
+   - Every stored page 45 and page 59 table chunk has a stale section path.
+
+   Scoring rules: a row earns credit only if at least half its cells, and at least 2, match in order. A filled-in first cell that differs from the expected key means a different row. Both rules were checked against the raw page 45 pieces.
 4. **Retrieval script.** Write `dexter_retrieval.py` and record the baseline.
 5. **End-to-end cases.** Add `xfail` support to `test_queries.py`, add the DX cases, update `corpus.md`, and run with `--repeat 3`.
 6. **Baseline report and commit.** Summarise the results in `tests/results/dexter/baseline/README.md` and commit.
