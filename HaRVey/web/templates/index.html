@@ -693,15 +693,19 @@
       details.append(el("summary", "", "Sources (" + sources.length + ")"));
       const list = el("ul");
       for (const src of sources) {
-        const label = src.filename + ", page " + (src.page ?? "?");
+        // Images and videos are single files: no page number
+        const isPdf = !src.media || src.media === "pdf";
+        const label = isPdf ? src.filename + ", page " + (src.page ?? "?")
+          : (src.media === "video" ? "▶ Video: " : "Image: ") + src.filename;
         const item = el("li");
         if (src.url) {
-          // Opens the full manual at the cited page in a new tab
+          // Opens the full manual at the cited page (or the image/video) in a new tab
           const link = el("a", "", label);
           link.href = src.url;
           link.target = "_blank";
           link.rel = "noopener";
-          link.title = "Open the full manual at this page";
+          link.title = isPdf ? "Open the full manual at this page"
+            : src.media === "video" ? "Watch the video" : "Open the image";
           item.append(link);
         } else {
           item.append(label);

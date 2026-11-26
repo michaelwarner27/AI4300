@@ -24,6 +24,7 @@ from pathlib import Path
 from flask import Flask, abort, jsonify, render_template, request, send_from_directory, session, url_for
 
 from src.config import load_config
+from src.ingestion.tools import media_kind
 from src.query.graph import chat_turn_from_result, create_query_graph, execute_query_pipeline
 from src.query.nodes import DIAGRAM_DIR_NAME, ERROR_MESSAGE, PROJECT_ROOT
 from src.utils.logging import setup_logging
@@ -99,19 +100,22 @@ def _record_from_result(message: str, result) -> dict:
 
 def _source_with_url(source: dict, doc_dir: Path) -> dict:
     """
-    A source plus a "url" to its manual, opened at the cited page.
+    A source plus its "media" type ("pdf", "image" or "video") and a "url" to
+    the file: a PDF opens at the cited page, an image or video opens as is.
 
-    No url is added when the PDF is not in the documents folder, so the browser
+    No url is added when the file is not in the documents folder, so the browser
     only gets links the server can serve.
     """
     name = source.get("filename") or ""  # may include subfolders: "folder/a.pdf"
-    if not name.lower().endswith(".pdf"):
+    kind = media_kind(name)
+    if kind is None:
         return source
+    source = {**source, "media": kind}
     path = (doc_dir / name).resolve()
     if not path.is_relative_to(doc_dir.resolve()) or not path.is_file():
         return source
     url = url_for("serve_manual", filename=name)
-    if source.get("page"):
+    if kind == "pdf" and source.get("page"):
         url += f"#page={source['page']}"
     return {**source, "url": url}
 
@@ -192,9 +196,10 @@ def create_app() -> Flask:
 
     @app.get("/manuals/<path:filename>")
     def serve_manual(filename: str):
-        # PDFs only, shown inline so the browser's viewer honors #page=N
-        if not filename.lower().endswith(".pdf"):
+        # Ingested file types only, shown inline: the PDF viewer honors #page=N,
+        # and range requests (handled by send_from_directory) let videos seek
+        if media_kind(filename) is None:
             abort(404)
-        return send_from_directory(doc_dir, filename, mimetype="application/pdf", as_attachment=False)
+        return send_from_directory(doc_dir, filename, as_attachment=False)
 
     return app
