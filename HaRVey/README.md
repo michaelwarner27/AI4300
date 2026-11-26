@@ -1,11 +1,11 @@
 # HaRVey: Vector Ingestion & Semantic Query Pipeline
 
-A complete vector ingestion and hybrid search pipeline (semantic + keyword + exact part-number matching) built with LangGraph for processing PDF documents, generating embeddings, and enabling intelligent querying through a ReAct-style agent. The agent loop is hand-built as LangGraph nodes (`generate_response` ⇄ `search_more`) rather than LangGraph's prebuilt `create_react_agent`: the LLM reasons, calls a search tool, observes the results and repeats until it gives a final answer.
+A complete vector ingestion and hybrid search pipeline (semantic + keyword + exact part-number matching) built with LangGraph for processing PDF documents (plus standalone images and videos), generating embeddings, and enabling intelligent querying through a ReAct-style agent. The agent loop is hand-built as LangGraph nodes (`generate_response` ⇄ `search_more`) rather than LangGraph's prebuilt `create_react_agent`: the LLM reasons, calls a search tool, observes the results and repeats until it gives a final answer.
 
 ## Overview
 
-**Ingestion Pipeline** - Converts PDF documents into a searchable vector database  
-**Query Pipeline** - Accepts user queries and returns evidence-based answers with source citations
+**Ingestion Pipeline** - Converts PDF documents, images and videos into a searchable vector database  
+**Query Pipeline** - Accepts user queries and returns evidence-based answers with source citations, diagrams and video links
 
 ---
 
@@ -13,9 +13,9 @@ A complete vector ingestion and hybrid search pipeline (semantic + keyword + exa
 
 ```
 /HaRVey/
-├── documents/                       # Source PDFs
+├── documents/                       # Source PDFs, images (.jpg/.jpeg/.png) and videos (.mp4)
 ├── chroma_db/                       # Vector database storage
-├── extracted_diagrams/              # Extracted images from PDFs
+├── extracted_diagrams/              # Images extracted from PDFs, plus copies of standalone images
 ├── src/
 │   ├── config.py                    # Configuration loader (.env), used by both pipelines
 │   ├── data_models.py               # Type-safe dataclasses (ingestion records, QueryState, ChatTurn)
@@ -76,7 +76,7 @@ Run every command from the project root; the scripts import the `src` package fr
 python ingestion_main.py
 ```
 
-Processes all PDFs in `documents/`, generates embeddings, and stores in Chroma.
+Processes all PDFs, images and videos in `documents/` (including subfolders), generates embeddings, and stores in Chroma. See [Images and Videos](#images-and-videos) for how non-PDF files are handled.
 
 **Automatic change detection:**
 - First run: All documents processed and stored with their file hash
@@ -91,9 +91,10 @@ After ingestion, use the CLI tool to list, delete, or update documents:
 # List all documents
 python manage_documents.py --list
 
-# Delete a document by ID (shown in --list) or by filename
+# Delete a document (vectors and diagram files) by ID (shown in --list) or by filename
 python manage_documents.py --delete a1b2c3d4
 python manage_documents.py --delete outdated.pdf
+python manage_documents.py --delete "Dometic/Guides/Cooktop & Ranges/Range Breakdown.PNG"
 
 # Prepare document for re-ingestion
 python manage_documents.py --update ./documents/report.pdf
@@ -115,7 +116,7 @@ Interactive query interface using the ingested vector database.
 python web_main.py            # then open http://127.0.0.1:5000
 ```
 
-Browser chat UI: ask follow-up questions in a conversation thread. Answers render as markdown (marked + DOMPurify from cdnjs; plain text if they can't load), steps are grouped by stage, diagrams show as captioned images, sources sit in a collapsible list, clarifying questions offer clickable options, and error details are collapsed. Each browser session has its own conversation (kept in server memory, cleared on restart or with **New chat**). Optionally set `FLASK_SECRET_KEY` in `.env` to keep session cookies valid across restarts.
+Browser chat UI: ask follow-up questions in a conversation thread. Answers render as markdown (marked + DOMPurify from cdnjs; plain text if they can't load), steps are grouped by stage, diagrams show as captioned images, sources sit in a collapsible list (PDF sources open at the cited page; video sources show as "▶ Video" and play in a new tab), clarifying questions offer clickable options, and error details are collapsed. Each browser session has its own conversation (kept in server memory, cleared on restart or with **New chat**). Optionally set `FLASK_SECRET_KEY` in `.env` to keep session cookies valid across restarts.
 
 ### Run Tests
 
@@ -124,7 +125,7 @@ python tests/test_queries.py          # Run and grade the live cases in tests/te
 python tests/test_queries.py --only C,RW01 --repeat 3   # Chosen cases or groups, with pass rates
 python tests/test_queries.py --rewrite-only             # Grade only the follow-up query rewrite
 python tests/build_corpus.py --copy   # Copy the test manuals (tests/corpus-manifest.txt) into documents/
-python tests/verify_ingestion.py      # Self-contained ingestion checks (fixture PDF, temp Chroma, fake embeddings)
+python tests/verify_ingestion.py      # Self-contained ingestion checks (fixture PDF, images and videos, temp Chroma, fake embeddings)
 python tests/verify_ingestion.py --live   # ...plus a sanity check of your real Chroma database
 python tests/verify_query_loop.py     # Offline checks of the query agent loop, hybrid search (part numbers, BM25 blend) and exact-code lookup
 ```
@@ -133,8 +134,8 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop, 
 
 ## Ingestion Pipeline (6 Nodes)
 
-1. **load_documents** - Discover all PDFs, calculate hashes, detect changes
-2. **parse_documents** - Extract text (pypdf), tables (pdfplumber) and diagrams
+1. **load_documents** - Discover all PDFs, images and videos, calculate hashes, detect changes
+2. **parse_documents** - Extract text (pypdf), tables (pdfplumber) and diagrams; store standalone images as diagrams and describe videos by title and folder
 3. **extract_metadata** - PyMuPDF layout analysis: column-aware reading order, font repair, headings from font styling, text split into sections; heading path and context for each diagram and table
 4. **chunk_text** - Split each section separately into chunks of up to 1000 characters with 100-character overlap (`CHUNK_SIZE`, `CHUNK_OVERLAP`). Every chunk starts with a `Section: A > B` line. If layout analysis finds no sections, each page becomes one section. Tables and diagrams get one chunk each. Every chunk gets `part_numbers` metadata: model / part / fault codes from its text and its manual's filename
 5. **generate_embeddings** - Generate vectors via embedding service with retry logic
@@ -143,6 +144,7 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop, 
 **Features:**
 - PDF parsing with PyMuPDF layout text (pypdf text is used only when layout analysis finds no text); PyMuPDF is required
 - Table extraction (pdfplumber) and diagram extraction (embedded images and vector figures rendered via PyMuPDF, with text captions)
+- Standalone images and videos, found by folder path and filename (see below)
 - File hash-based change detection (skips unchanged documents)
 - Automatic retry with exponential backoff (3 attempts)
 - Batch embedding API calls (32 chunks per request)
@@ -152,9 +154,24 @@ python tests/verify_query_loop.py     # Offline checks of the query agent loop, 
 - Comprehensive logging with detailed metrics
 
 **Change Detection:**
-- First run: Processes all PDFs; each chunk is stored in Chroma with its file's SHA256 hash
+- First run: Processes all documents; each chunk is stored in Chroma with its file's SHA256 hash
 - Subsequent runs: Automatically skips unchanged documents
 - Can be disabled with `ENABLE_CHANGE_DETECTION=false`
+
+### Images and Videos
+
+The manual collection includes some files that aren't PDFs. They are ingested as one-page documents:
+
+| Type | Extensions | Stored as | In answers |
+|---|---|---|---|
+| Image | `.jpg`, `.jpeg`, `.png` (any case) | Copied into `extracted_diagrams/`; one `diagram_reference` chunk (`diagram_kind="image_file"`) | Shown in the diagram viewer |
+| Video | `.mp4` | One `text` chunk: `Video: <title>` / `Folder: <folders>` | Cited as a source; the link plays the video in a new tab |
+
+- **Search:** there is no OCR, transcription or vision model, so these files are found only by their folder path and filename. The agent picks them only when the title clearly matches the question.
+- **`.wmv`:** not ingested, because most browsers can't play it.
+- **Serving:** the web app's `/manuals/<path>` serves PDFs, images and mp4s, and supports seeking within videos.
+- **Managing:** change detection, `--delete` and `--update` work the same as for PDFs.
+- **More detail:** [requirements/ingestion.md](./requirements/ingestion.md#standalone-images-and-videos).
 
 ---
 
@@ -244,10 +261,10 @@ DOCUMENT_INPUT_DIR=./documents
 
 **Security:** Never commit `.env` or API keys. Use only on institutional network with HTTP endpoints.
 
-**Changing chunk settings:** `.env` values override the defaults, and change detection skips PDFs whose file hash is unchanged. After changing `CHUNK_SIZE` or `CHUNK_OVERLAP`, re-ingest with `ENABLE_CHANGE_DETECTION=false` (or delete each document with `manage_documents.py --delete` first) so every document is re-chunked.
+**Changing chunk settings:** `.env` values override the defaults, and change detection skips documents whose file hash is unchanged. After changing `CHUNK_SIZE` or `CHUNK_OVERLAP`, re-ingest with `ENABLE_CHANGE_DETECTION=false` (or delete each document with `manage_documents.py --delete` first) so every document is re-chunked.
 
 **Change Detection Details:**
-- First run: Processes all PDFs; the SHA256 hash is stored on each chunk in Chroma (no separate hash file)
+- First run: Processes all documents; the SHA256 hash is stored on each chunk in Chroma (no separate hash file)
 - Subsequent runs: Compares the file hash against Chroma and skips unchanged documents
 - Documents are stored all-or-nothing: if any chunk fails embedding or storage, nothing is saved for that file, so it is retried next run
 - Unchanged files logged as warnings (configurable with `CHANGE_DETECTION_LOG_LEVEL`)
@@ -281,7 +298,7 @@ Delete with: python manage_documents.py --delete <ID or filename>
 
 ### Delete Document
 
-Remove a document and all its vectors from Chroma. Use the ID from `--list` (handy for long filenames) or the filename itself:
+Remove a document's vectors from Chroma and its files in `extracted_diagrams/`. This works for any ingested type: PDF, image or video. Use the ID from `--list` (handy for long filenames) or the filename itself. The source file in `documents/` is not touched, so remove it too if it shouldn't come back on the next ingestion:
 
 ```bash
 python manage_documents.py --delete a1b2c3d4
@@ -293,14 +310,15 @@ Output:
 Document: report.pdf
 ID:       a1b2c3d4
 Chunks:   245
-Delete this document and all its vectors? This cannot be undone. (y/n): y
+Diagram files: 37
+Delete this document, its vectors and its diagram files? This cannot be undone. (y/n): y
 
-Success! Deleted 245 vectors for 'report.pdf'
+Success! Deleted 245 vectors and 37 diagram files for 'report.pdf'
 ```
 
 ### Update Document
 
-Delete old vectors and prepare for re-ingestion:
+Delete old vectors and diagram files and prepare for re-ingestion (any ingested type):
 
 ```bash
 python manage_documents.py --update ./documents/report.pdf
@@ -309,9 +327,10 @@ python manage_documents.py --update ./documents/report.pdf
 Output:
 ```
 Preparing to update document: report.pdf
-Delete old vectors and prepare for re-ingestion? (y/n): y
+Chunks: 245, diagram files: 37
+Delete old vectors and diagram files and prepare for re-ingestion? (y/n): y
 
-Success! Deleted 245 old vectors for 'report.pdf'
+Success! Deleted 245 old vectors and 37 diagram files for 'report.pdf'
 
 Next steps:
   1. Modify report.pdf if needed
@@ -321,7 +340,7 @@ Next steps:
 
 **Workflow for updating a document**:
 1. Run the delete/prepare command above
-2. Modify the PDF file (optional)
+2. Modify the file (optional)
 3. Run `python ingestion_main.py` to re-ingest
 4. Change detection automatically detects the modification
 
@@ -335,7 +354,7 @@ For detailed usage and options, see [Post-Ingestion Document Management](./requi
 ### Data Flow
 
 ```
-PDFs → Load → Parse → Metadata → Chunk → Embed → Store (Chroma)
+PDFs, images, videos → Load → Parse → Metadata → Chunk → Embed → Store (Chroma)
                                            ↓
 Query (+ chat history) → Rewrite → Embed → Hybrid search (Chroma + BM25 + part numbers) + earlier docs → LLM (Tool Calling) → Format Response
 ```
