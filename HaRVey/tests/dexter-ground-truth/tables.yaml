@@ -41,7 +41,7 @@ tables:
       - ['10 ON 11 1/4" HUB', 'HUB FACE = OUTSIDE OF FLANGES + 11.16']
       - ['TAG AXLE WITH 9-20 DRUM', 'HUB FACE = OUTSIDE OF FLANGES + 17.19']
       - ['TAG AXLE WITH 9-23 DRUM', 'HUB FACE = OUTSIDE OF FLANGES + 15.38']
-    verified: false
+    verified: true
     notes: 'Two-column table. Some model cells contain commas ("6K, 7K (865)").'
 
   - id: p14-d35-overhang
@@ -60,7 +60,7 @@ tables:
       - ['STRAIGHT—3.00"', 'DISC', '15"', '23"']
       - ['6" DROP—2 3/8"', 'IDLER/DRUM', '15.75"', '18"']
       - ['6" DROP—2 3/8"', 'DISC', '15.75"', '18"']
-    verified: false
+    verified: true
     notes: 'Row order is the text-layer order. Check it against the printed order. Rows 1 and 2 look almost the same (IDLER/DRUM vs DRUM), so confirm both are printed. No table chunk holds this table at baseline.'
 
   - id: p15-boxed-brake-assemblies
@@ -102,7 +102,7 @@ tables:
       - ['HAP-203-02X', '041665', 'MULTI-AXLE CONVERSION KIT', '42 1/4"']
       - ['HAP-203-03', '041680', 'DEXTER MULTI-AXLE CONVERSION KIT', '48 1/2"']
       - ['HAP-203-03X', '041685', 'MULTI-AXLE CONVERSION KIT', '48 1/2"']
-    verified: false
+    verified: true
     notes: 'Reference numbers have leading zeros. "—" means no spacing.'
 
   - id: p45-full-load
@@ -121,7 +121,7 @@ tables:
       - ['4.80-8', '3.5"', '11.4"', '5.3"', '1.2"', '9.1"', '7.6"', '-0.1"', '7.8"', '8.9"', '-1.1"', '6.8"', '9.9"', '-2.0"', '5.9"', '10.8"', '-3"', '4.9"', '11.8"', '7.9"', '8.8"']
       - ['4.80-12', '3.5"', '13"', '7.3"', '1.2"', '10.7"', '9.6"', '-0.1"', '9.4"', '10.9"', '-1.1"', '8.4"', '11.9"', '-2.0"', '7.5"', '12.8"', '-3"', '6.5"', '13.8"', '9.5"', '10.8"']
       - ['20.5X8.0-10', '3.5"', '13.2"', '7.3"', '1.2"', '10.9"', '9.6"', '-0.1"', '9.6"', '10.9"', '-1.1"', '8.6"', '11.9"', '-2.0"', '7.7"', '12.8"', '-3"', '6.7"', '13.8"', '9.7"', '10.8"']
-    verified: false
+    verified: true
     notes: >
       Key baseline case. pdfplumber drops rows ST175/80R13 and 4.80-12 (the shaded rows), and
       the junk filter drops the remaining one-row pieces, so no data rows are stored at baseline.
@@ -162,7 +162,7 @@ tables:
       - ['10° UP', 'HIGH', '1.05', '5.91', '-1.13', '5.06']
       - ['22° UP', 'LOW', '-1.08', '5.54', '-3.02', '4.24']
       - ['22° UP', 'HIGH', '-0.21', '5.54', '-2.15', '4.24']
-    verified: false
+    verified: true
     notes: 'The start angle is printed once per pair of rows (merged cell). Ground truth repeats it on both rows. Check the minus signs.'
 
   - id: p59-full-load
@@ -182,7 +182,7 @@ tables:
       - ['12-16.5 LT', '4.6"', '19.5"', '11.2"', '2.3"', '17.2"', '13.5"', '1"', '15.9"', '14.8"', '-0.1"', '14.8"', '15.9"', '-0.1"', '13.9"', '16.8"', '-2"', '12.9"', '17.8"', '14.9"', '15.8"']
       - ['9.50-16.5 LT', '4.6"', '18.7"', '10.6"', '2.3"', '16.4"', '12.9"', '1"', '15.1"', '14.2"', '-0.1"', '14"', '15.3"', '-0.1"', '13.1"', '16.2"', '-2"', '12.1"', '17.2"', '14.1"', '15.2"']
       - ['9R 17.5 HC', '4.6"', '20"', '12.5"', '2.3"', '17.7"', '14.8"', '1"', '16.4"', '16.1"', '-0.1"', '15.3"', '17.2"', '-0.1"', '14.4"', '18.1"', '-2"', '13.4"', '19.1"', '15.4"', '17.1"']
-    verified: false
+    verified: true
     notes: 'The text layer gives -0.1" for both 0° H and 10° UP H. That may be a catalog typo, so check against the image. Same layout as p45, but a different Torflex model (#13).'
 
   - id: p96-brake-springs-adjusters
@@ -195,7 +195,7 @@ tables:
       - ['BP07-190', '218000', 'SHOE RETURN SPRINGS, 12.25" ELECTRIC']
       - ['BP07-195', '218100', 'SHOE CENTER SPRINGS, 12.25" 7.2-15K ELECTRIC']
       - ['BP08-155', '220910', 'ADJUSTER SPRING, 12.25" ELECTRIC']
-    verified: false
+    verified: true
     notes: 'Replacement-guide layout. pdfplumber finds no table on this page at baseline.'
 
   - id: p100-rt35-overhang
@@ -209,5 +209,5 @@ tables:
       - ['4" DROP', 'IDLER', '14"', '18"']
       - ['4" DROP', 'DRUM', '14"', '18"']
       - ['4" DROP', 'DISC', '14"', '18"']
-    verified: false
+    verified: true
     notes: 'Rockwell brand, not Dexter. Tests that the title "ROCKWELL AXLE OVERHANG RESTRICTIONS" is kept.'

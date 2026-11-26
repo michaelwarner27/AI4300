@@ -188,7 +188,7 @@ Values I have already read from the page images. These are drafts and still need
    - Every stored page 45 and page 59 table chunk has a stale section path.
 
    Scoring rules: a row earns credit only if at least half its cells, and at least 2, match in order. A filled-in first cell that differs from the expected key means a different row. Both rules were checked against the raw page 45 pieces.
-4. **Retrieval script.** *(done 2026-11-26)* `tests/dexter_retrieval.py` wrote `tests/results/dexter/baseline/retrieval.json`. It records ranked hybrid hits (top 20) and whether the right page reaches the LLM's first context. Baseline results, strict / lenient, for the 35 cases that aren't xfail:
+4. **Retrieval script.** *(done 2026-11-26)* `tests/dexter_retrieval.py` wrote `tests/results/dexter/baseline/retrieval.json`. It records ranked hybrid hits (top 20) and whether the right page reaches the LLM's first context. Baseline results, strict / lenient, for the 36 cases that aren't xfail (this includes DXR-X03):
 
    | Category | R@10 | MRR | In context |
    |---|---|---|---|
@@ -219,7 +219,7 @@ Values I have already read from the page images. These are drafts and still need
 
    - **Root causes:** DX06, DX08 and DX10 fail because of stale headings and page tags, not missing OCR. Docling's layout analysis may fix headings as a side effect, so these cases show both effects.
    - **Mistake found in my cases:** the first run used unquoted YAML questions containing `#9`, which YAML treated as a comment, so the questions were cut off. They are quoted now. A scan of all 81 cases found no other cut-off values.
-6. **Baseline report and commit.** Summarise the results in `tests/results/dexter/baseline/README.md` and commit.
+6. **Baseline report and commit.** *(done 2026-11-26)* `tests/results/dexter/baseline/README.md` summarises all four layers. It also says what improvement should look like after OCR and how to reproduce each run. All 11 tables in `tables.yaml` were verified by the user. The DX case facts are still unverified.
 
 ## Risks and notes
 

@@ -1,7 +1,7 @@
 {
   "label": "baseline",
   "file": "Dexter Trailer Catalog V1-24 p1-100.pdf",
-  "created": "2026-11-26T11:41:31",
+  "created": "2026-11-26T12:22:40",
   "extractor": "pdfplumber (TableExtractor)",
   "summary": {
     "all": {
@@ -32,28 +32,28 @@
     },
     "verified": {
       "extracted": {
-        "found": 1,
-        "tables": 3,
-        "mean_row_recall": 0.167,
-        "mean_cell_accuracy": 0.167,
-        "mean_fragments_when_found": 4.0,
-        "header_kept": "0/1"
+        "found": 7,
+        "tables": 11,
+        "mean_row_recall": 0.344,
+        "mean_cell_accuracy": 0.437,
+        "mean_fragments_when_found": 2.86,
+        "header_kept": "1/9"
       },
       "filtered": {
-        "found": 0,
-        "tables": 3,
-        "mean_row_recall": 0.0,
-        "mean_cell_accuracy": 0.0,
-        "mean_fragments_when_found": 0.0,
-        "header_kept": "0/1"
+        "found": 1,
+        "tables": 11,
+        "mean_row_recall": 0.091,
+        "mean_cell_accuracy": 0.091,
+        "mean_fragments_when_found": 1.0,
+        "header_kept": "1/9"
       },
       "stored": {
-        "found": 0,
-        "tables": 3,
-        "mean_row_recall": 0.0,
-        "mean_cell_accuracy": 0.0,
-        "mean_fragments_when_found": 0.0,
-        "header_kept": "0/1"
+        "found": 1,
+        "tables": 11,
+        "mean_row_recall": 0.091,
+        "mean_cell_accuracy": 0.091,
+        "mean_fragments_when_found": 1.0,
+        "header_kept": "1/9"
       }
     }
   },
@@ -61,7 +61,7 @@
     {
       "id": "p12-hub-face-equations",
       "page": 12,
-      "verified": false,
+      "verified": true,
       "rows": 17,
       "stages": {
         "extracted": {
@@ -94,7 +94,7 @@
     {
       "id": "p14-d35-overhang",
       "page": 14,
-      "verified": false,
+      "verified": true,
       "rows": 11,
       "stages": {
         "extracted": {
@@ -193,7 +193,7 @@
     {
       "id": "p32-hanger-kits",
       "page": 32,
-      "verified": false,
+      "verified": true,
       "rows": 7,
       "stages": {
         "extracted": {
@@ -226,7 +226,7 @@
     {
       "id": "p45-full-load",
       "page": 45,
-      "verified": false,
+      "verified": true,
       "rows": 4,
       "stages": {
         "extracted": {
@@ -292,7 +292,7 @@
     {
       "id": "p45-articulation",
       "page": 45,
-      "verified": false,
+      "verified": true,
       "rows": 14,
       "stages": {
         "extracted": {
@@ -325,7 +325,7 @@
     {
       "id": "p59-full-load",
       "page": 59,
-      "verified": false,
+      "verified": true,
       "rows": 5,
       "stages": {
         "extracted": {
@@ -358,7 +358,7 @@
     {
       "id": "p96-brake-springs-adjusters",
       "page": 96,
-      "verified": false,
+      "verified": true,
       "rows": 5,
       "stages": {
         "extracted": {
@@ -391,7 +391,7 @@
     {
       "id": "p100-rt35-overhang",
       "page": 100,
-      "verified": false,
+      "verified": true,
       "rows": 6,
       "stages": {
         "extracted": {
